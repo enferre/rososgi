@@ -6,10 +6,11 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.ros.EnvironmentVariables;
 import org.ros.RosCore;
 
 @Component(immediate=true)
-public class RosCoreComponent {
+public class RosCoreInit {
 
 	private final static String DEFAULT_URI = "http://localhost:11311";
 	private RosCore core;
@@ -19,7 +20,7 @@ public class RosCoreComponent {
 		URI uri = null;
 		
 		// first try env variable
-		String env = System.getenv("ROS_MASTER_URI");
+		String env = System.getenv(EnvironmentVariables.ROS_MASTER_URI);
 		if(env != null){
 			uri = new URI(env);
 		} else {
@@ -42,5 +43,6 @@ public class RosCoreComponent {
 	public void deactivate() throws Exception {
 		core.shutdown();
 	}
+
 
 }
