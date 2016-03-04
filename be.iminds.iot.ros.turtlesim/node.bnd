@@ -1,0 +1,3 @@
+Private-Package: \
+	be.iminds.iot.ros.turtlesim.node,\
+	be.iminds.iot.ros.util
