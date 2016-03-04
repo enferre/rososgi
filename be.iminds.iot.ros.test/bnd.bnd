@@ -5,6 +5,4 @@
 	org.ros.rosjava_messages.std_msgs,\
 	org.ros.rosjava.message_generation
 Bundle-Version: 0.1.0
-Private-Package: \
-	be.iminds.iot.ros.test.pub,\
-	be.iminds.iot.ros.test.sub
+-sub: *.bnd

@@ -22,14 +22,15 @@
 	org.ros.rosjava_core.apache_xmlrpc_common;version='[0.2.1,0.2.2)',\
 	org.ros.rosjava_core.apache_xmlrpc_client;version='[0.2.1,0.2.2)',\
 	org.ros.rosjava_core.apache_xmlrpc_server;version='[0.2.1,0.2.2)',\
-	org.ros.rosjava;version='[0.2.1,0.2.2)',\
+	org.ros.rosjava;version='[0.2.2,0.2.3)',\
 	org.ros.rosjava.message_generation;version='[0.2.1,0.2.2)',\
 	org.ros.rosjava_messages.rosgraph_msgs;version='[1.11.1,1.12)',\
 	org.ros.rosjava_messages.std_msgs;version='[0.5.9,0.6)',\
+	org.ros.rosjava_messages.geometry_msgs;version='[1.11.7,1.11.8)',\
 	be.iminds.iot.ros.core;version=latest,\
+	be.iminds.iot.ros.test.pub;version=latest,\
+	be.iminds.iot.ros.test.sub;version=latest
 	
-	
-#	be.iminds.iot.ros.test;version=latest
 	
 	
 -runsystempackages:\
