@@ -1,6 +1,6 @@
 -runfw: org.eclipse.concierge
 
--runbundles: \
+-runbundles.core: \
 	org.apache.felix.gogo.command;version='[0.14.0,0.15)',\
 	org.apache.felix.gogo.runtime;version='[0.16.2,0.17)',\
 	org.apache.felix.gogo.shell;version='[0.10.0,0.11)',\
@@ -28,8 +28,10 @@
 	org.ros.rosjava_messages.std_msgs;version='[0.5.9,0.6)',\
 	org.ros.rosjava_messages.geometry_msgs;version='[1.11.7,1.11.8)',\
 	be.iminds.iot.ros.core;version=latest,\
-	be.iminds.iot.ros.test.pub;version=latest,\
-	be.iminds.iot.ros.test.sub;version=latest
+	
+	
+#	be.iminds.iot.ros.test.pub;version=latest,\
+#	be.iminds.iot.ros.test.sub;version=latest
 	
 	
 	

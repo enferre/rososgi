@@ -1,0 +1,6 @@
+-include ../be.iminds.iot.ros.core/core.bndrun
+
+-runbundles.turtle: \
+	be.iminds.iot.ros.turtlesim.msgs;version=latest,\
+	be.iminds.iot.ros.turtlesim.node;version=latest,\
+	be.iminds.iot.ros.turtlesim.control;version=latest,\

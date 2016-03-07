@@ -19,7 +19,6 @@ public class RosRuntime {
 	@Reference(cardinality=ReferenceCardinality.MULTIPLE, 
 			   policy=ReferencePolicy.DYNAMIC)
 	void addNode(NodeMain node) {
-		System.out.println("START NODE "+node.getDefaultNodeName());
 		try {
 			NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic("localhost",new URI("http://localhost:11311"));
 			executor.execute(node, nodeConfiguration);
