@@ -6,43 +6,36 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.ros.EnvironmentVariables;
+import org.osgi.service.component.annotations.Reference;
 import org.ros.RosCore;
+
+import be.iminds.iot.ros.api.Environment;
 
 @Component(immediate=true)
 public class RosCoreInit {
 
 	private final static String DEFAULT_URI = "http://localhost:11311";
 	private RosCore core;
+	private Environment env;
 	
 	@Activate
-	public void activate(BundleContext context) throws Exception {
-		URI uri = null;
-		
-		// first try env variable
-		String env = System.getenv(EnvironmentVariables.ROS_MASTER_URI);
-		if(env != null){
-			uri = new URI(env);
-		} else {
-			
-			// then try context property
-			String ctx = context.getProperty("ros.master.uri");
-			if(ctx != null){
-				uri = new URI(ctx);
-			} else {
-				uri = new URI(DEFAULT_URI);
-			}
+	void activate(BundleContext context) throws Exception {
+		URI masterURI = env.getMasterURI();
+		if(masterURI==null){
+			masterURI = new URI(DEFAULT_URI);
 		}
-		
-		core = RosCore.newPublic(uri.getHost(), uri.getPort());
+		core = RosCore.newPublic(masterURI.getHost(), masterURI.getPort());
 		core.start();
 		System.out.println("ROS core service [/rosout] started on "+core.getUri());
 	}
 
 	@Deactivate
-	public void deactivate() throws Exception {
+	void deactivate() throws Exception {
 		core.shutdown();
 	}
 
-
+	@Reference
+	void setEnvironment(Environment e){
+		this.env = e;
+	}
 }
