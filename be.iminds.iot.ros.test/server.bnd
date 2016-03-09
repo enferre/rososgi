@@ -1,0 +1,3 @@
+Private-Package: be.iminds.iot.ros.test.server
+Bundle-Version: 0.1.0
+Export-Package: test_srv
