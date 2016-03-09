@@ -1,0 +1,5 @@
+-include ../be.iminds.iot.ros.core/core.bndrun
+
+-runbundles.vrep: \
+	be.iminds.iot.ros.simulator.vrep;version=latest
+	

@@ -1,7 +1,5 @@
 package be.iminds.iot.ros.core;
 
-import java.io.File;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;

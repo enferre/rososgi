@@ -27,6 +27,7 @@
 	org.ros.rosjava_messages.rosgraph_msgs;version='[1.11.1,1.12)',\
 	org.ros.rosjava_messages.std_msgs;version='[0.5.9,0.6)',\
 	org.ros.rosjava_messages.geometry_msgs;version='[1.11.7,1.11.8)',\
+	org.ros.rosjava_messages.sensor_msgs;version='[1.11.7,1.11.8)',\
 	be.iminds.iot.ros.core;version=latest,\
 	
 	
