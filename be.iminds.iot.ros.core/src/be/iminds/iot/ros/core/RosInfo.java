@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.osgi.service.component.annotations.Component;
 import org.ros.master.client.MasterStateClient;
+import org.ros.master.client.ServiceSystemState;
 import org.ros.master.client.SystemState;
 import org.ros.master.client.TopicSystemState;
 import org.ros.master.client.TopicType;
@@ -23,7 +24,9 @@ import be.iminds.iot.ros.api.Ros;
 		"osgi.command.function=nodes",
 		"osgi.command.function=topics",
 		"osgi.command.function=publishers",
-		"osgi.command.function=subscribers"})
+		"osgi.command.function=subscribers",
+		"osgi.command.function=services",
+		"osgi.command.function=providers"})
 public class RosInfo extends AbstractNodeMain implements Ros {
 
 	private MasterStateClient master;
@@ -88,6 +91,19 @@ public class RosInfo extends AbstractNodeMain implements Ros {
 		return type.getMessageType();
 	}
 
+	@Override
+	public Collection<String> getServices() {
+		SystemState state = master.getSystemState();
+		return state.getServices().stream().map(s -> s.getServiceName()).collect(Collectors.toList());
+	}
+
+	@Override
+	public Collection<String> getProviders(String service) {
+		SystemState state = master.getSystemState();
+		ServiceSystemState sss = state.getServices().stream().filter(s -> s.getServiceName().equals(service)).findFirst().get();
+		return sss.getProviders();
+	}
+	
 	void nodes(){
 		getNodes().stream().forEach(System.out::println);
 	}
@@ -102,5 +118,13 @@ public class RosInfo extends AbstractNodeMain implements Ros {
 	
 	void subscribers(String topic){
 		getPublishers(topic).stream().forEach(System.out::println);
+	}
+	
+	void services(){
+		getServices().stream().forEach(System.out::println);
+	}
+	
+	void providers(String service){
+		getProviders(service).forEach(System.out::println);
 	}
 }

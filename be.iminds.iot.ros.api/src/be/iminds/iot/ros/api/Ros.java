@@ -19,4 +19,8 @@ public interface Ros {
 	
 	String getTopicType(String topic);
 	
+	Collection<String> getServices();
+	
+	Collection<String> getProviders(String service);
+	
 }
