@@ -8,7 +8,6 @@ import java.util.List;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.ros.EnvironmentVariables;
 
 import be.iminds.iot.ros.api.Environment;
 
@@ -26,13 +25,16 @@ public class RosEnvironment implements Environment {
 	void activate(BundleContext context) throws Exception {
 		try {
 			String uri = getVariable("ROS_MASTER_URI", "ros.master.uri", context);
+			if(uri==null){
+				throw new Exception("No master URI configured!");
+			}
 			masterURI = new URI(uri);
 			distro = getVariable("ROS_DISTRO", "ros.distro", context);
 			namespace = getVariable("ROS_NAMESPACE", "ros.namespace", context);
 			root = getVariable("ROS_ROOT", "ros.root", context);
 			packagePath = getVariable("ROS_PACKAGE_PATH", "ros.package.path", context);
 		} catch(Exception e){
-			System.err.println("Error setting up the ROS environment");
+			System.err.println("Error setting up the ROS environment: "+e.getMessage());
 			throw e;
 		} 
 	}
@@ -78,14 +80,19 @@ public class RosEnvironment implements Environment {
 
 	@Override
 	public File getRoot() {
+		if(root==null){
+			return new File(".");
+		}
 		return new File(root);
 	}
 
 	@Override
 	public List<File> getPackagePath() {
 		List<File> files = new ArrayList<>();
-		for(String f : packagePath.split(":")){
-			files.add(new File(f));
+		if(packagePath!=null){
+			for(String f : packagePath.split(":")){
+				files.add(new File(f));
+			}
 		}
 		return files;
 	}
