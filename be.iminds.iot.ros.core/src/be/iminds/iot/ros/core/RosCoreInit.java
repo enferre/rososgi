@@ -1,5 +1,6 @@
 package be.iminds.iot.ros.core;
 
+import java.net.Socket;
 import java.net.URI;
 
 import org.osgi.framework.BundleContext;
@@ -24,9 +25,15 @@ public class RosCoreInit {
 		if(masterURI==null){
 			masterURI = new URI(DEFAULT_URI);
 		}
-		core = RosCore.newPublic(masterURI.getHost(), masterURI.getPort());
-		core.start();
-		System.out.println("ROS core service [/rosout] started on "+core.getUri());
+		try {
+			// try to connect first to see whether there is already something running there
+			Socket s = new Socket(masterURI.getHost(), masterURI.getPort());
+			s.close();
+		} catch(Exception e){
+			core = RosCore.newPublic(masterURI.getHost(), masterURI.getPort());
+			core.start();
+			System.out.println("ROS core service [/rosout] started on "+core.getUri());
+		}
 	}
 
 	@Deactivate
