@@ -1,5 +1,6 @@
 -include ../be.iminds.iot.ros.core/core.bndrun
 
 -runbundles.vrep: \
+	osgi.promise;version='[6.0.0,6.1.0)',\
 	be.iminds.iot.ros.simulator.vrep;version=latest
 	

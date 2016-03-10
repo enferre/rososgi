@@ -8,7 +8,8 @@ Bundle-Version: 0.1.0
 	org.jboss.netty,\
 	osgi.core;version=5.0,\
 	osgi.enterprise;version=5.0,\
-	be.iminds.iot.ros.simulator.api;version=latest
+	be.iminds.iot.ros.simulator.api;version=latest,\
+	osgi.promise
 Private-Package: be.iminds.iot.ros.simulator.vrep
 Export-Package: \
 	vrep_common,\
