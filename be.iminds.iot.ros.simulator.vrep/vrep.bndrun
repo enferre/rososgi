@@ -2,5 +2,6 @@
 
 -runbundles.vrep: \
 	osgi.promise;version='[6.0.0,6.1.0)',\
+	org.ros.rosjava_messages.brics_actuator;version='[0.7,0.8)',\
 	be.iminds.iot.ros.simulator.vrep;version=latest
 	

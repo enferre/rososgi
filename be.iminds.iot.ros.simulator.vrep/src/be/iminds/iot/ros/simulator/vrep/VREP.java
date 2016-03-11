@@ -12,6 +12,7 @@ import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 
 import be.iminds.iot.ros.simulator.api.Simulator;
+import be.iminds.iot.ros.simulator.vrep.youbot.Youbot;
 import vrep_common.simRosLoadScene;
 import vrep_common.simRosLoadSceneRequest;
 import vrep_common.simRosLoadSceneResponse;
@@ -63,7 +64,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 			pauseSim = connectedNode.newServiceClient("/vrep/simRosPauseSimulation", simRosPauseSimulation._TYPE);
 			loadScene = connectedNode.newServiceClient("/vrep/simRosLoadScene", simRosLoadScene._TYPE);
 			
-			loadYoubot();
+			load();
 		} catch(Exception e){
 			System.err.println("Failed to find VREP services, is VREP (with ROS plugin enabled) running? ");
 		}
@@ -81,7 +82,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 			}
 		});
 		
-		youbot.publish();
+		enable();
 	}
 
 	@Override
@@ -95,6 +96,8 @@ public class VREP extends AbstractNodeMain implements Simulator {
 				System.err.println("Error pausing simulation");
 			}
 		});
+		
+		disable();
 	}
 
 	@Override
@@ -108,6 +111,8 @@ public class VREP extends AbstractNodeMain implements Simulator {
 				System.err.println("Error stopping simulation");
 			}
 		});
+		
+		disable();
 	}
 
 	@Override
@@ -119,7 +124,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 			@Override
 			public void onSuccess(simRosLoadSceneResponse response) {
 				try {
-					loadYoubot();
+					load();
 				} catch (Exception e) {
 					System.err.println("Failed to load youbot");
 				}
@@ -131,7 +136,10 @@ public class VREP extends AbstractNodeMain implements Simulator {
 		});
 	}
 	
-	private void loadYoubot() throws Exception {
+	/**
+	 * Load objects  
+	 */
+	private void load() throws Exception {
 		// TODO search for youbot objects?
 		youbot = new Youbot(node, 
 				"youBot",
@@ -148,25 +156,41 @@ public class VREP extends AbstractNodeMain implements Simulator {
 				"rollingJoint_fr");
 	}
 	
+	/**
+	 * Enable objects - register their pub/sub ROS topics
+	 */
+	private void enable(){
+		youbot.enable();
+	}
+	
+	/**
+	 * Disable objects - unregister ROS stuff
+	 */
+	private void disable(){
+		youbot.disable();
+	}
+	
+	
+	
 	// For testing via CLI
 	
-	public void position(int joint, float p){
+	public void position(int joint, double p){
 		youbot.arm().setPosition(joint, p);
 	}
 	
-	public void targetPosition(int joint, float p){
+	public void targetPosition(int joint, double p){
 		youbot.arm().setTargetPosition(joint, p);
 	}
 	
-	public void targetVelocity(int joint, float v){
+	public void targetVelocity(int joint, double v){
 		youbot.arm().setTargetVelocity(joint, v);
 	}
 	
-	public void torque(int joint, float t){
+	public void torque(int joint, double t){
 		youbot.arm().setTorque(joint, t);
 	}
 	
-	public void move(float x, float y, float a){
+	public void move(double x, double y, double a){
 		youbot.base().move(x, y, a);
 	}
 	

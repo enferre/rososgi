@@ -21,7 +21,7 @@ import vrep_common.simRosSetObjectIntParameter;
 import vrep_common.simRosSetObjectIntParameterRequest;
 import vrep_common.simRosSetObjectIntParameterResponse;
 
-public class JointController {
+public class VREPJointController {
 
 	private ServiceClient<simRosSetObjectIntParameterRequest, simRosSetObjectIntParameterResponse> setIntParam;
 	private ServiceClient<simRosSetJointPositionRequest, simRosSetJointPositionResponse> setJointPosition;
@@ -30,7 +30,7 @@ public class JointController {
 	private ServiceClient<simRosSetJointForceRequest, simRosSetJointForceResponse> setJointTorque;
 
 	
-	public JointController(ConnectedNode node){
+	public VREPJointController(ConnectedNode node){
 		try {
 			setIntParam = node.newServiceClient("/vrep/simRosSetObjectIntParameter", simRosSetObjectIntParameter._TYPE);
 			setJointPosition = node.newServiceClient("/vrep/simRosSetJointPosition", simRosSetJointPosition._TYPE);
@@ -60,7 +60,7 @@ public class JointController {
 		});	
 	}
 	
-	public void setJointPosition(int handle, float position){
+	public void setJointPosition(int handle, double position){
 		final simRosSetJointPositionRequest request = setJointPosition.newMessage();
 		request.setHandle(handle);
 		request.setPosition(position);
@@ -76,7 +76,7 @@ public class JointController {
 		});	
 	}
 	
-	public void setJointTargetPosition(int handle, float position){
+	public void setJointTargetPosition(int handle, double position){
 		final simRosSetJointTargetPositionRequest request = setJointTargetPos.newMessage();
 		request.setHandle(handle);
 		request.setTargetPosition(position);
@@ -92,7 +92,7 @@ public class JointController {
 		});		
 	}
 	
-	public void setJointTargetVelocity(int handle, float velocity){
+	public void setJointTargetVelocity(int handle, double velocity){
 		final simRosSetJointTargetVelocityRequest request = setJointVelocity.newMessage();
 		request.setHandle(handle);
 		request.setTargetVelocity(velocity);
@@ -108,7 +108,7 @@ public class JointController {
 		});		
 	}
 	
-	public void setJointTorque(int handle, float torque){
+	public void setJointTorque(int handle, double torque){
 		final simRosSetJointForceRequest request = setJointTorque.newMessage();
 		request.setHandle(handle);
 		request.setForceOrTorque(torque);
