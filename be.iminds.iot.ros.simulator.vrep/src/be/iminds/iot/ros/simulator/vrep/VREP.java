@@ -11,8 +11,8 @@ import org.ros.node.NodeMain;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 
-import be.iminds.iot.ros.simulator.api.Simulator;
 import be.iminds.iot.ros.simulator.vrep.youbot.Youbot;
+import be.iminds.iot.simulator.api.Simulator;
 import vrep_common.simRosLoadScene;
 import vrep_common.simRosLoadSceneRequest;
 import vrep_common.simRosLoadSceneResponse;

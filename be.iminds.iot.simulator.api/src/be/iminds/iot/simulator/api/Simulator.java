@@ -1,4 +1,4 @@
-package be.iminds.iot.ros.simulator.api;
+package be.iminds.iot.simulator.api;
 
 public interface Simulator {
 
@@ -7,6 +7,8 @@ public interface Simulator {
 	void pause();
 	
 	void stop();
+	
+	// TODO tick()
 	
 	void loadScene(String file);
 	
