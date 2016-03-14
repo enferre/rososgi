@@ -2,6 +2,8 @@ package be.iminds.iot.ros.simulator.vrep;
 
 import java.io.File;
 
+import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.ros.exception.RemoteException;
 import org.ros.namespace.GraphName;
@@ -50,6 +52,13 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	private ConnectedNode node;
 	private Youbot youbot;
 	
+	private String scene = null;
+	
+	@Activate
+	void activate(BundleContext context){
+		scene = context.getProperty("vrep.scene");
+	}
+	
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("vrep/simulator");
@@ -57,16 +66,31 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	
 	@Override
 	public void onStart(ConnectedNode connectedNode){
-		try {
-			node = connectedNode;
-			startSim = connectedNode.newServiceClient("/vrep/simRosStartSimulation", simRosStartSimulation._TYPE);
-			stopSim = connectedNode.newServiceClient("/vrep/simRosStopSimulation", simRosStopSimulation._TYPE);
-			pauseSim = connectedNode.newServiceClient("/vrep/simRosPauseSimulation", simRosPauseSimulation._TYPE);
-			loadScene = connectedNode.newServiceClient("/vrep/simRosLoadScene", simRosLoadScene._TYPE);
-			
-			load();
-		} catch(Exception e){
-			System.err.println("Failed to find VREP services, is VREP (with ROS plugin enabled) running? ");
+		node = connectedNode;
+	
+		int tries = 0;
+		while(startSim==null && tries < 2){
+			try {
+				startSim = connectedNode.newServiceClient("/vrep/simRosStartSimulation", simRosStartSimulation._TYPE);
+				stopSim = connectedNode.newServiceClient("/vrep/simRosStopSimulation", simRosStopSimulation._TYPE);
+				pauseSim = connectedNode.newServiceClient("/vrep/simRosPauseSimulation", simRosPauseSimulation._TYPE);
+				loadScene = connectedNode.newServiceClient("/vrep/simRosLoadScene", simRosLoadScene._TYPE);
+				
+				if(scene!=null){
+					loadScene(scene);
+				} else {
+					load();
+				}
+			} catch(Exception e){
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e1) {
+				}
+				tries++;
+				if(tries == 2){
+					System.err.println("Failed to instantiate VREP ROS interface. Check if VREP is running with ROS plugin enabled");
+				}
+			}
 		}
 	}
 
@@ -140,6 +164,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	 * Load objects  
 	 */
 	private void load() throws Exception {
+		
 		// TODO search for youbot objects?
 		youbot = new Youbot(node, 
 				"youBot",
