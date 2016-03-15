@@ -18,7 +18,9 @@ public class NativeRosNode {
 	@Activate
 	protected void activate() throws Exception {
 		try {
-			process = Runtime.getRuntime().exec(new String[]{"rosrun", rosPackage, rosNode});
+			ProcessBuilder builder = new ProcessBuilder("rosrun", rosPackage, rosNode);
+			builder.inheritIO();
+			process = builder.start();
 		} catch(Exception e){
 			System.err.println("Error launching native ros node "+rosPackage+" "+rosNode);
 			throw e;

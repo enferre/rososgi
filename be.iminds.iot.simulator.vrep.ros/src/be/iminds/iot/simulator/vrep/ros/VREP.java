@@ -112,6 +112,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 						File file = new File(dir);
 						ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep");
 						builder.environment().put("LD_LIBRARY_PATH", builder.environment().get("LD_LIBRARY_PATH")+":"+file.getAbsolutePath());
+						builder.inheritIO();
 						process = builder.start();
 					} catch(Exception ex){
 						System.err.println("Error launching VREP ");					}
