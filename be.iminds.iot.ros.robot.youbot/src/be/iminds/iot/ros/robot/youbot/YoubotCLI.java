@@ -8,7 +8,8 @@ import be.iminds.iot.robot.api.OmniDirectional;
 
 @Component(service={Object.class},
 	property = {"osgi.command.scope=youbot", 
-	"osgi.command.function=test",
+	"osgi.command.function=armTest",
+	"osgi.command.function=baseTest",
 	"osgi.command.function=reset",
 	"osgi.command.function=candle",
 	"osgi.command.function=position",
@@ -21,12 +22,24 @@ public class YoubotCLI {
 	private Arm arm;
 	private OmniDirectional base;
 	
-	public void test(){
+	public void armTest(){
 		// preprogrammed arm movement
 		arm.openGripper(0.02f)
 			.then(p -> arm.setPositions(0.7f, 0.1f, -3.5f, 1.0f, 1.5f))
+			.then(p -> arm.waitFor(2000))
 			.then(p -> arm.setPosition(0, 0.011f))
 			.then(p -> arm.closeGripper());
+	}
+	
+	public void baseTest(){
+		// preprogrammed base movement
+		base.move(0, 0, 3)
+			.then(p -> base.waitFor(5000))
+			.then(p -> base.move(2, 0, 0))
+			.then(p -> base.waitFor(5000))
+			.then(p -> base.move(0, 0, 3))
+			.then(p -> base.waitFor(5000))
+			.then(p -> base.stop());
 	}
 	
 	public void reset(){

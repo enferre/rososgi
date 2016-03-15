@@ -1,10 +1,6 @@
 package be.iminds.iot.ros.simulator.vrep.youbot;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;

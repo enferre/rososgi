@@ -1,7 +1,8 @@
 package be.iminds.iot.ros.robot.youbot;
 
 import java.util.Collection;
-import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.util.promise.Deferred;
@@ -16,6 +17,10 @@ import geometry_msgs.Twist;
 public class BaseImpl implements OmniDirectional {
 
 	private final Publisher<geometry_msgs.Twist> pTwist;
+	
+	private Deferred<Void> deferred = null;
+	private Timer timer = new Timer();
+
 	
 	public BaseImpl(BundleContext context,
 			ConnectedNode node){
@@ -36,8 +41,13 @@ public class BaseImpl implements OmniDirectional {
 	}
 
 	@Override
-	public Promise<Void> move(float vx, float vy, float va) {
-		Deferred<Void> deferred = new Deferred<>();
+	public synchronized Promise<Void> move(float vx, float vy, float va) {
+		if(deferred!=null){
+			deferred.fail(new Exception("Operation interrupted!"));
+			deferred = null;
+		}
+		// will be resolved immediately
+		Deferred<Void> d = new Deferred<>();
 
 		Twist cmd = pTwist.newMessage();
 		
@@ -51,13 +61,49 @@ public class BaseImpl implements OmniDirectional {
 
 		pTwist.publish(cmd);
 		
-		// immediately resolve?
-		deferred.resolve(null);
+		// resolve immediately
+		d.resolve(null);
+		return d.getPromise();
+	}
+	
+	@Override
+	public synchronized Promise<Void> waitFor(long time) {
+		if(deferred!=null){
+			deferred.fail(new Exception("Operation interrupted!"));
+		}
+		deferred = new Deferred<Void>();
+
+		timer.schedule(new ResolveTask(deferred), time);
+	
 		return deferred.getPromise();
 	}
 
 	@Override
-	public void stop() {
-		move(0, 0, 0);
+	public Promise<Void> stop() {
+		return move(0, 0, 0);
+	}
+	
+	private class ResolveTask extends TimerTask {
+		
+		private Deferred<Void> deferred;
+		
+		public ResolveTask(Deferred<Void> deferred){
+			this.deferred = deferred;
+		}
+		
+		@Override
+		public void run() {
+			if(deferred == BaseImpl.this.deferred){
+				synchronized(BaseImpl.this){
+					BaseImpl.this.deferred = null;
+				}
+			}
+				
+			try {
+				deferred.resolve(null);
+			} catch(IllegalStateException e){
+				// ignore if already resolved
+			}
+		}
 	}
 }

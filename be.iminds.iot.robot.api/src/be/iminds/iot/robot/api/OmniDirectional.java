@@ -15,7 +15,9 @@ public interface OmniDirectional {
 	Promise<Void> setVelocities(Collection<JointValue> velocities);
 	
 	Promise<Void> move(float vx, float vy, float va);
+	
+	Promise<Void> waitFor(long time);
 
-	void stop();
+	Promise<Void> stop();
 	
 }

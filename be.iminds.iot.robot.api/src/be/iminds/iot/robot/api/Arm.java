@@ -38,5 +38,7 @@ public interface Arm {
 	Promise<Void> setTorques(Collection<JointValue> torques);
 	
 	
-	void stop();
+	Promise<Void> waitFor(long time);
+	
+	Promise<Void> stop();
 }

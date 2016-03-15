@@ -7,6 +7,8 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import org.osgi.framework.BundleContext;
@@ -39,6 +41,7 @@ public class ArmImpl implements Arm {
 	
 	private Deferred<Void> deferred = null;
 	private Target target = null;
+	private Timer timer = new Timer();
 	
 	// TODO get from config? also look at be.iminds.iot.ros.simulator.vrep.youbot.Youbot
 	private String[] config = new String[]{
@@ -270,9 +273,54 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public void stop() {
-		// TODO how to implement stop? motors off?
+	public synchronized Promise<Void> waitFor(long time) {
+		if(deferred!=null){
+			deferred.fail(new Exception("Operation interrupted!"));
+		}
+		deferred = new Deferred<Void>();
+
+		timer.schedule(new ResolveTask(deferred), time);
+	
+		return deferred.getPromise();
+	}
+	
+	private class ResolveTask extends TimerTask {
 		
+		private Deferred<Void> deferred;
+		
+		public ResolveTask(Deferred<Void> deferred){
+			this.deferred = deferred;
+		}
+		
+		@Override
+		public void run() {
+			if(deferred == ArmImpl.this.deferred){
+				synchronized(ArmImpl.this){
+					ArmImpl.this.deferred = null;
+				}
+			}
+				
+			try {
+				deferred.resolve(null);
+			} catch(IllegalStateException e){
+				// ignore if already resolved
+			}
+		}
+	}
+	
+	@Override
+	public Promise<Void> stop() {
+		// TODO how to implement stop? motors off?
+		if(deferred!=null){
+			deferred.fail(new Exception("Operation interrupted!"));
+		}
+		
+		// TODO stop?
+		
+		// return an already resolved promise?
+		Deferred<Void> d = new Deferred<>();
+		d.resolve(null);
+		return d.getPromise();
 	}
 
 	
