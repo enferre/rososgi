@@ -1,0 +1,7 @@
+-include ../be.iminds.iot.ros.core/core.bndrun
+
+-runbundles.youbot: \
+	osgi.promise;version='[6.0.0,6.1.0)',\
+	org.ros.rosjava_messages.brics_actuator;version='[0.7,0.8)',\
+	be.iminds.iot.ros.youbot;version=latest,\
+	be.iminds.iot.robot.youbot.ros;version=latest
