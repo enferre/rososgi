@@ -1,10 +1,12 @@
 package be.iminds.iot.ros.simulator.vrep;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.ros.exception.RemoteException;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -53,10 +55,31 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	private VREPYoubot youbot;
 	
 	private String scene = null;
+
+	// in case we have to start vrep ourselves
+	private Process process;
+	private String dir = "/opt/vrep";
 	
 	@Activate
 	void activate(BundleContext context){
 		scene = context.getProperty("vrep.scene");
+		
+		String d = context.getProperty("vrep.dir");
+		if(d!=null){
+			dir = d;
+		}
+		
+		File file = new File(dir);
+		if(!file.exists() || !file.isDirectory()){
+			dir = null;
+		}
+	}
+	
+	@Deactivate
+	void deactivate(){
+		if(process!=null){
+			process.destroy();
+		}
 	}
 	
 	@Override
@@ -82,6 +105,17 @@ public class VREP extends AbstractNodeMain implements Simulator {
 					load();
 				}
 			} catch(Exception e){
+				if(process==null && dir!=null){
+					// try to launch vrep ourselves
+					try {
+						// add vrep dir to LD_LIBRARY_PATH and start vrep executable
+						File file = new File(dir);
+						ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep");
+						builder.environment().put("LD_LIBRARY_PATH", builder.environment().get("LD_LIBRARY_PATH")+":"+file.getAbsolutePath());
+						process = builder.start();
+					} catch(Exception ex){
+						System.err.println("Error launching VREP ");					}
+				}
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e1) {
