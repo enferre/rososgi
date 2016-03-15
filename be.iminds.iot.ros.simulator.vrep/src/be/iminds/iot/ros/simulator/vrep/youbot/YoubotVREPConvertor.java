@@ -66,7 +66,10 @@ public class YoubotVREPConvertor {
 	public double invert(double value, int joint){
 		double o = value - vrep_min[joint];
 		double r = o / (vrep_max[joint]-vrep_min[joint]);
-		double y = r * (youbot_max[joint] - youbot_min[joint]);
-		return y + youbot_min[joint];
+		double y = r * (youbot_max[joint] - youbot_min[joint]) + youbot_min[joint];
+		if(joint==5)
+			return 2*y;  // compensate for weird way of gripper config in vrep...
+		return y;
+		
 	}
 }
