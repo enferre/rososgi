@@ -1,5 +1,11 @@
 package be.iminds.iot.ros.simulator.vrep.youbot;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 import org.ros.exception.RemoteException;
@@ -7,6 +13,7 @@ import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
 import be.iminds.iot.ros.simulator.vrep.VREPJointController;
@@ -37,6 +44,11 @@ public class Youbot {
 	private Subscriber<brics_actuator.JointVelocities> arm_vel;
 	private Subscriber<brics_actuator.JointPositions> grip_pos;
 	
+	private Subscriber<sensor_msgs.JointState> subJoint;
+	private Publisher<sensor_msgs.JointState>  pubJoint;
+
+	private YoubotVREPConvertor convertor;
+	
 	private ConnectedNode node;
 	
 	private boolean enabled = false;
@@ -48,10 +60,11 @@ public class Youbot {
 		
 		this.node = node;
 		
+		convertor = new YoubotVREPConvertor(joint0, joint1, joint2, joint3, joint4, gripperL, gripperR);
+		
 		getHandle = node.newServiceClient("/vrep/simRosGetObjectHandle", simRosGetObjectHandle._TYPE);
 		enablePublisher = node.newServiceClient("/vrep/simRosEnablePublisher", simRosEnablePublisher._TYPE);
 		disablePublisher = node.newServiceClient("/vrep/simRosDisablePublisher", simRosDisablePublisher._TYPE);
-
 		
 		VREPJointController c = new VREPJointController(node);
 		
@@ -90,7 +103,38 @@ public class Youbot {
 		// TODO setup ROS topics similar to youbot ros driver
 		//enablePublisher("/"+name+"/joint_state_1", 4102, arm.joints[1]);
 
-		enablePublisher("/joint_states", 4102, -2); // publish all joint states in scene
+		enablePublisher("/vrep/joint_states", 4102, -2); // publish all joint states in scene
+		// translate from vrep joint_states to the joint_states youbot expects
+		pubJoint = node.newPublisher("/joint_states", sensor_msgs.JointState._TYPE);
+		subJoint = node.newSubscriber("/vrep/joint_states", sensor_msgs.JointState._TYPE);
+		subJoint.addMessageListener(new MessageListener<sensor_msgs.JointState>() {
+			@Override
+			public void onNewMessage(sensor_msgs.JointState jointStates) {
+				sensor_msgs.JointState translated = pubJoint.newMessage();
+				List<String> names = convertor.getYoubotArmJoints();
+				double[] pos = new double[names.size()];
+				double[] vel = new double[names.size()];
+				double[] tor = new double[names.size()];
+
+				for(int i=0;i<names.size();i++){
+					String vrepJoint = convertor.getVREPJoint(names.get(i));
+					int index = jointStates.getName().indexOf(vrepJoint);
+					if(index!=-1){
+						pos[i] = convertor.invert(jointStates.getPosition()[index], i);
+						vel[i] = jointStates.getVelocity()[index];
+						tor[i] = jointStates.getEffort()[index];
+					} else {
+						System.err.println("Joint state message missing joint "+vrepJoint);
+					}
+				}
+				translated.setName(names);
+				translated.setPosition(pos);
+				translated.setVelocity(vel);
+				translated.setEffort(tor);
+				pubJoint.publish(translated);
+			}
+		});
+		
 		enablePublisher("/odom", 8193, handle); // publish odom of youbot handle
 		
 		// setup subscribers
@@ -102,6 +146,9 @@ public class Youbot {
 	public void disable(){
 		disablePublisher("/joint_states");
 		disablePublisher("/odom"); 
+		
+		subJoint.shutdown();
+		pubJoint.shutdown();
 		
 		unsubscribe();
 		
@@ -130,8 +177,8 @@ public class Youbot {
 					String joint = p.getJointUri();
 					double val = p.getValue();
 					
-					int i = arm.getJoint(joint);
-					arm.setTargetPosition(i, arm.convert(val, i));
+					int i = convertor.getJointIndex(joint);
+					arm.setTargetPosition(i, convertor.convert(val, i));
 				});
 			}
 		});
@@ -144,7 +191,7 @@ public class Youbot {
 					String joint = p.getJointUri();
 					double val = p.getValue();
 					
-					int i = arm.getJoint(joint);
+					int i = convertor.getJointIndex(joint);
 					arm.setTargetVelocity(i, val);
 				});
 			}
@@ -158,8 +205,8 @@ public class Youbot {
 					String joint = p.getJointUri();
 					double val = p.getValue();
 					
-					int i = arm.getJoint(joint);
-					arm.setTargetPosition(i, arm.convert(val, i));
+					int i = convertor.getJointIndex(joint);
+					arm.setTargetPosition(i, convertor.convert(val, i));
 				});
 			}
 		});

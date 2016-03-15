@@ -4,14 +4,10 @@ import be.iminds.iot.ros.simulator.vrep.VREPJointController;
 
 public class YoubotArm {
 
-	double[] vrep_min = new double[]{2.94961 , 1.13446, -2.54818,  1.7889625,  2.9234265,      0,       0};
-	double[] vrep_max = new double[]{-2.94961, -1.5708,  2.63545, -1.7889625, -2.9234265, 0.0115, -0.0115};
+	// VREP handles for all joints
+	private int[] joints = new int[7];
 	
-	double[] youbot_min = new double[]{0.0100693, 0.0100693, -0.015708, 0.0221239, 0.11062, 0		,      0};
-	double[] youbot_max = new double[]{5.84014	, 2.61799  , -5.02655 , 3.4292	 , 5.64159, 0.0115	, 0.0115};
-	
-	int[] joints = new int[7];
-	
+	// VREP Joint control
 	private VREPJointController controller;
 	
 	public YoubotArm(VREPJointController c, int j0, int j1, int j2, int j3, int j4, int gl, int gr){
@@ -61,31 +57,5 @@ public class YoubotArm {
 		controller.setJointTargetPosition(joints[6], -0.0f);
 	}
 	
-	// convert from youbot driver data range to vrep degree data range
-	public double convert(double value, int joint){
-		double r = (value - youbot_min[joint])/(youbot_max[joint] - youbot_min[joint]);
-		double o = r * (vrep_max[joint]-vrep_min[joint]);
-		return vrep_min[joint] + o;
-	}
-	
-	// convert from youbot joint uri
-	public int getJoint(String joint){
-		switch(joint){
-		case "arm_joint_1":
-			return 0;
-		case "arm_joint_2":
-			return 1;
-		case "arm_joint_3":
-			return 2;
-		case "arm_joint_4":
-			return 3;
-		case "arm_joint_5":
-			return 4;
-		case "gripper_finger_joint_l":
-			return 5;
-		case "gripper_finger_joint_r":
-			return 6;
-		}
-		return -1;
-	}
+
 }
