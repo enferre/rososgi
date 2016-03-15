@@ -2,13 +2,13 @@ package be.iminds.iot.ros.simulator.vrep.youbot;
 
 import be.iminds.iot.ros.simulator.vrep.VREPJointController;
 
-public class YoubotBase {
+public class VREPYoubotBase {
 
 	int[] wheels = new int[4];
 	
 	private VREPJointController controller;
 	
-	public YoubotBase(VREPJointController c, int fl, int rl, int rr, int fr){
+	public VREPYoubotBase(VREPJointController c, int fl, int rl, int rr, int fr){
 		controller = c;
 		
 		wheels[0] = fl;

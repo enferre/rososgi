@@ -27,10 +27,10 @@ import vrep_common.simRosGetObjectHandle;
 import vrep_common.simRosGetObjectHandleRequest;
 import vrep_common.simRosGetObjectHandleResponse;
 
-public class Youbot {
+public class VREPYoubot {
 
-	private YoubotBase base;
-	private YoubotArm arm;
+	private VREPYoubotBase base;
+	private VREPYoubotArm arm;
 
 	private String name;
 	private int handle = -1;
@@ -53,7 +53,7 @@ public class Youbot {
 	
 	private boolean enabled = false;
 	
-	public Youbot(ConnectedNode node, String name, 
+	public VREPYoubot(ConnectedNode node, String name, 
 			String joint0, String joint1, String joint2, String joint3, String joint4, 
 			String gripperL, String gripperR,
 			String wheelFL, String wheelFR, String wheelRL, String wheelRR) throws Exception {
@@ -68,13 +68,13 @@ public class Youbot {
 		
 		VREPJointController c = new VREPJointController(node);
 		
-		this.base = new YoubotBase(c, 
+		this.base = new VREPYoubotBase(c, 
 				getHandle(wheelFL).getValue(),
 				getHandle(wheelFR).getValue(), 
 				getHandle(wheelRL).getValue(), 
 				getHandle(wheelRR).getValue());
 		
-		this.arm = new YoubotArm(c, 
+		this.arm = new VREPYoubotArm(c, 
 				getHandle(joint0).getValue(),
 				getHandle(joint1).getValue(),
 				getHandle(joint2).getValue(),
@@ -88,11 +88,11 @@ public class Youbot {
 		
 	}
 	
-	public YoubotBase base(){
+	public VREPYoubotBase base(){
 		return base;
 	}
 	
-	public YoubotArm arm(){
+	public VREPYoubotArm arm(){
 		return arm;
 	}
 	

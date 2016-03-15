@@ -13,7 +13,7 @@ import org.ros.node.NodeMain;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 
-import be.iminds.iot.ros.simulator.vrep.youbot.Youbot;
+import be.iminds.iot.ros.simulator.vrep.youbot.VREPYoubot;
 import be.iminds.iot.simulator.api.Simulator;
 import vrep_common.simRosLoadScene;
 import vrep_common.simRosLoadSceneRequest;
@@ -50,7 +50,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	private ServiceClient<simRosLoadSceneRequest, simRosLoadSceneResponse> loadScene;
 	
 	private ConnectedNode node;
-	private Youbot youbot;
+	private VREPYoubot youbot;
 	
 	private String scene = null;
 	
@@ -166,7 +166,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	private void load() throws Exception {
 		
 		// TODO search for youbot objects?
-		youbot = new Youbot(node, 
+		youbot = new VREPYoubot(node, 
 				"youBot",
 				"youBotArmJoint0",
 				"youBotArmJoint1",

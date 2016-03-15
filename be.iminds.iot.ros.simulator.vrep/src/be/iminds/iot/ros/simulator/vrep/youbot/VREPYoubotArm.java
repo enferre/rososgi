@@ -2,7 +2,7 @@ package be.iminds.iot.ros.simulator.vrep.youbot;
 
 import be.iminds.iot.ros.simulator.vrep.VREPJointController;
 
-public class YoubotArm {
+public class VREPYoubotArm {
 
 	// VREP handles for all joints
 	private int[] joints = new int[7];
@@ -10,7 +10,7 @@ public class YoubotArm {
 	// VREP Joint control
 	private VREPJointController controller;
 	
-	public YoubotArm(VREPJointController c, int j0, int j1, int j2, int j3, int j4, int gl, int gr){
+	public VREPYoubotArm(VREPJointController c, int j0, int j1, int j2, int j3, int j4, int gl, int gr){
 		controller = c;
 		
 		joints[0] = j0;
