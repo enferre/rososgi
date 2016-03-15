@@ -1,7 +1,6 @@
 package be.iminds.iot.simulator.vrep.ros;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
@@ -29,12 +28,19 @@ import vrep_common.simRosStartSimulationResponse;
 import vrep_common.simRosStopSimulation;
 import vrep_common.simRosStopSimulationRequest;
 import vrep_common.simRosStopSimulationResponse;
+import vrep_common.simRosSynchronous;
+import vrep_common.simRosSynchronousRequest;
+import vrep_common.simRosSynchronousResponse;
+import vrep_common.simRosSynchronousTrigger;
+import vrep_common.simRosSynchronousTriggerRequest;
+import vrep_common.simRosSynchronousTriggerResponse;
 
 @Component(service = {NodeMain.class, Simulator.class},
 property = {"osgi.command.scope=vrep", 
 	"osgi.command.function=start",
 	"osgi.command.function=pause",
 	"osgi.command.function=stop",
+	"osgi.command.function=tick",
 	"osgi.command.function=loadScene",
 	"osgi.command.function=position",
 	"osgi.command.function=targetPosition",
@@ -49,6 +55,8 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	private ServiceClient<simRosStartSimulationRequest, simRosStartSimulationResponse> startSim;
 	private ServiceClient<simRosStopSimulationRequest, simRosStopSimulationResponse> stopSim;
 	private ServiceClient<simRosPauseSimulationRequest, simRosPauseSimulationResponse> pauseSim;
+	private ServiceClient<simRosSynchronousRequest, simRosSynchronousResponse> syncSim;
+	private ServiceClient<simRosSynchronousTriggerRequest, simRosSynchronousTriggerResponse> triggerSim;
 	private ServiceClient<simRosLoadSceneRequest, simRosLoadSceneResponse> loadScene;
 	
 	private ConnectedNode node;
@@ -97,6 +105,9 @@ public class VREP extends AbstractNodeMain implements Simulator {
 				startSim = connectedNode.newServiceClient("/vrep/simRosStartSimulation", simRosStartSimulation._TYPE);
 				stopSim = connectedNode.newServiceClient("/vrep/simRosStopSimulation", simRosStopSimulation._TYPE);
 				pauseSim = connectedNode.newServiceClient("/vrep/simRosPauseSimulation", simRosPauseSimulation._TYPE);
+				syncSim = connectedNode.newServiceClient("/vrep/simRosSynchronous", simRosSynchronous._TYPE);
+				triggerSim = connectedNode.newServiceClient("/vrep/simRosSynchronousTrigger", simRosSynchronousTrigger._TYPE);
+
 				loadScene = connectedNode.newServiceClient("/vrep/simRosLoadScene", simRosLoadScene._TYPE);
 				
 				if(scene!=null){
@@ -129,8 +140,18 @@ public class VREP extends AbstractNodeMain implements Simulator {
 		}
 	}
 
+	public void start(){
+		start(false);
+	}
+	
 	@Override
-	public void start() {
+	public void start(boolean sync) {
+		if(sync){
+			setSyncMode(true);
+		} else {
+			setSyncMode(false);
+		}
+		
 		final simRosStartSimulationRequest request = startSim.newMessage();
 		startSim.call(request, new ServiceResponseListener<simRosStartSimulationResponse>() {
 			@Override
@@ -142,6 +163,19 @@ public class VREP extends AbstractNodeMain implements Simulator {
 		});
 		
 		enable();
+	}
+	
+	private void setSyncMode(boolean set){
+		final simRosSynchronousRequest request = syncSim.newMessage();
+		request.setEnable((byte) (set ? 1 : 0));
+		syncSim.call(request, new ServiceResponseListener<simRosSynchronousResponse>() {
+			@Override
+			public void onSuccess(simRosSynchronousResponse response) {}
+			@Override
+			public void onFailure(RemoteException e) {
+				System.err.println("Error starting simulation");
+			}
+		});
 	}
 
 	@Override
@@ -158,9 +192,23 @@ public class VREP extends AbstractNodeMain implements Simulator {
 		
 		disable();
 	}
+	
+	@Override
+	public void tick() {
+		final simRosSynchronousTriggerRequest request = triggerSim.newMessage();
+		triggerSim.call(request, new ServiceResponseListener<simRosSynchronousTriggerResponse>() {
+			@Override
+			public void onSuccess(simRosSynchronousTriggerResponse response) {}
+			@Override
+			public void onFailure(RemoteException e) {
+				System.err.println("Error pausing simulation");
+			}
+		});
+	}
 
 	@Override
 	public void stop() {
+		setSyncMode(false);
 		final simRosStopSimulationRequest request = stopSim.newMessage();
 		stopSim.call(request, new ServiceResponseListener<simRosStopSimulationResponse>() {
 			@Override
