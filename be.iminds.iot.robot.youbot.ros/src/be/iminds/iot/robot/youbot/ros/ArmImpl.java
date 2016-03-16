@@ -23,6 +23,7 @@ import org.ros.node.topic.Subscriber;
 import be.iminds.iot.robot.api.Arm;
 import be.iminds.iot.robot.api.Gripper;
 import be.iminds.iot.robot.api.Joint;
+import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.JointValue.Type;
@@ -54,6 +55,26 @@ public class ArmImpl implements Arm {
 			"gripper_finger_joint_r"
 	};
 	
+	private float[] positionMin = new float[]{
+		0.0100693f, 
+		0.0100693f, 
+		-5.02655f,
+		0.0221239f, 
+		0.11062f, 
+		0f,      
+		0f	
+	};
+	
+	private float[] positionMax = new float[]{
+		5.84014f,
+		2.61799f,
+		-0.015708f, 
+		3.4292f, 
+		5.64159f, 
+		0.0115f, 
+		0.0115f	
+	};
+	
 	public ArmImpl(BundleContext context,
 			ConnectedNode node){
 	
@@ -69,8 +90,12 @@ public class ArmImpl implements Arm {
 		
 		// joints
 		joints = new ArrayList<>();
-		for(String name : config){
-			JointImpl joint = new JointImpl(name, this);
+		for(int i=0;i<config.length;i++){
+			String name = config[i];
+			JointDescription d = new JointDescription(name,
+					positionMin[i], positionMax[i], 
+					0.0f, 1.5f, 0.0f, 1.0f); // TODO what are min and max velocities/torques?
+			JointImpl joint = new JointImpl(d, this);
 			joints.add(joint);
 		}
 		
@@ -134,8 +159,8 @@ public class ArmImpl implements Arm {
 	}
 	
 	@Override
-	public List<String> getJoints() {
-		return joints.stream().map(j -> j.getName()).collect(Collectors.toList());
+	public List<JointDescription> getJoints() {
+		return joints.stream().map(j -> j.getDescription()).collect(Collectors.toList());
 	}
 
 	@Override
@@ -172,6 +197,9 @@ public class ArmImpl implements Arm {
 			brics_actuator.JointValue pos = factory.newFromType(brics_actuator.JointValue._TYPE);
 			pos.setJointUri(position.joint);
 			pos.setUnit("rad");
+			
+			JointDescription d = getJoint(position.joint).getDescription();
+			position.value = clamp(position.value, d.positionMin, d.positionMax);
 			pos.setValue(position.value);
 			pp.add(pos);
 		}
@@ -195,6 +223,9 @@ public class ArmImpl implements Arm {
 			brics_actuator.JointValue vel = factory.newFromType(brics_actuator.JointValue._TYPE);
 			vel.setJointUri(velocity.joint);
 			vel.setUnit("rad/s");
+			
+			JointDescription d = getJoint(velocity.joint).getDescription();
+			velocity.value = clamp(velocity.value, d.positionMin, d.positionMax);
 			vel.setValue(velocity.value);
 			vv.add(vel);
 		}
@@ -220,6 +251,9 @@ public class ArmImpl implements Arm {
 //			brics_actuator.JointValue tor = factory.newFromType(brics_actuator.JointValue._TYPE);
 //			tor.setJointUri(torque.joint);
 //			tor.setUnit("Nm");
+//		
+//			JointDescription d = getJoint(torque.joint).getDescription();
+//			torque.value = clamp(torque.value, d.positionMin, d.positionMax);
 //			tor.setValue(torque.value);
 //			tt.add(tor);
 //		}
@@ -370,4 +404,12 @@ public class ArmImpl implements Arm {
 		}
 	}
 
+	private float clamp(float value, float min, float max){
+		if(value < min){
+			return min;
+		} else if(value > max){
+			return max;
+		}
+		return value;
+	}
 }

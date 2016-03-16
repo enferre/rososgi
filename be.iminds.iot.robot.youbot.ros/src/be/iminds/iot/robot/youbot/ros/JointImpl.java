@@ -3,13 +3,14 @@ package be.iminds.iot.robot.youbot.ros;
 import java.util.Collections;
 
 import be.iminds.iot.robot.api.Joint;
+import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.JointValue.Type;
 
 public class JointImpl implements Joint {
 
-	private final String name;
+	private final JointDescription description;
 	
 	private final ArmImpl arm;
 	
@@ -17,21 +18,26 @@ public class JointImpl implements Joint {
 	float velocity;
 	float torque;
 
-	public JointImpl(String name,
+	public JointImpl(JointDescription d,
 			ArmImpl arm) {
-		this.name = name;
+		this.description = d;
 		
 		this.arm = arm;
 	}
 	
 	@Override
 	public String getName() {
-		return name;
+		return description.name;
 	}
 
 	@Override
+	public JointDescription getDescription() {
+		return description;
+	}
+	
+	@Override
 	public void setPosition(float p) {
-		JointValue val = new JointValue(name, Type.POSITION, p);
+		JointValue val = new JointValue(description.name, Type.POSITION, p);
 		arm.setPositions(Collections.singleton(val));
 	}
 
@@ -42,7 +48,7 @@ public class JointImpl implements Joint {
 
 	@Override
 	public void setVelocity(float v) {
-		JointValue val = new JointValue(name, Type.VELOCITY, v);
+		JointValue val = new JointValue(description.name, Type.VELOCITY, v);
 		arm.setPositions(Collections.singleton(val));
 	}
 
@@ -53,7 +59,7 @@ public class JointImpl implements Joint {
 
 	@Override
 	public void setTorque(float t) {
-		JointValue val = new JointValue(name, Type.TORQUE, t);
+		JointValue val = new JointValue(description.name, Type.TORQUE, t);
 		arm.setPositions(Collections.singleton(val));
 	}
 

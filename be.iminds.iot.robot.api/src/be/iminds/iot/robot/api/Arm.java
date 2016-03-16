@@ -7,7 +7,7 @@ import org.osgi.util.promise.Promise;
 
 public interface Arm {
 
-	List<String> getJoints();
+	List<JointDescription> getJoints();
 	
 	List<JointState> getState();
 

@@ -4,6 +4,8 @@ public interface Joint {
 
 	String getName();
 	
+	JointDescription getDescription();
+	
 	void setPosition(float p);
 	
 	float getPosition();
