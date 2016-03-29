@@ -41,4 +41,6 @@ public interface Arm {
 	Promise<Void> waitFor(long time);
 	
 	Promise<Void> stop();
+	
+	Promise<Void> reset();
 }

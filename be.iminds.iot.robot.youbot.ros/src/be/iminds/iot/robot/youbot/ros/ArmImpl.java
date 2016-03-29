@@ -318,6 +318,11 @@ public class ArmImpl implements Arm {
 		return deferred.getPromise();
 	}
 	
+	@Override
+	public Promise<Void> reset() {
+		return setPositions(0.0f, 0.0f, 0.0f, 0.0f, 0.0f).then(p -> closeGripper());
+	}
+	
 	private class ResolveTask extends TimerTask {
 		
 		private Deferred<Void> deferred;
