@@ -12,7 +12,9 @@ public class YoubotDriver extends NativeRosNode {
 	private Ros ros;
 	
 	public YoubotDriver(){
-		super("youbot_driver_ros_interface","youbot_driver_ros_interface");
+		super("youbot_driver_ros_interface","youbot_driver_ros_interface", 
+				"base/joint_states:=/joint_states",
+				"arm_1/joint_states:=/joint_states");
 	}
 	
 	public void activate() throws Exception {
