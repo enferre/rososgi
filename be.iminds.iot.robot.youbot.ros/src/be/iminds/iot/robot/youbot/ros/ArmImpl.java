@@ -130,7 +130,8 @@ public class ArmImpl implements Arm {
 					
 					joint.position = (float)jointState.getPosition()[i];
 					joint.velocity = (float)jointState.getVelocity()[i];
-					joint.torque = (float)jointState.getEffort()[i];
+// torque not supported	atm				
+//					joint.torque = (float)jointState.getEffort()[i];
 				}
 				
 				// check if target is resolved 
