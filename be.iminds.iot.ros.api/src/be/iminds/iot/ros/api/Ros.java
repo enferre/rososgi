@@ -2,6 +2,7 @@ package be.iminds.iot.ros.api;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.Map;
 
 public interface Ros {
 
@@ -22,5 +23,9 @@ public interface Ros {
 	Collection<String> getServices();
 	
 	Collection<String> getProviders(String service);
+	
+	void setParameter(String key, Object value);
+	
+	<T> T getParameter(String key, Class<T> type);
 	
 }
