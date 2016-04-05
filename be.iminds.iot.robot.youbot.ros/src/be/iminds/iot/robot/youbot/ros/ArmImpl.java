@@ -71,8 +71,8 @@ public class ArmImpl implements Arm {
 		-0.015708f, 
 		3.4292f, 
 		5.64159f, 
-		0.0115f, 
-		0.0115f	
+		0.0114f, 
+		0.0114f	
 	};
 	
 	public ArmImpl(BundleContext context,
@@ -192,12 +192,23 @@ public class ArmImpl implements Arm {
 		deferred = new Deferred<Void>();
 		target = new Target(positions);
 
+		boolean arm = false;
+		boolean gripper = false;
 		brics_actuator.JointPositions msg = pPos.newMessage();
 		List<brics_actuator.JointValue> pp = new ArrayList<>();
 		for(JointValue position : positions){
 			brics_actuator.JointValue pos = factory.newFromType(brics_actuator.JointValue._TYPE);
+			
+			if(position.joint.startsWith("arm")){
+				arm = true;
+				pos.setUnit("rad");
+			}
+			if(position.joint.startsWith("gripper")){
+				gripper = true;
+				pos.setUnit("m");
+			}
+			
 			pos.setJointUri(position.joint);
-			pos.setUnit("rad");
 			
 			JointDescription d = getJoint(position.joint).getDescription();
 			position.value = clamp(position.value, d.positionMin, d.positionMax);
@@ -205,7 +216,12 @@ public class ArmImpl implements Arm {
 			pp.add(pos);
 		}
 		msg.setPositions(pp);
-		pPos.publish(msg);
+		
+		if(arm)
+			pPos.publish(msg);
+		if(gripper)
+			pGrip.publish(msg);
+		
 		
 		return deferred.getPromise();
 	}
