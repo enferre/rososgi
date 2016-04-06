@@ -5,42 +5,38 @@ import java.util.List;
 
 import org.osgi.util.promise.Promise;
 
-public interface Arm {
+public interface Arm extends Robot {
 
 	List<JointDescription> getJoints();
 	
 	List<JointState> getState();
 
 	
-	Promise<Void> setPosition(int joint, float position);
+	Promise<Arm> setPosition(int joint, float position);
 	
-	Promise<Void> setVelocity(int joint, float velocity);
+	Promise<Arm> setVelocity(int joint, float velocity);
 
-	Promise<Void> setTorque(int joint, float torque);
+	Promise<Arm> setTorque(int joint, float torque);
 	
 	
-	Promise<Void> setPositions(float... position);
+	Promise<Arm> setPositions(float... position);
 	
-	Promise<Void> setVelocities(float... velocity);
+	Promise<Arm> setVelocities(float... velocity);
 
-	Promise<Void> setTorques(float... torque);
-
-
-	Promise<Void> openGripper(float opening);
-	
-	Promise<Void> closeGripper();
+	Promise<Arm> setTorques(float... torque);
 
 
-	Promise<Void> setPositions(Collection<JointValue> positions);
+	Promise<Arm> openGripper(float opening);
 	
-	Promise<Void> setVelocities(Collection<JointValue> velocities);
+	Promise<Arm> closeGripper();
 
-	Promise<Void> setTorques(Collection<JointValue> torques);
+
+	Promise<Arm> setPositions(Collection<JointValue> positions);
+	
+	Promise<Arm> setVelocities(Collection<JointValue> velocities);
+
+	Promise<Arm> setTorques(Collection<JointValue> torques);
 	
 	
-	Promise<Void> waitFor(long time);
-	
-	Promise<Void> stop();
-	
-	Promise<Void> reset();
+	Promise<Arm> reset();
 }

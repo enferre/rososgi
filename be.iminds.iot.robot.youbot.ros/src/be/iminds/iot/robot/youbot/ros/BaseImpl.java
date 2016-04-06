@@ -18,7 +18,7 @@ public class BaseImpl implements OmniDirectional {
 
 	private final Publisher<geometry_msgs.Twist> pTwist;
 	
-	private Deferred<Void> deferred = null;
+	private Deferred<OmniDirectional> deferred = null;
 	private Timer timer = new Timer();
 
 	
@@ -35,19 +35,19 @@ public class BaseImpl implements OmniDirectional {
 	}
 
 	@Override
-	public Promise<Void> setVelocities(Collection<JointValue> velocities) {
+	public Promise<OmniDirectional> setVelocities(Collection<JointValue> velocities) {
 		// TODO is this even possible with current ROS interface?
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public synchronized Promise<Void> move(float vx, float vy, float va) {
+	public synchronized Promise<OmniDirectional> move(float vx, float vy, float va) {
 		if(deferred!=null){
 			deferred.fail(new Exception("Operation interrupted!"));
 			deferred = null;
 		}
 		// will be resolved immediately
-		Deferred<Void> d = new Deferred<>();
+		Deferred<OmniDirectional> d = new Deferred<>();
 
 		Twist cmd = pTwist.newMessage();
 		
@@ -62,16 +62,16 @@ public class BaseImpl implements OmniDirectional {
 		pTwist.publish(cmd);
 		
 		// resolve immediately
-		d.resolve(null);
+		d.resolve(BaseImpl.this);
 		return d.getPromise();
 	}
 	
 	@Override
-	public synchronized Promise<Void> waitFor(long time) {
+	public synchronized Promise<OmniDirectional> waitFor(long time) {
 		if(deferred!=null){
 			deferred.fail(new Exception("Operation interrupted!"));
 		}
-		deferred = new Deferred<Void>();
+		deferred = new Deferred<OmniDirectional>();
 
 		timer.schedule(new ResolveTask(deferred), time);
 	
@@ -79,15 +79,15 @@ public class BaseImpl implements OmniDirectional {
 	}
 
 	@Override
-	public Promise<Void> stop() {
+	public Promise<OmniDirectional> stop() {
 		return move(0, 0, 0);
 	}
 	
 	private class ResolveTask extends TimerTask {
 		
-		private Deferred<Void> deferred;
+		private Deferred<OmniDirectional> deferred;
 		
-		public ResolveTask(Deferred<Void> deferred){
+		public ResolveTask(Deferred<OmniDirectional> deferred){
 			this.deferred = deferred;
 		}
 		
@@ -100,7 +100,7 @@ public class BaseImpl implements OmniDirectional {
 			}
 				
 			try {
-				deferred.resolve(null);
+				deferred.resolve(BaseImpl.this);
 			} catch(IllegalStateException e){
 				// ignore if already resolved
 			}

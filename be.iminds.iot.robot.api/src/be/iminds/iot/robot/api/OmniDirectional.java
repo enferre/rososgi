@@ -10,14 +10,10 @@ import org.osgi.util.promise.Promise;
  * @author tverbele
  *
  */
-public interface OmniDirectional {
+public interface OmniDirectional extends Robot {
 
-	Promise<Void> setVelocities(Collection<JointValue> velocities);
+	Promise<OmniDirectional> setVelocities(Collection<JointValue> velocities);
 	
-	Promise<Void> move(float vx, float vy, float va);
-	
-	Promise<Void> waitFor(long time);
-
-	Promise<Void> stop();
+	Promise<OmniDirectional> move(float vx, float vy, float va);
 	
 }

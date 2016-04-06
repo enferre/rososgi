@@ -40,7 +40,7 @@ public class ArmImpl implements Arm {
 	private final Publisher<brics_actuator.JointPositions> pGrip;
 
 	
-	private Deferred<Void> deferred = null;
+	private Deferred<Arm> deferred = null;
 	private Target target = null;
 	private Timer timer = new Timer();
 	
@@ -142,7 +142,7 @@ public class ArmImpl implements Arm {
 							deferred = null;
 							target = null;
 						}
-						d.resolve(null);
+						d.resolve(ArmImpl.this);
 					}
 				}
 			}
@@ -170,26 +170,26 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Void> setPosition(int joint, float position){
+	public Promise<Arm> setPosition(int joint, float position){
 		return setPositions(Collections.singleton(new JointValue(config[joint], Type.POSITION, position)));
 	}
 	
 	@Override
-	public Promise<Void> setVelocity(int joint, float velocity){
+	public Promise<Arm> setVelocity(int joint, float velocity){
 		return setVelocities(Collections.singleton(new JointValue(config[joint], Type.VELOCITY, velocity)));
 	}
 
 	@Override
-	public Promise<Void> setTorque(int joint, float torque){
+	public Promise<Arm> setTorque(int joint, float torque){
 		return setTorques(Collections.singleton(new JointValue(config[joint], Type.TORQUE, torque)));
 	}
 	
 	@Override
-	public synchronized Promise<Void> setPositions(Collection<JointValue> positions) {
+	public synchronized Promise<Arm> setPositions(Collection<JointValue> positions) {
 		if(deferred!=null){
 			deferred.fail(new Exception("Operation interrupted!"));
 		}
-		deferred = new Deferred<Void>();
+		deferred = new Deferred<Arm>();
 		target = new Target(positions);
 
 		boolean arm = false;
@@ -227,11 +227,11 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public synchronized Promise<Void> setVelocities(Collection<JointValue> velocities) {
+	public synchronized Promise<Arm> setVelocities(Collection<JointValue> velocities) {
 		if(deferred!=null){
 			deferred.fail(new Exception("Operation interrupted!"));
 		}
-		deferred = new Deferred<Void>();
+		deferred = new Deferred<Arm>();
 		target = new Target(velocities);
 
 		brics_actuator.JointVelocities msg = pVel.newMessage();
@@ -253,7 +253,7 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public synchronized Promise<Void> setTorques(Collection<JointValue> torques) {
+	public synchronized Promise<Arm> setTorques(Collection<JointValue> torques) {
 		throw new UnsupportedOperationException();
 		
 //		if(deferred!=null){
@@ -281,7 +281,7 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Void> openGripper(float opening) {
+	public Promise<Arm> openGripper(float opening) {
 		List<JointValue> positions = new ArrayList<>();
 		positions.add(new JointValue(config[5], Type.POSITION, opening/2));
 		positions.add(new JointValue(config[6], Type.POSITION, opening/2));
@@ -289,12 +289,12 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Void> closeGripper() {
+	public Promise<Arm> closeGripper() {
 		return openGripper(0);
 	}
 	
 	@Override
-	public Promise<Void> setPositions(float... position) {
+	public Promise<Arm> setPositions(float... position) {
 		List<JointValue> jointValues = new ArrayList<>();
 		for(int i=0;i<position.length;i++){
 			JointValue val = new JointValue(joints.get(i).getName(), Type.POSITION, position[i]);
@@ -304,7 +304,7 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Void> setVelocities(float... velocity) {
+	public Promise<Arm> setVelocities(float... velocity) {
 		List<JointValue> jointValues = new ArrayList<>();
 		for(int i=0;i<velocity.length;i++){
 			JointValue val = new JointValue(joints.get(i).getName(), Type.VELOCITY, velocity[i]);
@@ -314,7 +314,7 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Void> setTorques(float... torque) {
+	public Promise<Arm> setTorques(float... torque) {
 		List<JointValue> jointValues = new ArrayList<>();
 		for(int i=0;i<torque.length;i++){
 			JointValue val = new JointValue(joints.get(i).getName(), Type.TORQUE, torque[i]);
@@ -324,11 +324,11 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public synchronized Promise<Void> waitFor(long time) {
+	public synchronized Promise<Arm> waitFor(long time) {
 		if(deferred!=null){
 			deferred.fail(new Exception("Operation interrupted!"));
 		}
-		deferred = new Deferred<Void>();
+		deferred = new Deferred<Arm>();
 
 		timer.schedule(new ResolveTask(deferred), time);
 	
@@ -336,15 +336,15 @@ public class ArmImpl implements Arm {
 	}
 	
 	@Override
-	public Promise<Void> reset() {
+	public Promise<Arm> reset() {
 		return setPositions(0.0f, 0.0f, 0.0f, 0.0f, 0.0f).then(p -> closeGripper());
 	}
 	
 	private class ResolveTask extends TimerTask {
 		
-		private Deferred<Void> deferred;
+		private Deferred<Arm> deferred;
 		
-		public ResolveTask(Deferred<Void> deferred){
+		public ResolveTask(Deferred<Arm> deferred){
 			this.deferred = deferred;
 		}
 		
@@ -357,7 +357,7 @@ public class ArmImpl implements Arm {
 			}
 				
 			try {
-				deferred.resolve(null);
+				deferred.resolve(ArmImpl.this);
 			} catch(IllegalStateException e){
 				// ignore if already resolved
 			}
@@ -365,7 +365,7 @@ public class ArmImpl implements Arm {
 	}
 	
 	@Override
-	public Promise<Void> stop() {
+	public Promise<Arm> stop() {
 		// TODO how to implement stop? motors off?
 		if(deferred!=null){
 			deferred.fail(new Exception("Operation interrupted!"));
@@ -374,8 +374,8 @@ public class ArmImpl implements Arm {
 		// TODO stop?
 		
 		// return an already resolved promise?
-		Deferred<Void> d = new Deferred<>();
-		d.resolve(null);
+		Deferred<Arm> d = new Deferred<>();
+		d.resolve(ArmImpl.this);
 		return d.getPromise();
 	}
 

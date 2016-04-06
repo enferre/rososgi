@@ -16,7 +16,7 @@ import be.iminds.iot.robot.api.OmniDirectional;
 	"osgi.command.function=velocity",
 	"osgi.command.function=torque",
 	"osgi.command.function=move",
-	"osgi.command.function=stop"})
+	"osgi.command.function=halt"})
 public class YoubotCLI {
 
 	private Arm arm;
@@ -66,7 +66,7 @@ public class YoubotCLI {
 		base.move(vx, vy, va);
 	}
 	
-	public void stop(){
+	public void halt(){
 		base.stop();
 		arm.stop();
 	}
