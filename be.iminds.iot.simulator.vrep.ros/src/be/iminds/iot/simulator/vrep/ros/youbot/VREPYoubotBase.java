@@ -5,6 +5,7 @@ import be.iminds.iot.simulator.vrep.ros.VREPJointController;
 public class VREPYoubotBase {
 
 	int[] wheels = new int[4];
+	double scale = 1000;
 	
 	private VREPJointController controller;
 	
@@ -22,10 +23,10 @@ public class VREPYoubotBase {
 	}
 	
 	public void move(double x, double y, double angular){
-		controller.setJointTargetVelocity(wheels[0], -y - x - angular);
-		controller.setJointTargetVelocity(wheels[1], -y + x - angular);
-		controller.setJointTargetVelocity(wheels[2], -y - x + angular);
-		controller.setJointTargetVelocity(wheels[3], -y + x + angular);
+		controller.setJointTargetVelocity(wheels[0], (-y + x + angular)*scale);
+		controller.setJointTargetVelocity(wheels[1], (-y - x + angular)*scale);
+		controller.setJointTargetVelocity(wheels[2], (-y + x - angular)*scale);
+		controller.setJointTargetVelocity(wheels[3], (-y - x - angular)*scale);
 	}
 	
 }
