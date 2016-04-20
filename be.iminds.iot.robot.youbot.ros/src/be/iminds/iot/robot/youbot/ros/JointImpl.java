@@ -70,7 +70,7 @@ public class JointImpl implements Joint {
 
 	@Override
 	public JointState getState() {
-		return new JointState(position, velocity, torque);
+		return new JointState(description.name, position, velocity, torque);
 	}
 
 }
