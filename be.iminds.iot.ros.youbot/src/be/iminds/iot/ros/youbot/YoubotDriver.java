@@ -1,5 +1,7 @@
 package be.iminds.iot.ros.youbot;
 
+import java.util.Map;
+
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -17,14 +19,15 @@ public class YoubotDriver extends NativeRosNode {
 				"arm_1/joint_states:=/joint_states");
 	}
 	
-	public void activate() throws Exception {
+	public void activate(Map<String, Object> properties) throws Exception {
+		// for some reason youbot requires global parameters?!
 		ros.setParameter("youBotHasBase", true);
 		ros.setParameter("youBotHasArms", true);
 
 		ros.setParameter("youBotBaseName", "youbot-base");
 		ros.setParameter("youBotArmName1", "youbot-manipulator");
 		
-		super.activate();
+		super.activate(properties);
 	}
 	
 	@Reference
