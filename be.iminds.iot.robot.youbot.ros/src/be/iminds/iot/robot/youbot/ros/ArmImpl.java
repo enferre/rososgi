@@ -5,10 +5,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.osgi.framework.BundleContext;
@@ -39,10 +43,9 @@ public class ArmImpl implements Arm {
 	private final Publisher<brics_actuator.JointTorques> pTorq;
 	private final Publisher<brics_actuator.JointPositions> pGrip;
 
+	private final Map<Target, Deferred<Arm>> targets = new ConcurrentHashMap<>();
 	
-	private Deferred<Arm> deferred = null;
-	private Target target = null;
-	private Timer timer = new Timer();
+	private final Timer timer = new Timer();
 	
 	// TODO get from config? also look at be.iminds.iot.ros.simulator.vrep.youbot.Youbot
 	private String[] config = new String[]{
@@ -135,14 +138,18 @@ public class ArmImpl implements Arm {
 				}
 				
 				// check if target is resolved 
-				if(target!=null && target.isResolved()){
-					Deferred d = deferred;
-					if(d!=null){
-						synchronized(ArmImpl.this){
-							deferred = null;
-							target = null;
+				Iterator<Entry<Target, Deferred<Arm>>> it = targets.entrySet().iterator();
+				while(it.hasNext()){
+					Entry<Target, Deferred<Arm>> e = it.next();
+					Target target = e.getKey();
+					if(target.isResolved()){
+						Deferred<Arm> d = e.getValue();
+						if(d!=null){
+							try {
+								d.resolve(ArmImpl.this);
+							} catch(IllegalStateException ex){}
 						}
-						d.resolve(ArmImpl.this);
+						it.remove();
 					}
 				}
 			}
@@ -185,12 +192,26 @@ public class ArmImpl implements Arm {
 	}
 	
 	@Override
-	public synchronized Promise<Arm> setPositions(Collection<JointValue> positions) {
-		if(deferred!=null){
-			deferred.fail(new Exception("Operation interrupted!"));
+	public Promise<Arm> setPositions(Collection<JointValue> positions) {
+		// check for collision with operations in progress
+		for(JointValue v : positions){
+			Iterator<Entry<Target, Deferred<Arm>>> it = targets.entrySet().iterator();
+			while(it.hasNext()){
+				Entry<Target, Deferred<Arm>> target = it.next();
+				for(JointValue joint : target.getKey().target){
+					if(joint.joint.equals(v.joint)){
+						Deferred<Arm> deferred = target.getValue();
+						try {
+							deferred.fail(new Exception("Operation interrupted!"));
+						} catch(IllegalStateException ex){}
+						it.remove();
+					}
+				}
+			}
 		}
-		deferred = new Deferred<Arm>();
-		target = new Target(positions);
+		Deferred<Arm> deferred = new Deferred<Arm>();
+		Target target = new Target(positions);
+		targets.put(target, deferred);
 
 		boolean arm = false;
 		boolean gripper = false;
@@ -227,12 +248,26 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public synchronized Promise<Arm> setVelocities(Collection<JointValue> velocities) {
-		if(deferred!=null){
-			deferred.fail(new Exception("Operation interrupted!"));
+	public Promise<Arm> setVelocities(Collection<JointValue> velocities) {
+		// check for collision with operations in progress
+		for(JointValue v : velocities){
+			Iterator<Entry<Target, Deferred<Arm>>> it = targets.entrySet().iterator();
+			while(it.hasNext()){
+				Entry<Target, Deferred<Arm>> target = it.next();
+				for(JointValue joint : target.getKey().target){
+					if(joint.joint.equals(v.joint)){
+						Deferred<Arm> deferred = target.getValue();
+						try {
+							deferred.fail(new Exception("Operation interrupted!"));
+						} catch(IllegalStateException ex){}
+						it.remove();
+					}
+				}
+			}
 		}
-		deferred = new Deferred<Arm>();
-		target = new Target(velocities);
+		Deferred<Arm> deferred = new Deferred<Arm>();
+		Target target = new Target(velocities);
+		targets.put(target, deferred);
 
 		brics_actuator.JointVelocities msg = pVel.newMessage();
 		List<brics_actuator.JointValue> vv = new ArrayList<>();
@@ -253,14 +288,28 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public synchronized Promise<Arm> setTorques(Collection<JointValue> torques) {
+	public Promise<Arm> setTorques(Collection<JointValue> torques) {
 		throw new UnsupportedOperationException();
 		
-//		if(deferred!=null){
-//			deferred.fail(new Exception("Operation interrupted!"));
+		// check for collision with operations in progress
+//		for(JointValue v : torques){
+//			Iterator<Entry<Target, Deferred<Arm>>> it = targets.entrySet().iterator();
+//			while(it.hasNext()){
+//				Entry<Target, Deferred<Arm>> target = it.next();
+//				for(JointValue joint : target.getKey().target){
+//					if(joint.joint.equals(v.joint)){
+//						Deferred<Arm> deferred = target.getValue();
+//						try {		
+//							deferred.fail(new Exception("Operation interrupted!"));
+//						} catch(IllegalStateException ex){}
+//						it.remove();
+//					}
+//				}
+//			}
 //		}
-//		deferred = new Deferred<Void>();
-//		target = new Target(torques);
+//		Deferred<Arm> deferred = new Deferred<Arm>();
+//		Target target = new Target(torques);
+//		targets.put(target, deferred);
 //
 //		brics_actuator.JointTorques msg = pTorq.newMessage();
 //		List<brics_actuator.JointValue> tt = new ArrayList<>();
@@ -324,14 +373,9 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
-	public synchronized Promise<Arm> waitFor(long time) {
-		if(deferred!=null){
-			deferred.fail(new Exception("Operation interrupted!"));
-		}
-		deferred = new Deferred<Arm>();
-
+	public Promise<Arm> waitFor(long time) {
+		Deferred<Arm> deferred = new Deferred<Arm>();
 		timer.schedule(new ResolveTask(deferred), time);
-	
 		return deferred.getPromise();
 	}
 	
@@ -350,12 +394,6 @@ public class ArmImpl implements Arm {
 		
 		@Override
 		public void run() {
-			if(deferred == ArmImpl.this.deferred){
-				synchronized(ArmImpl.this){
-					ArmImpl.this.deferred = null;
-				}
-			}
-				
 			try {
 				deferred.resolve(ArmImpl.this);
 			} catch(IllegalStateException e){
@@ -367,11 +405,9 @@ public class ArmImpl implements Arm {
 	@Override
 	public Promise<Arm> stop() {
 		// TODO how to implement stop? motors off?
-		if(deferred!=null){
-			deferred.fail(new Exception("Operation interrupted!"));
-		}
-		
+
 		// TODO stop?
+		System.err.println("Stop not implemented atm...");
 		
 		// return an already resolved promise?
 		Deferred<Arm> d = new Deferred<>();
@@ -384,7 +420,7 @@ public class ArmImpl implements Arm {
 		
 		private static final float THRESHOLD = 0.002f;
 		
-		private final Collection<JointValue> target;
+		final Collection<JointValue> target;
 		
 		public Target(Collection<JointValue> states){
 			this.target = states;
