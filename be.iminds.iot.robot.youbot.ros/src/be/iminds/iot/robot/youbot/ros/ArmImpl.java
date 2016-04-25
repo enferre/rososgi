@@ -404,15 +404,12 @@ public class ArmImpl implements Arm {
 	
 	@Override
 	public Promise<Arm> stop() {
-		// TODO how to implement stop? motors off?
+		// TODO should we power off the motors?
 
-		// TODO stop?
-		System.err.println("Stop not implemented atm...");
-		
-		// return an already resolved promise?
-		Deferred<Arm> d = new Deferred<>();
-		d.resolve(ArmImpl.this);
-		return d.getPromise();
+		// set all joints to current position
+		return setPositions(getState().stream()
+				.map(s -> new JointValue(s.joint, Type.POSITION, s.position))
+				.collect(Collectors.toList()));
 	}
 
 	
