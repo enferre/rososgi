@@ -16,7 +16,8 @@ import be.iminds.iot.robot.api.OmniDirectional;
 	"osgi.command.function=velocity",
 	"osgi.command.function=torque",
 	"osgi.command.function=move",
-	"osgi.command.function=halt"})
+	"osgi.command.function=halt",
+	"osgi.command.function=arm"})
 public class YoubotCLI {
 
 	private Arm arm;
@@ -48,6 +49,10 @@ public class YoubotCLI {
 	
 	public void candle(){
 		arm.setPositions(2.92510465f, 1.103709733f, -2.478948503f, 1.72566195f);
+	}
+	
+	public void arm(){
+		arm.getState().stream().forEach(joint -> System.out.println(joint.joint+" : "+joint.position));
 	}
 	
 	public void position(int joint, float val){
