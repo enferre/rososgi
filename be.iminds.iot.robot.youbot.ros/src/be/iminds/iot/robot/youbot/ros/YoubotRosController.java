@@ -6,6 +6,7 @@ import org.osgi.service.component.annotations.Component;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
+import org.ros.node.Node;
 import org.ros.node.NodeMain;
 
 import be.iminds.iot.robot.api.Arm;
@@ -37,4 +38,13 @@ public class YoubotRosController extends AbstractNodeMain {
 		arm = new ArmImpl(context, connectedNode);
 		base = new BaseImpl(context, connectedNode);
 	}
+	
+	@Override
+	public void onShutdown(Node node) {
+		try {
+			base.stop();
+			arm.reset().getValue();
+		} catch(Exception e){}
+	}
+
 }
