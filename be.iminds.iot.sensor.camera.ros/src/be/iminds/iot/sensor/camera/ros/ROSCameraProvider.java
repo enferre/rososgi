@@ -63,6 +63,7 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 			public void onNewMessage(Image image) {
 
 				Frame f = new Frame();
+				f.src = id;
 				f.width = image.getWidth();
 				f.height = image.getHeight();
 				f.encoding = image.getEncoding();

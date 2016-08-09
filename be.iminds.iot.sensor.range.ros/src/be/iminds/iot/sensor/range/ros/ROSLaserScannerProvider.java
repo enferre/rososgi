@@ -55,6 +55,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 			@Override
 			public void onNewMessage(LaserScan scan) {
 				be.iminds.iot.sensor.api.LaserScan s = new be.iminds.iot.sensor.api.LaserScan();
+				s.src = id;
 				s.minAngle = scan.getAngleMin();
 				s.maxAngle = scan.getAngleMax();
 				s.data = scan.getRanges();
