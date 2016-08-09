@@ -1,4 +1,4 @@
-package be.iminds.iot.ros.camera;
+package be.iminds.iot.sensor.camera.ros;
 
 import java.util.ArrayList;
 import java.util.Dictionary;
@@ -36,9 +36,9 @@ import sensor_msgs.Image;
  *
  */
 @Component(service = NodeMain.class,
-	name="be.iminds.iot.ros.camera.Camera",
+	name="be.iminds.iot.sensor.camera.ros.Camera",
 	configurationPolicy=ConfigurationPolicy.REQUIRE)
-public class CameraSubscriber extends AbstractNodeMain implements Camera {
+public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 
 	private BundleContext context;
 	private ServiceRegistration<Camera> registration;
@@ -92,7 +92,7 @@ public class CameraSubscriber extends AbstractNodeMain implements Camera {
 					// register Camera service
 					Dictionary<String, Object> properties = new Hashtable<>();
 					properties.put("id", id.toString());
-					registration = context.registerService(Camera.class, CameraSubscriber.this, properties);
+					registration = context.registerService(Camera.class, ROSCameraProvider.this, properties);
 				}
 				currentFrame = f;
 				

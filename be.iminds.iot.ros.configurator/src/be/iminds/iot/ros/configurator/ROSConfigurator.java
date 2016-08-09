@@ -1,4 +1,4 @@
-package be.iminds.iot.ros.camera;
+package be.iminds.iot.ros.configurator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +17,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 @Component(immediate=true)
-public class CameraConfigurator {
+public class ROSConfigurator {
 
 	private ConfigurationAdmin ca;
 	
@@ -32,11 +32,11 @@ public class CameraConfigurator {
 		}
 		
 		for(File f : dir.listFiles()){
-			if(!f.getName().endsWith(".config"))
-				continue;
-			
 			if(f.isDirectory())
 				continue; // dont recurse
+			
+			if(!f.getName().endsWith(".config"))
+				continue;
 			
 			try {
 				Properties props = new Properties();
@@ -47,15 +47,17 @@ public class CameraConfigurator {
 				
 				// set ros package
 				Configuration nodeConfig;
+				Configuration subscriberConfig;
 				
-				String name = dict.get("name");
-				String type = dict.get("type");
+				String name = dict.get("name"); // use name to remap topics
+				String type = dict.get("type"); // use type to configure ros node to launch
 				switch(type){
 					case "usb_cam":
 						dict.put("ros.package", "usb_cam");
 						dict.put("ros.node", "usb_cam_node");
-						dict.put("ros.mappings", "usb_cam/image_raw:="+name+"/image_raw,usb_cam/camera_info:="+name+"/camera_info");
-						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera");
+						dict.put("ros.mappings", "usb_cam/image_raw:="+name+"/image_raw,usb_cam/camera_info:="+name+"/image_raw");
+						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera", null);
+						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
 						break;
 					default: 
 						continue;
@@ -65,7 +67,6 @@ public class CameraConfigurator {
 					nodeConfig.update(dict);
 					configurations.add(nodeConfig);
 					
-					Configuration subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.Camera");
 					subscriberConfig.update(dict);
 					configurations.add(subscriberConfig);
 				}
