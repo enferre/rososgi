@@ -30,6 +30,6 @@ repourl="http://aiolos.intec.ugent.be/repositories"
 	, \
 	aQute.bnd.deployer.repository.FixedIndexedRepo; \
 		name=Concierge; \
-		locations=${repourl}/concierge/index.xml;
+		locations=${repourl}/org.eclipse.concierge/index.xml;
 		
 -releaserepo: Release
