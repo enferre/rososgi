@@ -48,11 +48,13 @@ public class CameraConfigurator {
 				// set ros package
 				Configuration nodeConfig;
 				
+				String name = dict.get("name");
 				String type = dict.get("type");
 				switch(type){
 					case "usb_cam":
 						dict.put("ros.package", "usb_cam");
 						dict.put("ros.node", "usb_cam_node");
+						dict.put("ros.mappings", "usb_cam/image_raw:="+name+"/image_raw,usb_cam/camera_info:="+name+"/camera_info");
 						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera");
 						break;
 					default: 

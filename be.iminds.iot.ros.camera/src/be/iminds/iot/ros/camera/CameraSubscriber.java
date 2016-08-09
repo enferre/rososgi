@@ -172,6 +172,6 @@ public class CameraSubscriber extends AbstractNodeMain implements Camera {
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
-		this.name = (String)config.get("camera_name");
+		this.name = (String)config.get("name");
 	}
 }
