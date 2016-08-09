@@ -59,6 +59,13 @@ public class ROSConfigurator {
 						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera", null);
 						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
 						break;
+					case "hokuyo":
+						dict.put("ros.package", "urg_node");
+						dict.put("ros.node", "urg_node");
+						dict.put("ros.mappings", "scan:="+name+"/scan,diagnostics:="+name+"/diagnostics");
+						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
+						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
+						break;
 					default: 
 						continue;
 				}
