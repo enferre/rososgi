@@ -6,34 +6,13 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.ros.exception.RemoteException;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
-import org.ros.node.service.ServiceClient;
-import org.ros.node.service.ServiceResponseListener;
 
 import be.iminds.iot.simulator.api.Simulator;
 import be.iminds.iot.simulator.vrep.ros.youbot.VREPYoubot;
-import vrep_common.simRosLoadScene;
-import vrep_common.simRosLoadSceneRequest;
-import vrep_common.simRosLoadSceneResponse;
-import vrep_common.simRosPauseSimulation;
-import vrep_common.simRosPauseSimulationRequest;
-import vrep_common.simRosPauseSimulationResponse;
-import vrep_common.simRosStartSimulation;
-import vrep_common.simRosStartSimulationRequest;
-import vrep_common.simRosStartSimulationResponse;
-import vrep_common.simRosStopSimulation;
-import vrep_common.simRosStopSimulationRequest;
-import vrep_common.simRosStopSimulationResponse;
-import vrep_common.simRosSynchronous;
-import vrep_common.simRosSynchronousRequest;
-import vrep_common.simRosSynchronousResponse;
-import vrep_common.simRosSynchronousTrigger;
-import vrep_common.simRosSynchronousTriggerRequest;
-import vrep_common.simRosSynchronousTriggerResponse;
 
 @Component(service = {NodeMain.class, Simulator.class},
 property = {"osgi.command.scope=vrep", 
@@ -51,15 +30,9 @@ property = {"osgi.command.scope=vrep",
 	"osgi.command.function=close"})
 public class VREP extends AbstractNodeMain implements Simulator {
 
-	// service object for each ROS service used
-	private ServiceClient<simRosStartSimulationRequest, simRosStartSimulationResponse> startSim;
-	private ServiceClient<simRosStopSimulationRequest, simRosStopSimulationResponse> stopSim;
-	private ServiceClient<simRosPauseSimulationRequest, simRosPauseSimulationResponse> pauseSim;
-	private ServiceClient<simRosSynchronousRequest, simRosSynchronousResponse> syncSim;
-	private ServiceClient<simRosSynchronousTriggerRequest, simRosSynchronousTriggerResponse> triggerSim;
-	private ServiceClient<simRosLoadSceneRequest, simRosLoadSceneResponse> loadScene;
-	
 	private ConnectedNode node;
+	private VREPInterface vrep;
+	
 	private VREPYoubot youbot;
 	
 	private String scene = null;
@@ -100,15 +73,9 @@ public class VREP extends AbstractNodeMain implements Simulator {
 		node = connectedNode;
 	
 		int tries = 0;
-		while(startSim==null && tries < 2){
+		while(vrep==null && tries < 2){
 			try {
-				startSim = connectedNode.newServiceClient("/vrep/simRosStartSimulation", simRosStartSimulation._TYPE);
-				stopSim = connectedNode.newServiceClient("/vrep/simRosStopSimulation", simRosStopSimulation._TYPE);
-				pauseSim = connectedNode.newServiceClient("/vrep/simRosPauseSimulation", simRosPauseSimulation._TYPE);
-				syncSim = connectedNode.newServiceClient("/vrep/simRosSynchronous", simRosSynchronous._TYPE);
-				triggerSim = connectedNode.newServiceClient("/vrep/simRosSynchronousTrigger", simRosSynchronousTrigger._TYPE);
-
-				loadScene = connectedNode.newServiceClient("/vrep/simRosLoadScene", simRosLoadScene._TYPE);
+				vrep = new VREPInterface(connectedNode);
 				
 				if(scene!=null){
 					loadScene(scene);
@@ -146,101 +113,42 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	
 	@Override
 	public void start(boolean sync) {
-		if(sync){
-			setSyncMode(true);
-		} else {
-			setSyncMode(false);
-		}
+		vrep.setSynchronous(sync);
 		
-		final simRosStartSimulationRequest request = startSim.newMessage();
-		startSim.call(request, new ServiceResponseListener<simRosStartSimulationResponse>() {
-			@Override
-			public void onSuccess(simRosStartSimulationResponse response) {}
-			@Override
-			public void onFailure(RemoteException e) {
-				System.err.println("Error starting simulation");
-			}
-		});
+		vrep.startSimuation();
 		
 		enable();
 	}
 	
-	private void setSyncMode(boolean set){
-		final simRosSynchronousRequest request = syncSim.newMessage();
-		request.setEnable((byte) (set ? 1 : 0));
-		syncSim.call(request, new ServiceResponseListener<simRosSynchronousResponse>() {
-			@Override
-			public void onSuccess(simRosSynchronousResponse response) {}
-			@Override
-			public void onFailure(RemoteException e) {
-				System.err.println("Error starting simulation");
-			}
-		});
-	}
-
 	@Override
 	public void pause() {
-		final simRosPauseSimulationRequest request = pauseSim.newMessage();
-		pauseSim.call(request, new ServiceResponseListener<simRosPauseSimulationResponse>() {
-			@Override
-			public void onSuccess(simRosPauseSimulationResponse response) {}
-			@Override
-			public void onFailure(RemoteException e) {
-				System.err.println("Error pausing simulation");
-			}
-		});
+		vrep.pauseSimulation();
 		
 		disable();
 	}
 	
 	@Override
 	public void tick() {
-		final simRosSynchronousTriggerRequest request = triggerSim.newMessage();
-		triggerSim.call(request, new ServiceResponseListener<simRosSynchronousTriggerResponse>() {
-			@Override
-			public void onSuccess(simRosSynchronousTriggerResponse response) {}
-			@Override
-			public void onFailure(RemoteException e) {
-				System.err.println("Error pausing simulation");
-			}
-		});
+		vrep.trigger();
 	}
 
 	@Override
 	public void stop() {
-		setSyncMode(false);
-		final simRosStopSimulationRequest request = stopSim.newMessage();
-		stopSim.call(request, new ServiceResponseListener<simRosStopSimulationResponse>() {
-			@Override
-			public void onSuccess(simRosStopSimulationResponse response) {}
-			@Override
-			public void onFailure(RemoteException e) {
-				System.err.println("Error stopping simulation");
-			}
-		});
+		vrep.setSynchronous(false);
+		
+		vrep.stopSimulation();
 		
 		disable();
 	}
 
 	@Override
 	public void loadScene(String file) {
-		File f = new File(file);
-		final simRosLoadSceneRequest request = loadScene.newMessage();
-		request.setFileName(f.getAbsolutePath());
-		loadScene.call(request, new ServiceResponseListener<simRosLoadSceneResponse>() {
-			@Override
-			public void onSuccess(simRosLoadSceneResponse response) {
-				try {
-					load();
-				} catch (Exception e) {
-					System.err.println("Failed to load youbot");
-				}
-			}
-			@Override
-			public void onFailure(RemoteException e) {
-				System.err.println("Error loading scene "+file);
-			}
-		});
+		vrep.loadScene(file);
+		
+		try {
+			load();
+		} catch (Exception e) {
+		}
 	}
 	
 	/**
@@ -249,7 +157,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	private void load() throws Exception {
 		
 		// TODO search for youbot objects?
-		youbot = new VREPYoubot(node, 
+		youbot = new VREPYoubot(node, vrep, 
 				"youBot",
 				"youBotArmJoint0",
 				"youBotArmJoint1",

@@ -1,17 +1,17 @@
 package be.iminds.iot.simulator.vrep.ros.youbot;
 
-import be.iminds.iot.simulator.vrep.ros.VREPJointController;
+import be.iminds.iot.simulator.vrep.ros.VREPInterface;
 
 public class VREPYoubotArm {
 
 	// VREP handles for all joints
 	private int[] joints = new int[7];
 	
-	// VREP Joint control
-	private VREPJointController controller;
+	// VREP interface
+	private VREPInterface vrep;
 	
-	public VREPYoubotArm(VREPJointController c, int j0, int j1, int j2, int j3, int j4, int gl, int gr){
-		controller = c;
+	public VREPYoubotArm(VREPInterface v, int j0, int j1, int j2, int j3, int j4, int gl, int gr){
+		vrep = v;
 		
 		joints[0] = j0;
 		joints[1] = j1;
@@ -23,39 +23,38 @@ public class VREPYoubotArm {
 	}
 	
 	public void setPosition(int joint, double pos){
-		controller.setJointPosition(joints[joint], pos);
+		vrep.setJointPosition(joints[joint], pos);
 	}
 	
 	public void setTargetPosition(int joint, double pos){
-		controller.setJointParameter(joints[joint], 2000, 1); // enable dynamic motor state
-		controller.setJointParameter(joints[joint], 2001, 1); // enable dynamic motor control loop 
+		vrep.setParameter(joints[joint], 2000, 1); // enable dynamic motor state
+		vrep.setParameter(joints[joint], 2001, 1); // enable dynamic motor control loop 
 		
-		controller.setJointTargetPosition(joints[joint], pos);
+		vrep.setJointTargetPosition(joints[joint], pos);
 	}
 	
 	public void setTargetVelocity(int joint, double vel){
-		controller.setJointParameter(joints[joint], 2000, 1);
-		controller.setJointParameter(joints[joint], 2001, 0);
+		vrep.setParameter(joints[joint], 2000, 1);
+		vrep.setParameter(joints[joint], 2001, 0);
 		
-		controller.setJointTargetVelocity(joints[joint], vel);
+		vrep.setJointTargetVelocity(joints[joint], vel);
 	}
 	
 	public void setTorque(int joint, double torque){
-		controller.setJointParameter(joints[joint], 2000, 1);
-		controller.setJointParameter(joints[joint], 2001, 0);
+		vrep.setParameter(joints[joint], 2000, 1);
+		vrep.setParameter(joints[joint], 2001, 0);
 		
-		controller.setJointTorque(joints[joint], torque);
+		vrep.setJointTorque(joints[joint], torque);
 	}
 	
 	public void openGripper(){
-		controller.setJointTargetPosition(joints[5], 0.0115f);
-		controller.setJointTargetPosition(joints[6], -0.023f);
+		vrep.setJointTargetPosition(joints[5], 0.0115f);
+		vrep.setJointTargetPosition(joints[6], -0.023f);
 	}
 	
 	public void closeGripper(){
-		controller.setJointTargetPosition(joints[5], 0.0f);
-		controller.setJointTargetPosition(joints[6], -0.0f);
+		vrep.setJointTargetPosition(joints[5], 0.0f);
+		vrep.setJointTargetPosition(joints[6], -0.0f);
 	}
-	
 
 }

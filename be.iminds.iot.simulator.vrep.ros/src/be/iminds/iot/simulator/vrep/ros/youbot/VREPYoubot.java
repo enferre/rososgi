@@ -2,17 +2,13 @@ package be.iminds.iot.simulator.vrep.ros.youbot;
 
 import java.util.List;
 
-import org.osgi.util.promise.Deferred;
-import org.osgi.util.promise.Promise;
-import org.ros.exception.RemoteException;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
-import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
-import be.iminds.iot.simulator.vrep.ros.VREPJointController;
+import be.iminds.iot.simulator.vrep.ros.VREPInterface;
 import vrep_common.simRosDisablePublisher;
 import vrep_common.simRosDisablePublisherRequest;
 import vrep_common.simRosDisablePublisherResponse;
@@ -46,15 +42,17 @@ public class VREPYoubot {
 	private YoubotVREPConvertor convertor;
 	
 	private ConnectedNode node;
+	private VREPInterface vrep;
 	
 	private boolean enabled = false;
 	
-	public VREPYoubot(ConnectedNode node, String name, 
+	public VREPYoubot(ConnectedNode node, VREPInterface vrep, String name, 
 			String joint0, String joint1, String joint2, String joint3, String joint4, 
 			String gripperL, String gripperR,
 			String wheelFL, String wheelFR, String wheelRL, String wheelRR) throws Exception {
 		
 		this.node = node;
+		this.vrep = vrep;
 		
 		convertor = new YoubotVREPConvertor(joint0, joint1, joint2, joint3, joint4, gripperL, gripperR);
 		
@@ -62,25 +60,23 @@ public class VREPYoubot {
 		enablePublisher = node.newServiceClient("/vrep/simRosEnablePublisher", simRosEnablePublisher._TYPE);
 		disablePublisher = node.newServiceClient("/vrep/simRosDisablePublisher", simRosDisablePublisher._TYPE);
 		
-		VREPJointController c = new VREPJointController(node);
+		this.base = new VREPYoubotBase(vrep, 
+				vrep.getObjectHandle(wheelFL).getValue(),
+				vrep.getObjectHandle(wheelFR).getValue(), 
+				vrep.getObjectHandle(wheelRL).getValue(), 
+				vrep.getObjectHandle(wheelRR).getValue());
 		
-		this.base = new VREPYoubotBase(c, 
-				getHandle(wheelFL).getValue(),
-				getHandle(wheelFR).getValue(), 
-				getHandle(wheelRL).getValue(), 
-				getHandle(wheelRR).getValue());
-		
-		this.arm = new VREPYoubotArm(c, 
-				getHandle(joint0).getValue(),
-				getHandle(joint1).getValue(),
-				getHandle(joint2).getValue(),
-				getHandle(joint3).getValue(),
-				getHandle(joint4).getValue(),
-				getHandle(gripperL).getValue(),
-				getHandle(gripperR).getValue());
+		this.arm = new VREPYoubotArm(vrep, 
+				vrep.getObjectHandle(joint0).getValue(),
+				vrep.getObjectHandle(joint1).getValue(),
+				vrep.getObjectHandle(joint2).getValue(),
+				vrep.getObjectHandle(joint3).getValue(),
+				vrep.getObjectHandle(joint4).getValue(),
+				vrep.getObjectHandle(gripperL).getValue(),
+				vrep.getObjectHandle(gripperR).getValue());
 		
 		this.name = name;
-		this.handle = getHandle(name).getValue();
+		this.handle = vrep.getObjectHandle(name).getValue();
 		
 	}
 	
@@ -97,9 +93,9 @@ public class VREPYoubot {
 			return;
 		
 		// TODO setup ROS topics similar to youbot ros driver
-		//enablePublisher("/"+name+"/joint_state_1", 4102, arm.joints[1]);
+		//vrep.enablePublisher("/"+name+"/joint_state_1", 4102, arm.joints[1]);
 
-		enablePublisher("/vrep/joint_states", 4102, -2); // publish all joint states in scene
+		vrep.enablePublisher("/vrep/joint_states", 4102, -2); // publish all joint states in scene
 		// translate from vrep joint_states to the joint_states youbot expects
 		pubJoint = node.newPublisher("/joint_states", sensor_msgs.JointState._TYPE);
 		subJoint = node.newSubscriber("/vrep/joint_states", sensor_msgs.JointState._TYPE);
@@ -131,7 +127,7 @@ public class VREPYoubot {
 			}
 		});
 		
-		enablePublisher("/odom", 8193, handle); // publish odom of youbot handle
+		vrep.enablePublisher("/odom", 8193, handle); // publish odom of youbot handle
 		
 		// setup subscribers
 		subscribe();
@@ -140,8 +136,8 @@ public class VREPYoubot {
 	}
 	
 	public void disable(){
-		disablePublisher("/joint_states");
-		disablePublisher("/odom"); 
+		vrep.disablePublisher("/joint_states");
+		vrep.disablePublisher("/odom"); 
 		
 		subJoint.shutdown();
 		pubJoint.shutdown();
@@ -214,53 +210,4 @@ public class VREPYoubot {
 		arm_vel.shutdown();
 		grip_pos.shutdown();
 	}
-	
-	private void enablePublisher(String topic, int type, int handle){
-		final simRosEnablePublisherRequest request = enablePublisher.newMessage();
-		request.setTopicName(topic);
-		request.setQueueSize(1);
-		request.setStreamCmd(type);
-		request.setAuxInt1(handle);
-		request.setAuxInt2(-1);
-		request.setAuxString("");
-		enablePublisher.call(request, new ServiceResponseListener<simRosEnablePublisherResponse>() {
-			@Override
-			public void onSuccess(simRosEnablePublisherResponse response) {
-			}
-			@Override
-			public void onFailure(RemoteException e) {
-			}
-		});	
-	}
-	
-	private void disablePublisher(String topic){
-		final simRosDisablePublisherRequest request = disablePublisher.newMessage();
-		request.setTopicName(topic);
-		disablePublisher.call(request, new ServiceResponseListener<simRosDisablePublisherResponse>() {
-			@Override
-			public void onSuccess(simRosDisablePublisherResponse response) {
-			}
-			@Override
-			public void onFailure(RemoteException e) {
-			}
-		});	
-	}
-	
-	private Promise<Integer> getHandle(String name){
-		final simRosGetObjectHandleRequest request = getHandle.newMessage();
-		request.setObjectName(name);
-		final Deferred<Integer> deferred = new Deferred<>();		
-		getHandle.call(request, new ServiceResponseListener<simRosGetObjectHandleResponse>() {
-			@Override
-			public void onSuccess(simRosGetObjectHandleResponse response) {
-				deferred.resolve(response.getHandle());
-			}
-			@Override
-			public void onFailure(RemoteException e) {
-				deferred.fail(e);
-			}
-		});	
-		return deferred.getPromise();
-	}
-	
 }
