@@ -1,15 +1,14 @@
 package be.iminds.iot.simulator.vrep.ros;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 
 import org.osgi.util.promise.Deferred;
-import org.osgi.util.promise.Promise;
 import org.ros.exception.RemoteException;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
 
+import geometry_msgs.Point;
 import vrep_common.simRosDisablePublisher;
 import vrep_common.simRosDisablePublisherRequest;
 import vrep_common.simRosDisablePublisherResponse;
@@ -19,6 +18,9 @@ import vrep_common.simRosEnablePublisherResponse;
 import vrep_common.simRosGetObjectHandle;
 import vrep_common.simRosGetObjectHandleRequest;
 import vrep_common.simRosGetObjectHandleResponse;
+import vrep_common.simRosGetObjectPose;
+import vrep_common.simRosGetObjectPoseRequest;
+import vrep_common.simRosGetObjectPoseResponse;
 import vrep_common.simRosLoadScene;
 import vrep_common.simRosLoadSceneRequest;
 import vrep_common.simRosLoadSceneResponse;
@@ -40,6 +42,9 @@ import vrep_common.simRosSetJointTargetVelocityResponse;
 import vrep_common.simRosSetObjectIntParameter;
 import vrep_common.simRosSetObjectIntParameterRequest;
 import vrep_common.simRosSetObjectIntParameterResponse;
+import vrep_common.simRosSetObjectPosition;
+import vrep_common.simRosSetObjectPositionRequest;
+import vrep_common.simRosSetObjectPositionResponse;
 import vrep_common.simRosStartSimulation;
 import vrep_common.simRosStartSimulationRequest;
 import vrep_common.simRosStartSimulationResponse;
@@ -66,6 +71,8 @@ public class VREPInterface {
 	/* Objects */
 	private ServiceClient<simRosGetObjectHandleRequest, simRosGetObjectHandleResponse> getHandle;
 	private ServiceClient<simRosSetObjectIntParameterRequest, simRosSetObjectIntParameterResponse> setIntParam;
+	private ServiceClient<simRosGetObjectPoseRequest, simRosGetObjectPoseResponse> getObjectPose;
+	private ServiceClient<simRosSetObjectPositionRequest, simRosSetObjectPositionResponse> setObjectPosition;
 	
 	/* Joints */
 	private ServiceClient<simRosSetJointPositionRequest, simRosSetJointPositionResponse> setJointPosition;
@@ -89,6 +96,8 @@ public class VREPInterface {
 		getHandle = node.newServiceClient("/vrep/simRosGetObjectHandle", simRosGetObjectHandle._TYPE);
 		setIntParam = node.newServiceClient("/vrep/simRosSetObjectIntParameter", simRosSetObjectIntParameter._TYPE);
 		
+		getObjectPose = node.newServiceClient("/vrep/simRosGetObjectPose", simRosGetObjectPose._TYPE);
+		setObjectPosition = node.newServiceClient("/vrep/simRosSetObjectPosition", simRosSetObjectPosition._TYPE);
 		
 		setJointPosition = node.newServiceClient("/vrep/simRosSetJointPosition", simRosSetJointPosition._TYPE);
 		setJointTargetPosition = node.newServiceClient("/vrep/simRosSetJointTargetPosition", simRosSetJointTargetPosition._TYPE);
@@ -293,6 +302,61 @@ public class VREPInterface {
 			public void onSuccess(simRosSetObjectIntParameterResponse response) {
 				if(response.getResult()==-1){
 					deferred.fail(new Exception("Failed to set parameter"));
+				} else {
+					deferred.resolve((Void)null);
+				}
+			}
+			@Override
+			public void onFailure(RemoteException e) {
+				deferred.fail(e);
+			}
+		});	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
+	}
+	
+	
+	public Point getPosition(int handle, int relativeToHandle){
+		final simRosGetObjectPoseRequest request = getObjectPose.newMessage();
+		request.setHandle(handle);
+		request.setRelativeToObjectHandle(relativeToHandle);
+		final Deferred<Point> deferred = new Deferred<>();		
+		getObjectPose.call(request, new ServiceResponseListener<simRosGetObjectPoseResponse>() {
+			@Override
+			public void onSuccess(simRosGetObjectPoseResponse response) {
+				deferred.resolve(response.getPose().getPose().getPosition());
+			}
+			@Override
+			public void onFailure(RemoteException e) {
+				deferred.fail(e);
+			}
+		});	
+		try {
+			return deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public void setPosition(int handle, int relativeToHandle, double x, double y, double z){
+		final simRosSetObjectPositionRequest request = setObjectPosition.newMessage();
+		request.setHandle(handle);
+		request.setRelativeToObjectHandle(relativeToHandle);
+		Point p = request.getPosition();
+		p.setX(x);
+		p.setY(y);
+		p.setZ(z);
+		request.setPosition(p);
+		final Deferred<Void> deferred = new Deferred<>();		
+		setObjectPosition.call(request, new ServiceResponseListener<simRosSetObjectPositionResponse>() {
+			@Override
+			public void onSuccess(simRosSetObjectPositionResponse response) {
+				if(response.getResult()==-1){
+					deferred.fail(new Exception("Failed to set position"));
 				} else {
 					deferred.resolve((Void)null);
 				}

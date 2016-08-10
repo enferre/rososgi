@@ -11,8 +11,10 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 
+import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
 import be.iminds.iot.simulator.vrep.ros.youbot.VREPYoubot;
+import geometry_msgs.Point;
 
 @Component(service = {NodeMain.class, Simulator.class},
 property = {"osgi.command.scope=vrep", 
@@ -21,7 +23,9 @@ property = {"osgi.command.scope=vrep",
 	"osgi.command.function=stop",
 	"osgi.command.function=tick",
 	"osgi.command.function=loadScene",
-	"osgi.command.function=position",
+	"osgi.command.function=getPosition",
+	"osgi.command.function=setPosition",
+	"osgi.command.function=jointPosition",
 	"osgi.command.function=targetPosition",
 	"osgi.command.function=targetVelocity",
 	"osgi.command.function=torque",
@@ -151,6 +155,36 @@ public class VREP extends AbstractNodeMain implements Simulator {
 		}
 	}
 	
+	@Override
+	public Position getPosition(String object) {
+		Point p = vrep.getPosition(vrep.getObjectHandle(object), -1);
+		return new Position(p.getX(), p.getY(), p.getZ());
+	}
+
+	public void setPosition(String object, double x, double y, double z) {
+		vrep.setPosition(vrep.getObjectHandle(object), -1, x, y, z);
+	}
+	
+	@Override
+	public void setPosition(String object, Position p) {
+		vrep.setPosition(vrep.getObjectHandle(object), -1, p.x, p.y, p.z);
+	}
+
+	@Override
+	public Position getPosition(String object, String relativeTo) {
+		Point p = vrep.getPosition(vrep.getObjectHandle(object), vrep.getObjectHandle(relativeTo));
+		return new Position(p.getX(), p.getY(), p.getZ());
+	}
+
+	@Override
+	public void setPosition(String object, String relativeTo, Position p) {
+		vrep.setPosition(vrep.getObjectHandle(object), vrep.getObjectHandle(relativeTo), p.x, p.y, p.z);		
+	}
+	
+	public void setPosition(String object, String relativeTo, double x, double y, double z) {
+		vrep.setPosition(vrep.getObjectHandle(object), vrep.getObjectHandle(relativeTo), x, y, z);
+	}
+	
 	/**
 	 * Load objects  
 	 */
@@ -190,7 +224,7 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	
 	// For testing via CLI
 	
-	public void position(int joint, double p){
+	public void jointPosition(int joint, double p){
 		youbot.arm().setPosition(joint, p);
 	}
 	
@@ -217,5 +251,6 @@ public class VREP extends AbstractNodeMain implements Simulator {
 	public void close(){
 		youbot.arm().closeGripper();
 	}
+
 }
 
