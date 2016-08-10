@@ -61,22 +61,22 @@ public class VREPYoubot {
 		disablePublisher = node.newServiceClient("/vrep/simRosDisablePublisher", simRosDisablePublisher._TYPE);
 		
 		this.base = new VREPYoubotBase(vrep, 
-				vrep.getObjectHandle(wheelFL).getValue(),
-				vrep.getObjectHandle(wheelFR).getValue(), 
-				vrep.getObjectHandle(wheelRL).getValue(), 
-				vrep.getObjectHandle(wheelRR).getValue());
+				vrep.getObjectHandle(wheelFL),
+				vrep.getObjectHandle(wheelFR), 
+				vrep.getObjectHandle(wheelRL), 
+				vrep.getObjectHandle(wheelRR));
 		
 		this.arm = new VREPYoubotArm(vrep, 
-				vrep.getObjectHandle(joint0).getValue(),
-				vrep.getObjectHandle(joint1).getValue(),
-				vrep.getObjectHandle(joint2).getValue(),
-				vrep.getObjectHandle(joint3).getValue(),
-				vrep.getObjectHandle(joint4).getValue(),
-				vrep.getObjectHandle(gripperL).getValue(),
-				vrep.getObjectHandle(gripperR).getValue());
+				vrep.getObjectHandle(joint0),
+				vrep.getObjectHandle(joint1),
+				vrep.getObjectHandle(joint2),
+				vrep.getObjectHandle(joint3),
+				vrep.getObjectHandle(joint4),
+				vrep.getObjectHandle(gripperL),
+				vrep.getObjectHandle(gripperR));
 		
 		this.name = name;
-		this.handle = vrep.getObjectHandle(name).getValue();
+		this.handle = vrep.getObjectHandle(name);
 		
 	}
 	

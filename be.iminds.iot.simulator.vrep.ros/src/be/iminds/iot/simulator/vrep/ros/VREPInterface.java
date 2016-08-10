@@ -1,6 +1,7 @@
 package be.iminds.iot.simulator.vrep.ros;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
@@ -88,6 +89,7 @@ public class VREPInterface {
 		getHandle = node.newServiceClient("/vrep/simRosGetObjectHandle", simRosGetObjectHandle._TYPE);
 		setIntParam = node.newServiceClient("/vrep/simRosSetObjectIntParameter", simRosSetObjectIntParameter._TYPE);
 		
+		
 		setJointPosition = node.newServiceClient("/vrep/simRosSetJointPosition", simRosSetJointPosition._TYPE);
 		setJointTargetPosition = node.newServiceClient("/vrep/simRosSetJointTargetPosition", simRosSetJointTargetPosition._TYPE);
 		setJointVelocity = node.newServiceClient("/vrep/simRosSetJointTargetVelocity", simRosSetJointTargetVelocity._TYPE);
@@ -101,7 +103,7 @@ public class VREPInterface {
 	 * Simulator
 	 */ 
 	
-	public Promise<Void> startSimuation() {
+	public void startSimuation() {
 		final simRosStartSimulationRequest request = startSimulation.newMessage();
 		final Deferred<Void> deferred = new Deferred<>();		
 		startSimulation.call(request, new ServiceResponseListener<simRosStartSimulationResponse>() {
@@ -118,11 +120,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> pauseSimulation() {
+	public void pauseSimulation() {
 		final simRosPauseSimulationRequest request = pauseSimulation.newMessage();
 		final Deferred<Void> deferred = new Deferred<>();		
 		pauseSimulation.call(request, new ServiceResponseListener<simRosPauseSimulationResponse>() {
@@ -139,11 +145,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> stopSimulation() {
+	public void stopSimulation() {
 		final simRosStopSimulationRequest request = stopSimulation.newMessage();
 		final Deferred<Void> deferred = new Deferred<>();		
 		stopSimulation.call(request, new ServiceResponseListener<simRosStopSimulationResponse>() {
@@ -160,11 +170,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	
-	public Promise<Void> setSynchronous(boolean sync){
+	public void setSynchronous(boolean sync){
 		final simRosSynchronousRequest request = synchronous.newMessage();
 		request.setEnable((byte) (sync ? 1 : 0));
 		final Deferred<Void> deferred = new Deferred<>();		
@@ -182,11 +196,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> trigger() {
+	public void trigger() {
 		final simRosSynchronousTriggerRequest request = trigger.newMessage();
 		final Deferred<Void> deferred = new Deferred<>();		
 		trigger.call(request, new ServiceResponseListener<simRosSynchronousTriggerResponse>() {
@@ -203,11 +221,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> loadScene(String file) {
+	public void loadScene(String file) {
 		File f = new File(file);
 		final simRosLoadSceneRequest request = loadScene.newMessage();
 		request.setFileName(f.getAbsolutePath());
@@ -226,14 +248,18 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/*
 	 * Objects
 	 */ 
 	
-	public Promise<Integer> getObjectHandle(String name){
+	public int getObjectHandle(String name){
 		final simRosGetObjectHandleRequest request = getHandle.newMessage();
 		request.setObjectName(name);
 		final Deferred<Integer> deferred = new Deferred<>();		
@@ -247,11 +273,16 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			return deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return -1;
 	}
 	
 	
-	public Promise<Void> setParameter(int handle, int param, int value){
+	public void setParameter(int handle, int param, int value){
 		final simRosSetObjectIntParameterRequest request = setIntParam.newMessage();
 		request.setHandle(handle);
 		request.setParameter(param);
@@ -271,7 +302,11 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
 	}
 	
 	
@@ -279,7 +314,7 @@ public class VREPInterface {
 	 * Joints
 	 */ 
 	
-	public Promise<Void> setJointPosition(int handle, double position){
+	public void setJointPosition(int handle, double position){
 		final simRosSetJointPositionRequest request = setJointPosition.newMessage();
 		request.setHandle(handle);
 		request.setPosition(position);
@@ -298,11 +333,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> setJointTargetPosition(int handle, double position){
+	public void setJointTargetPosition(int handle, double position){
 		final simRosSetJointTargetPositionRequest request = setJointTargetPosition.newMessage();
 		request.setHandle(handle);
 		request.setTargetPosition(position);
@@ -321,11 +360,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> setJointTargetVelocity(int handle, double velocity){
+	public void setJointTargetVelocity(int handle, double velocity){
 		final simRosSetJointTargetVelocityRequest request = setJointVelocity.newMessage();
 		request.setHandle(handle);
 		request.setTargetVelocity(velocity);
@@ -344,11 +387,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();	
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}	
 	}
 	
 	
-	public Promise<Void> setJointTorque(int handle, double torque){
+	public void setJointTorque(int handle, double torque){
 		final simRosSetJointForceRequest request = setJointTorque.newMessage();
 		request.setHandle(handle);
 		request.setForceOrTorque(torque);
@@ -367,14 +414,18 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/*
 	 * ROS publishers
 	 */ 
 	
-	public Promise<Void> enablePublisher(String topic, int type, int handle){
+	public void enablePublisher(String topic, int type, int handle){
 		final simRosEnablePublisherRequest request = enablePublisher.newMessage();
 		request.setTopicName(topic);
 		request.setQueueSize(1);
@@ -393,11 +444,15 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public Promise<Void> disablePublisher(String topic){
+	public void disablePublisher(String topic){
 		final simRosDisablePublisherRequest request = disablePublisher.newMessage();
 		request.setTopicName(topic);
 		final Deferred<Void> deferred = new Deferred<>();		
@@ -411,7 +466,11 @@ public class VREPInterface {
 				deferred.fail(e);
 			}
 		});	
-		return deferred.getPromise();
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 }
