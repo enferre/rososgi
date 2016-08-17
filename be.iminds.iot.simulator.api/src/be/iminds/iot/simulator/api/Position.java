@@ -2,13 +2,13 @@ package be.iminds.iot.simulator.api;
 
 public class Position {
 
-	public double x;
-	public double y;
-	public double z;
+	public float x;
+	public float y;
+	public float z;
 	
 	public Position(){}
 	
-	public Position(double x, double y, double z){
+	public Position(float x, float y, float z){
 		this.x = x;
 		this.y = y;
 		this.z = z;
