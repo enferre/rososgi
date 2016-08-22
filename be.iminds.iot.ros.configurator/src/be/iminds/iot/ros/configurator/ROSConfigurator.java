@@ -52,21 +52,17 @@ public class ROSConfigurator {
 				String name = dict.get("name"); // use name to remap topics
 				String type = dict.get("type"); // use type to configure ros node to launch
 				switch(type){
+					case "youbot":
+						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.youbot.Youbot", null);
+						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
+						break;
 					case "usb_cam":
-						dict.put("ros.package", "usb_cam");
-						dict.put("ros.node", "usb_cam_node");
 						dict.put("ros.mappings", "usb_cam/image_raw:="+name+"/image_raw,"
 								+ "usb_cam/camera_info:="+name+"/image_raw");
 						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera", null);
 						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
 						break;
 					case "hokuyo":
-						dict.put("ros.package", "urg_node");
-						dict.put("ros.node", "urg_node");
-						dict.put("ros.mappings", "scan:="+name+"/scan,"
-								+ "diagnostics:="+name+"/diagnostics,"
-								+ "/urg_node/parameter_descriptions:="+name+"/parameter_descriptions,"
-								+ "/urg_node/parameter_updates:="+name+"/parameter_updates");
 						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
 						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
 						break;

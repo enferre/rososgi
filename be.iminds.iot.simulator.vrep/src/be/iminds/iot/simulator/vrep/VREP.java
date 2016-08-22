@@ -1,13 +1,20 @@
 package be.iminds.iot.simulator.vrep;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
 import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
@@ -35,6 +42,14 @@ public class VREP implements Simulator {
 	
 	private Process process;
 	private String dir = "/opt/vrep-3.3.1";
+	
+	private List<Configuration> configurations = new ArrayList<>();
+	private ConfigurationAdmin ca;
+	
+	@Reference
+	void setConfigurationAdmin(ConfigurationAdmin ca){
+		this.ca = ca;
+	}
 	
 	@Activate
 	void activate(BundleContext context) throws Exception {
@@ -94,22 +109,60 @@ public class VREP implements Simulator {
 	
 	@Override
 	public void start(boolean sync) {
+		configure();
+		
 		vrep.simxSynchronous(clientID, sync);
 		
 		vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking);
+		
+	}
+	
+	private void configure(){
+		// TODO Should we configure the bundles registering OSGi services here?
+		// based on the present objects we could construct multiple configurations?
+		try {
+			for(String name : objectHandles.keySet()){
+				if(name.equals("youBot")){
+					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
+					c.update(new Hashtable());
+					configurations.add(c);
+				} else if(name.equals("hokuyo")){
+					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
+					c.update(new Hashtable());
+					configurations.add(c);
+				}
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void pause() {
+		deconfigure();
+		
 		vrep.simxPauseSimulation(clientID, vrep.simx_opmode_blocking);
 	}
 
 	@Override
 	public void stop() {
+		deconfigure();
+		
 		// stop the simulation:
 		vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking);
 	}
 
+	private void deconfigure(){
+		for(Configuration c : configurations){
+			try {
+				c.delete();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		configurations.clear();
+	}
+	
 	@Override
 	public void tick() {
 		vrep.simxSynchronousTrigger(clientID);

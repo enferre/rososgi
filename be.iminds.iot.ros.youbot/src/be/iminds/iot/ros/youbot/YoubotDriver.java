@@ -3,12 +3,15 @@ package be.iminds.iot.ros.youbot;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 
 import be.iminds.iot.ros.api.Ros;
 import be.iminds.iot.ros.util.NativeRosNode;
 
-@Component(immediate=true)
+@Component(immediate=true,
+	name="be.iminds.iot.ros.youbot.Youbot",
+	configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class YoubotDriver extends NativeRosNode {
 
 	private Ros ros;

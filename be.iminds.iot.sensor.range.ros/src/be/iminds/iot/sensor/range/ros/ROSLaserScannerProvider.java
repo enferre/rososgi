@@ -38,18 +38,17 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	
 	private volatile List<SensorListener> listeners = new ArrayList<>();
 
-	private String name;
 	private UUID id = UUID.randomUUID();
 	private volatile be.iminds.iot.sensor.api.LaserScan currentScan = null;
 	
 	@Override
 	public GraphName getDefaultNodeName() {
-		return GraphName.of("laserscan_subscriber");
+		return GraphName.of("laserscan/subscriber");
 	}
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		Subscriber<LaserScan> subscriber = connectedNode.newSubscriber(name+"/scan",
+		Subscriber<LaserScan> subscriber = connectedNode.newSubscriber("/scan",
 				LaserScan._TYPE);
 		subscriber.addMessageListener(new MessageListener<LaserScan>() {
 			@Override
@@ -61,12 +60,15 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 				s.data = scan.getRanges();
 				
 				if(currentScan == null){
+					currentScan = s;
+
 					// register LaserScanner service
 					Dictionary<String, Object> properties = new Hashtable<>();
 					properties.put("id", id.toString());
 					registration = context.registerService(LaserScanner.class, ROSLaserScannerProvider.this, properties);
+				} else {
+					currentScan = s;
 				}
-				currentScan = s;
 				
 				for(SensorListener l : listeners){
 					l.update(currentScan);
@@ -138,7 +140,6 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
-		this.name = (String)config.get("name");
 	}
 
 }

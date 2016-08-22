@@ -16,6 +16,10 @@ import be.iminds.iot.ros.util.NativeRosNode;
 		name="be.iminds.iot.ros.camera.USBCamera",
 		configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class USBCameraNode extends NativeRosNode {
-
+	
+	public USBCameraNode(){
+		super("usb_cam","usb_cam_node");
+	}
+	
 }
 

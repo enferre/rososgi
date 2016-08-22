@@ -1,27 +1,29 @@
 package be.iminds.iot.robot.youbot.ros;
 
+import java.util.Map;
+
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.Node;
 import org.ros.node.NodeMain;
 
-import be.iminds.iot.robot.api.Arm;
-import be.iminds.iot.robot.api.OmniDirectional;
-
-@Component(service = {NodeMain.class})
+@Component(service = {NodeMain.class},
+	name="be.iminds.iot.robot.youbot.ros.Youbot",
+	configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class YoubotRosController extends AbstractNodeMain {
 
-	private Arm arm;
-	private OmniDirectional base;
+	private ArmImpl arm;
+	private BaseImpl base;
 	
 	private BundleContext context;
 	
 	@Activate
-	void activate(BundleContext context){
+	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
 	}
 	
@@ -36,7 +38,10 @@ public class YoubotRosController extends AbstractNodeMain {
 
 		// this brings online arm and base services
 		arm = new ArmImpl(context, connectedNode);
+		arm.register();
+		
 		base = new BaseImpl(context, connectedNode);
+		base.register();
 	}
 	
 	@Override
@@ -45,6 +50,9 @@ public class YoubotRosController extends AbstractNodeMain {
 			base.stop();
 			arm.reset().getValue();
 		} catch(Exception e){}
+		
+		arm.unregister();
+		base.unregister();
 	}
 
 }

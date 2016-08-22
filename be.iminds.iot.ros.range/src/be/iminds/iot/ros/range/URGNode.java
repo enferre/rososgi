@@ -10,5 +10,9 @@ import be.iminds.iot.ros.util.NativeRosNode;
 		configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class URGNode extends NativeRosNode {
 
+	public URGNode(){
+		super("urg_node","urg_node");
+	}
+	
 }
 

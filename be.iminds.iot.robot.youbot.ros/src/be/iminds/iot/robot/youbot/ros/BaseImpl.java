@@ -5,6 +5,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 import org.ros.node.ConnectedNode;
@@ -16,6 +17,9 @@ import geometry_msgs.Twist;
 
 public class BaseImpl implements OmniDirectional {
 
+	private final BundleContext context;
+	private ServiceRegistration registration;
+	
 	private final Publisher<geometry_msgs.Twist> pTwist;
 	
 	private Deferred<OmniDirectional> deferred = null;
@@ -24,6 +28,8 @@ public class BaseImpl implements OmniDirectional {
 	
 	public BaseImpl(BundleContext context,
 			ConnectedNode node){
+		this.context = context;
+		
 		this.pTwist = node.newPublisher("/cmd_vel", geometry_msgs.Twist._TYPE);
 		
 		// TODO separate service for wheel joints?
@@ -31,7 +37,16 @@ public class BaseImpl implements OmniDirectional {
 		
 		// TODO expose odometry information?
 		
-		context.registerService(OmniDirectional.class, this, null);
+	}
+	
+	public void register(){
+		registration = 	context.registerService(OmniDirectional.class, this, null);
+	}
+	
+	public void unregister(){
+		if(registration != null){
+			registration.unregister();
+		}
 	}
 
 	@Override

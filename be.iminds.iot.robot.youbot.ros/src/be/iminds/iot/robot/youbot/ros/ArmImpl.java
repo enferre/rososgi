@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 import org.ros.message.MessageFactory;
@@ -34,6 +35,9 @@ import be.iminds.iot.robot.api.JointValue.Type;
 
 public class ArmImpl implements Arm {
 
+	private final BundleContext context;
+	private final List<ServiceRegistration> registrations = new ArrayList<>();
+	
 	private final List<JointImpl> joints;
 	private final Gripper gripper;
 	
@@ -80,7 +84,8 @@ public class ArmImpl implements Arm {
 	
 	public ArmImpl(BundleContext context,
 			ConnectedNode node){
-	
+		this.context = context;
+		
 		this.factory = node.getTopicMessageFactory();
 		// commands for arm joints
 		this.pPos = node.newPublisher("/arm_1/arm_controller/position_command", brics_actuator.JointPositions._TYPE);
@@ -123,7 +128,7 @@ public class ArmImpl implements Arm {
 		subscriber.addMessageListener(new MessageListener<sensor_msgs.JointState>() {
 			@Override
 			public void onNewMessage(sensor_msgs.JointState jointState) {
-				// update JointImpl internal state
+				// update JointImpl internal state1
 				for(int i=0;i<jointState.getName().size();i++){
 					String name = jointState.getName().get(i);
 					JointImpl joint = getJoint(name);
@@ -155,15 +160,29 @@ public class ArmImpl implements Arm {
 			}
 		});
 		
+
+	}
+	
+	public void register(){
 		// register OSGi services
 		for(Joint joint : joints){
 			Dictionary<String, Object> properties = new Hashtable<>();
 			properties.put("joint.name", joint.getName());
-			context.registerService(Joint.class, joint, properties);
+			ServiceRegistration rJoint = context.registerService(Joint.class, joint, properties);
+			registrations.add(rJoint);
 		}
 		
-		context.registerService(Gripper.class, gripper, null);
-		context.registerService(Arm.class, this, null);
+		ServiceRegistration rGripper = context.registerService(Gripper.class, gripper, null);
+		registrations.add(rGripper);
+		ServiceRegistration rArm = context.registerService(Arm.class, this, null);
+		registrations.add(rArm);
+	}
+	
+	public void unregister(){
+		for(ServiceRegistration r : registrations){
+			r.unregister();
+		}
+		registrations.clear();
 	}
 	
 	@Override
