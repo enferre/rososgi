@@ -11,5 +11,5 @@
 	
 -runproperties.vrep: \
 	ros.core.native=true,\
-	vrep.dir=/opt/vrep-3.3.0,\
-	vrep.scene=youbot_fetch_can.ttt
+	vrep.dir=/opt/vrep-3.3.1,\
+	vrep.scene=youbot_test.ttt

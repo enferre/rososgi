@@ -2,7 +2,6 @@ package be.iminds.iot.ros.api;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Map;
 
 public interface Ros {
 

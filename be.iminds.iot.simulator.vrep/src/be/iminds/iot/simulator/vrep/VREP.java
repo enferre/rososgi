@@ -88,6 +88,10 @@ public class VREP implements Simulator {
 		}
 	}
 	
+	public void start(){
+		start(false);
+	}
+	
 	@Override
 	public void start(boolean sync) {
 		vrep.simxSynchronous(clientID, sync);
