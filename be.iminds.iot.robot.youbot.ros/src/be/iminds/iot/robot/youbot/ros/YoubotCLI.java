@@ -12,6 +12,8 @@ import be.iminds.iot.robot.api.OmniDirectional;
 	"osgi.command.function=baseTest",
 	"osgi.command.function=reset",
 	"osgi.command.function=candle",
+	"osgi.command.function=open",
+	"osgi.command.function=close",
 	"osgi.command.function=position",
 	"osgi.command.function=velocity",
 	"osgi.command.function=torque",
@@ -76,6 +78,17 @@ public class YoubotCLI {
 		arm.stop();
 	}
 	
+	public void open(float opening){
+		arm.openGripper(opening);
+	}
+	
+	public void open(){
+		arm.openGripper(0.0228f);
+	}
+	
+	public void close(){
+		arm.closeGripper();
+	}
 	
 	@Reference
 	void setArm(Arm arm){
