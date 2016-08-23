@@ -349,6 +349,11 @@ public class ArmImpl implements Arm {
 	}
 
 	@Override
+	public Promise<Arm> openGripper() {
+		return openGripper(positionMax[5]*2);
+	}
+	
+	@Override
 	public Promise<Arm> openGripper(float opening) {
 		List<JointValue> positions = new ArrayList<>();
 		positions.add(new JointValue(config[5], Type.POSITION, opening/2));
@@ -431,6 +436,11 @@ public class ArmImpl implements Arm {
 				.collect(Collectors.toList()));
 	}
 
+	
+	@Override
+	public Promise<Arm> stop(int joint) {
+		return setPosition(joint, getState().get(joint).position);
+	}
 	
 	private class Target {
 		

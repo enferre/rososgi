@@ -26,6 +26,8 @@ public interface Arm extends Robot {
 	Promise<Arm> setTorques(float... torque);
 
 
+	Promise<Arm> openGripper();
+	
 	Promise<Arm> openGripper(float opening);
 	
 	Promise<Arm> closeGripper();
@@ -39,4 +41,6 @@ public interface Arm extends Robot {
 	
 	
 	Promise<Arm> reset();
+	
+	Promise<Arm> stop(int joint);
 }

@@ -83,7 +83,7 @@ public class YoubotCLI {
 	}
 	
 	public void open(){
-		arm.openGripper(0.0228f);
+		arm.openGripper();
 	}
 	
 	public void close(){

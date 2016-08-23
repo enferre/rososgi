@@ -1,3 +1,5 @@
+aiolos.version='[0.6.0,0.7.0)'
+
 -runfw: org.eclipse.concierge
 
 -runbundles.core: \
@@ -10,6 +12,10 @@
 	org.apache.felix.log;version='[1.0.1,1.0.2)',\
 	org.apache.felix.metatype;version='[1.0.10,1.1)',\
 	org.apache.felix.scr;version='[1.8.2,1.8.3)',\
+	org.apache.felix.http.api;version='[2.3.2,2.4)',\
+	org.apache.felix.http.jetty;version='[2.3.2,2.4)',\
+	org.apache.felix.http.servlet-api;version='[1.0.1,1.1)',\
+	org.apache.felix.http.whiteboard;version='[2.3.2,2.4)',\
 	com.google.guava;version='[12.0,13.0)',\
 	org.jboss.netty;version='[3.5,4)',\
 	org.apache.commons.logging;version='[1.1,2)',\
@@ -29,7 +35,7 @@
 	org.ros.rosjava_messages.std_msgs;version='[0.5.9,0.6)',\
 	org.ros.rosjava_messages.geometry_msgs;version='[1.11.7,1.11.8)',\
 	org.ros.rosjava_messages.sensor_msgs;version='[1.11.7,1.11.8)',\
-	be.iminds.iot.ros.core;version=latest,\
+	be.iminds.iot.ros.core;version=latest
 	
 	
 #	be.iminds.iot.ros.test.pub;version=latest,\
@@ -38,8 +44,10 @@
 	
 	
 -runsystempackages:\
+	javax.naming,\
 	javax.net,\
 	javax.net.ssl,\
+	javax.sql,\
 	javax.xml,\
 	javax.xml.parsers,\
 	javax.xml.namespace,\
@@ -49,4 +57,16 @@
 	org.xml.sax,\
 	org.xml.sax.ext,\
 	org.xml.sax.helpers,\
-	org.w3c.dom
+	org.w3c.dom,\
+	javax.annotation,\
+	javax.annotation.meta,\
+	javax.management,\
+	javax.management.modelmbean,\
+	javax.management.remote,\
+	javax.security.auth,\
+	javax.security.cert,\
+	javax.imageio,\
+	javax.imageio.stream,\
+	javax.imageio.plugins.jpeg,\
+	javax.tools
+	
