@@ -24,7 +24,8 @@ public class InputServlet extends HttpServlet {
 	private Arm arm;
 	private OmniDirectional base;
 	
-	private float velocity = 0.5f;
+	private float velocity = 0.2f;
+	private float angular = 0.4f;
 	
 	private float vx = 0;
 	private float vy = 0;
@@ -50,36 +51,35 @@ public class InputServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String type = request.getParameter("type");
 		String key = request.getParameter("key");
-		
 		// control base
 		if(type.equals("keydown")){
 			switch(key){
 				case "ArrowUp":
 				case "w":
-					vy = velocity;
+					vx = velocity;
 					base.move(vx, vy, va);
 					break;
 				case "ArrowDown":
 				case "s":
-					vy = -velocity;
+					vx = -velocity;
 					base.move(vx, vy, va);
 					break;
 				case "ArrowLeft":
 				case "a":
-					vx = velocity;
+					vy = velocity;
 					base.move(vx, vy, va);
 					break;
 				case "ArrowRight":
 				case "d":
-					vx = -velocity;
+					vy = -velocity;
 					base.move(vx, vy, va);
 					break;
 				case "q":
-					va = velocity;
+					va = angular;
 					base.move(vx, vy, va);
 					break;
 				case "e":
-					va = -velocity;
+					va = -angular;
 					base.move(vx, vy, va);
 					break;
 				case "t":
@@ -118,6 +118,18 @@ public class InputServlet extends HttpServlet {
 				case "n":
 					arm.closeGripper();
 					break;	
+				case "Enter":
+					// grip action
+					arm.openGripper()
+						.then(p -> arm.setPosition(0, 2.92f))
+						.then(p -> arm.setPosition(4, 2.875f))
+						.then(p -> arm.setPositions(2.92f, 1.76f, -1.37f, 2.55f))
+						.then(p -> arm.closeGripper())
+						.then(p -> arm.setPositions(0.01f, 0.8f))
+						.then(p -> arm.setPositions(0.01f, 0.8f, -1f, 2.9f))
+						.then(p -> arm.openGripper())
+						.then(p -> arm.setPosition(1, -1.3f))
+						.then(p -> arm.reset());
 					
 			}
 		} else if(type.equals("keyup")){
@@ -126,14 +138,14 @@ public class InputServlet extends HttpServlet {
 				case "w":
 				case "ArrowDown":
 				case "s":
-					vy = 0;
+					vx = 0;
 					base.move(vx, vy, va);
 					break;
 				case "ArrowLeft":
 				case "a":
 				case "ArrowRight":
 				case "d":
-					vx = 0;
+					vy = 0;
 					base.move(vx, vy, va);
 					break;
 				case "q":
@@ -143,23 +155,23 @@ public class InputServlet extends HttpServlet {
 					break;
 				case "t":
 				case "g":
-					arm.stop(0);
+					arm.setVelocity(0, 0).then(p -> arm.stop(0));
 					break;
 				case "y":
 				case "h":
-					arm.stop(1);
+					arm.setVelocity(1, 0).then(p -> arm.stop(1));
 					break;
 				case "u":
 				case "j":
-					arm.stop(2);
+					arm.setVelocity(2, 0).then(p -> arm.stop(2));
 					break;
 				case "i":
 				case "k":
-					arm.stop(3);
+					arm.setVelocity(3, 0).then(p -> arm.stop(3));
 					break;
 				case "o":
 				case "l":
-					arm.stop(4);
+					arm.setVelocity(4, 0).then(p -> arm.stop(4));
 					break;
 			}
 		}
