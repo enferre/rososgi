@@ -66,11 +66,17 @@ public class VREP implements Simulator {
 			if(d!=null){
 				dir = d;
 			}
+
+			boolean headless = false;
+			String h = context.getProperty("vrep.headless");
+			if(h!=null){
+				headless = Boolean.parseBoolean(h);
+			}
 			
 			try {
 				// add vrep dir to LD_LIBRARY_PATH and start vrep executable
 				File file = new File(dir);
-				ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep.sh");
+				ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep", headless ? "-h" : "");
 				builder.environment().put("LD_LIBRARY_PATH", builder.environment().get("LD_LIBRARY_PATH")+":"+file.getAbsolutePath());
 				builder.inheritIO();
 				process = builder.start();
