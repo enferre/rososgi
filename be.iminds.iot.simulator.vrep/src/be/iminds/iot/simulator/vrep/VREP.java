@@ -16,6 +16,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
+import be.iminds.iot.simulator.api.Orientation;
 import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
 import coppelia.FloatWA;
@@ -32,7 +33,10 @@ import coppelia.remoteApi;
 		"osgi.command.function=tick",
 		"osgi.command.function=loadScene",
 		"osgi.command.function=getPosition",
-		"osgi.command.function=setPosition"})
+		"osgi.command.function=setPosition",
+		"osgi.command.function=getOrientation",
+		"osgi.command.function=setOrientation",		
+		})
 public class VREP implements Simulator {
 	
 	private remoteApi vrep; 
@@ -108,7 +112,7 @@ public class VREP implements Simulator {
 	}
 	
 	@Override
-	public void start(boolean sync) {
+	public synchronized void start(boolean sync) {
 		configure();
 		
 		vrep.simxSynchronous(clientID, sync);
@@ -124,11 +128,13 @@ public class VREP implements Simulator {
 			for(String name : objectHandles.keySet()){
 				if(name.equals("youBot")){
 					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
-					c.update(new Hashtable());
+					Hashtable<String, Object> t = new Hashtable<>();
+					c.update(t);
 					configurations.add(c);
 				} else if(name.equals("hokuyo")){
 					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
-					c.update(new Hashtable());
+					Hashtable<String, Object> t = new Hashtable<>();
+					c.update(t);
 					configurations.add(c);
 				}
 			}
@@ -138,18 +144,19 @@ public class VREP implements Simulator {
 	}
 
 	@Override
-	public void pause() {
+	public synchronized void pause() {
 		deconfigure();
 		
 		vrep.simxPauseSimulation(clientID, vrep.simx_opmode_blocking);
 	}
 
 	@Override
-	public void stop() {
-		deconfigure();
-		
+	public synchronized void stop() {
 		// stop the simulation:
 		vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking);
+		
+		deconfigure();
+
 	}
 
 	private void deconfigure(){
@@ -237,6 +244,64 @@ public class VREP implements Simulator {
 		setPosition(object, relativeTo, new Position(x, y, z));
 	}
 	
+	@Override
+	public Orientation getOrientation(String object) {
+		return getOrientation(object, null);
+	}
+
+	@Override
+	public void setOrientation(String object, Orientation o) {
+		setOrientation(object, null, o);
+	}
+
+	@Override
+	public Orientation getOrientation(String object, String relativeTo) {
+		Integer objectHandle = objectHandles.get(object);
+		if(objectHandle == null){
+			System.out.println("Object "+object+" not found...");
+			return null;
+		}
+		Integer relativeToObjectHandle = objectHandles.get(relativeTo);
+		if(relativeToObjectHandle == null){
+			relativeToObjectHandle = new Integer(-1);
+		}
+		
+		FloatWA orientation = new FloatWA(3);
+		
+		vrep.simxGetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking);
+		
+		return new Orientation(orientation.getArray()[0], orientation.getArray()[1], orientation.getArray()[2]);
+	}
+
+	@Override
+	public void setOrientation(String object, String relativeTo, Orientation o) {
+		Integer objectHandle = objectHandles.get(object);
+		if(objectHandle == null){
+			System.out.println("Object "+object+" not found...");
+			return;
+		}
+		Integer relativeToObjectHandle = objectHandles.get(relativeTo);
+		if(relativeToObjectHandle == null){
+			relativeToObjectHandle = new Integer(-1);
+		}
+		
+		FloatWA orientation = new FloatWA(3);
+		orientation.getArray()[0]= o.alfa;
+		orientation.getArray()[1]= o.beta;
+		orientation.getArray()[2]= o.gamma;
+		
+		vrep.simxSetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking);
+
+	}
+	
+	public void setOrientation(String object, float a, float b, float g) {
+		setOrientation(object, new Orientation(a, b, g));
+	}
+	
+	public void setOrientation(String object, String relativeTo, float a, float b, float g) {
+		setOrientation(object, relativeTo, new Orientation(a, b, g));
+	}
+	
 	private void loadHandles(){
 		objectHandles.clear();
 		
@@ -256,4 +321,5 @@ public class VREP implements Simulator {
 			}
 		}		
 	}
+
 }

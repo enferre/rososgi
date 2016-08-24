@@ -25,4 +25,15 @@ public interface Simulator {
 	Position getPosition(String object, String relativeTo);
 	
 	void setPosition(String object, String relativeTo, Position p);
+	
+	// get and set orientation of objects
+	
+	Orientation getOrientation(String object);
+	
+	void setOrientation(String object, Orientation o);
+	
+	Orientation getOrientation(String object, String relativeTo);
+	
+	void setOrientation(String object, String relativeTo, Orientation o);
+	
 }
