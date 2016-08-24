@@ -48,7 +48,7 @@ public class YoubotRosController extends AbstractNodeMain {
 	public void onShutdown(Node node) {
 		try {
 			base.stop();
-			arm.reset().getValue();
+			arm.reset();
 		} catch(Exception e){}
 		
 		arm.unregister();
