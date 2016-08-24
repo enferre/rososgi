@@ -65,7 +65,7 @@ public class ArmImpl implements Arm {
 	private float[] positionMin = new float[]{
 		0.0100693f, 
 		0.0100693f, 
-		-5.02655f,
+		-5.02654f,
 		0.0221239f, 
 		0.11062f, 
 		0f,      
@@ -256,7 +256,7 @@ public class ArmImpl implements Arm {
 			pp.add(pos);
 		}
 		msg.setPositions(pp);
-		
+				
 		if(arm)
 			pPos.publish(msg);
 		if(gripper)
@@ -293,7 +293,7 @@ public class ArmImpl implements Arm {
 		for(JointValue velocity : velocities){
 			brics_actuator.JointValue vel = factory.newFromType(brics_actuator.JointValue._TYPE);
 			vel.setJointUri(velocity.joint);
-			vel.setUnit("rad/s");
+			vel.setUnit("s^-1 rad");
 			
 			JointDescription d = getJoint(velocity.joint).getDescription();
 			velocity.value = clamp(velocity.value, d.positionMin, d.positionMax);
@@ -348,9 +348,11 @@ public class ArmImpl implements Arm {
 //		return deferred.getPromise();
 	}
 
+	
+	// open and closed is inverted when using festo finger grippers :-)
 	@Override
 	public Promise<Arm> openGripper() {
-		return openGripper(positionMax[5]*2);
+		 return openGripper(0);
 	}
 	
 	@Override
@@ -363,7 +365,10 @@ public class ArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> closeGripper() {
-		return openGripper(0);
+		openGripper(positionMax[5]*2);
+		// TODO this is a hack to make it work in simulation 
+		// where the end positions are not reached during grabbing
+		return waitFor(2000);
 	}
 	
 	@Override
