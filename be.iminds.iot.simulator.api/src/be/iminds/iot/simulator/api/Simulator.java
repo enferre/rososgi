@@ -36,4 +36,7 @@ public interface Simulator {
 	
 	void setOrientation(String object, String relativeTo, Orientation o);
 	
+	// check collisions
+	boolean checkCollisions(String object);
+	
 }

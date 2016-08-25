@@ -19,11 +19,20 @@ import org.osgi.service.component.annotations.Reference;
 import be.iminds.iot.simulator.api.Orientation;
 import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
+import coppelia.BoolW;
 import coppelia.FloatWA;
+import coppelia.IntW;
 import coppelia.IntWA;
 import coppelia.StringWA;
 import coppelia.remoteApi;
 
+/**
+ * Simulator implementation for the VREP simulator
+ * 
+ * @author tverbele
+ *
+ */
+//TODO atm all function calls are done in blockig mode, some might be done better using the streaming mode?
 @Component(
 		immediate=true,
 		property = {"osgi.command.scope=vrep", 
@@ -35,7 +44,8 @@ import coppelia.remoteApi;
 		"osgi.command.function=getPosition",
 		"osgi.command.function=setPosition",
 		"osgi.command.function=getOrientation",
-		"osgi.command.function=setOrientation",		
+		"osgi.command.function=setOrientation",
+		"osgi.command.function=checkCollisions"		
 		})
 public class VREP implements Simulator {
 	
@@ -307,6 +317,7 @@ public class VREP implements Simulator {
 	public void setOrientation(String object, String relativeTo, float a, float b, float g) {
 		setOrientation(object, relativeTo, new Orientation(a, b, g));
 	}
+
 	
 	private void loadHandles(){
 		objectHandles.clear();
@@ -325,7 +336,19 @@ public class VREP implements Simulator {
 				int handle = handles[i];
 				this.objectHandles.put(name, handle);
 			}
-		}		
+		}
+	}
+
+	@Override
+	public boolean checkCollisions(String object) {
+		IntW handle = new IntW(0);
+		int ret = vrep.simxGetCollisionHandle(clientID, object, handle, vrep.simx_opmode_blocking);
+		if (ret==vrep.simx_return_ok){
+			BoolW collision = new BoolW(false);
+			vrep.simxReadCollision(clientID, handle.getValue(), collision, vrep.simx_opmode_blocking);
+			return collision.getValue();
+		}
+		return false;
 	}
 
 }
