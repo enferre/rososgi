@@ -1,9 +1,0 @@
-Bundle-Version: 0.1.0
--buildpath: \
-	osgi.core;version=5.0,\
-	osgi.enterprise;version=5.0,\
-	org.ros.rosjava,\
-	org.ros.rosjava.message_generation,\
-	org.ros.rosjava_messages.geometry_msgs,\
-	be.iminds.iot.ros.api;version=latest
--sub: *.bnd
