@@ -4,6 +4,6 @@
 	osgi.enterprise;version=5.0,\
 	be.iminds.iot.robot.api;version=latest,\
 	org.apache.felix.http.servlet-api
-Bundle-Version: 0.1.0
+Bundle-Version: 0.2.0
 -includeresource: res=resources
 Private-Package: be.iminds.iot.robot.input
