@@ -49,6 +49,8 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 	private UUID id = UUID.randomUUID();
 	private volatile Frame currentFrame = null;
 	
+	private Subscriber<Image> subscriber;
+	
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("camera/subscriber");
@@ -56,7 +58,7 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		Subscriber<Image> subscriber = connectedNode.newSubscriber(name+"/image_raw",
+		subscriber = connectedNode.newSubscriber(name+"/image_raw",
 				Image._TYPE);
 		subscriber.addMessageListener(new MessageListener<Image>() {
 			@Override
@@ -111,6 +113,8 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 			registration.unregister();
 			currentFrame = null;
 		}
+		
+		subscriber.shutdown();
 	}
 	
 	@Override

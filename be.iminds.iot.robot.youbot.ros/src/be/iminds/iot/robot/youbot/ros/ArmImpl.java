@@ -41,11 +41,15 @@ public class ArmImpl implements Arm {
 	private final List<JointImpl> joints;
 	private final Gripper gripper;
 	
+	
+	private final ConnectedNode node;
 	private final MessageFactory factory;
-	private final Publisher<brics_actuator.JointPositions> pPos;
-	private final Publisher<brics_actuator.JointVelocities> pVel;
-	private final Publisher<brics_actuator.JointTorques> pTorq;
-	private final Publisher<brics_actuator.JointPositions> pGrip;
+	private Publisher<brics_actuator.JointPositions> pPos;
+	private Publisher<brics_actuator.JointVelocities> pVel;
+	private Publisher<brics_actuator.JointTorques> pTorq;
+	private Publisher<brics_actuator.JointPositions> pGrip;
+	
+	private Subscriber<sensor_msgs.JointState> subscriber; 
 
 	private final Map<Target, Deferred<Arm>> targets = new ConcurrentHashMap<>();
 	
@@ -85,16 +89,10 @@ public class ArmImpl implements Arm {
 	public ArmImpl(BundleContext context,
 			ConnectedNode node){
 		this.context = context;
+		this.node = node;
 		
 		this.factory = node.getTopicMessageFactory();
-		// commands for arm joints
-		this.pPos = node.newPublisher("/arm_1/arm_controller/position_command", brics_actuator.JointPositions._TYPE);
-		this.pVel = node.newPublisher("/arm_1/arm_controller/velocity_command", brics_actuator.JointVelocities._TYPE);;
-		// TODO torque_command is not supported atm
-		this.pTorq = node.newPublisher("/arm_1/arm_controller/torque_command", brics_actuator.JointTorques._TYPE);;
-		
-		// commands for gripper joints
-		this.pGrip = node.newPublisher("/arm_1/gripper_controller/position_command", brics_actuator.JointPositions._TYPE);
+
 		
 		// joints
 		joints = new ArrayList<>();
@@ -120,10 +118,20 @@ public class ArmImpl implements Arm {
 				closeGripper();
 			}
 		};
+	}
+	
+	public void register(){
+		// commands for arm joints
+		this.pPos = node.newPublisher("/arm_1/arm_controller/position_command", brics_actuator.JointPositions._TYPE);
+		this.pVel = node.newPublisher("/arm_1/arm_controller/velocity_command", brics_actuator.JointVelocities._TYPE);;
+		// TODO torque_command is not supported atm
+		this.pTorq = node.newPublisher("/arm_1/arm_controller/torque_command", brics_actuator.JointTorques._TYPE);;
 		
+		// commands for gripper joints
+		this.pGrip = node.newPublisher("/arm_1/gripper_controller/position_command", brics_actuator.JointPositions._TYPE);
 		
 		// add subscriber
-		Subscriber<sensor_msgs.JointState> subscriber = node.newSubscriber("/joint_states",
+		subscriber = node.newSubscriber("/joint_states",
 				sensor_msgs.JointState._TYPE);
 		subscriber.addMessageListener(new MessageListener<sensor_msgs.JointState>() {
 			@Override
@@ -160,10 +168,6 @@ public class ArmImpl implements Arm {
 			}
 		});
 		
-
-	}
-	
-	public void register(){
 		// register OSGi services
 		for(Joint joint : joints){
 			Dictionary<String, Object> properties = new Hashtable<>();
@@ -183,6 +187,12 @@ public class ArmImpl implements Arm {
 			r.unregister();
 		}
 		registrations.clear();
+		
+		pGrip.shutdown();
+		pPos.shutdown();
+		pVel.shutdown();
+		pTorq.shutdown();
+		subscriber.shutdown();
 	}
 	
 	@Override

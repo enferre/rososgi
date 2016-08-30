@@ -20,7 +20,9 @@ public class BaseImpl implements OmniDirectional {
 	private final BundleContext context;
 	private ServiceRegistration registration;
 	
-	private final Publisher<geometry_msgs.Twist> pTwist;
+	private final ConnectedNode node;
+	
+	private Publisher<geometry_msgs.Twist> pTwist;
 	
 	private Deferred<OmniDirectional> deferred = null;
 	private Timer timer = new Timer();
@@ -29,8 +31,7 @@ public class BaseImpl implements OmniDirectional {
 	public BaseImpl(BundleContext context,
 			ConnectedNode node){
 		this.context = context;
-		
-		this.pTwist = node.newPublisher("/cmd_vel", geometry_msgs.Twist._TYPE);
+		this.node = node;
 		
 		// TODO separate service for wheel joints?
 		// can you even control those individually using ROS interface?
@@ -40,6 +41,8 @@ public class BaseImpl implements OmniDirectional {
 	}
 	
 	public void register(){
+		pTwist = node.newPublisher("/cmd_vel", geometry_msgs.Twist._TYPE);
+		
 		registration = 	context.registerService(OmniDirectional.class, this, null);
 	}
 	
@@ -47,6 +50,8 @@ public class BaseImpl implements OmniDirectional {
 		if(registration != null){
 			registration.unregister();
 		}
+		
+		pTwist.shutdown();
 	}
 
 	@Override

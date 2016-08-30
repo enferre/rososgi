@@ -41,6 +41,8 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	private UUID id = UUID.randomUUID();
 	private volatile be.iminds.iot.sensor.api.LaserScan currentScan = null;
 	
+	private Subscriber<LaserScan> subscriber;
+	
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("laserscan/subscriber");
@@ -48,7 +50,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		Subscriber<LaserScan> subscriber = connectedNode.newSubscriber("/scan",
+		subscriber = connectedNode.newSubscriber("/scan",
 				LaserScan._TYPE);
 		subscriber.addMessageListener(new MessageListener<LaserScan>() {
 			@Override
@@ -98,6 +100,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 			registration.unregister();
 			currentScan = null;
 		}
+		subscriber.shutdown();
 	}
 	
 	
