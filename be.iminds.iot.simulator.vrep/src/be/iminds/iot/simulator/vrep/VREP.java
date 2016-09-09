@@ -129,12 +129,11 @@ public class VREP implements Simulator {
 	
 	@Override
 	public synchronized void start(boolean sync) {
-		configure();
-		
 		vrep.simxSynchronous(clientID, sync);
 		
 		vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking);
 		
+		configure();
 	}
 	
 	private void configure(){
@@ -161,9 +160,9 @@ public class VREP implements Simulator {
 
 	@Override
 	public synchronized void pause() {
-		deconfigure();
-		
 		vrep.simxPauseSimulation(clientID, vrep.simx_opmode_blocking);
+		
+		deconfigure();
 	}
 
 	@Override
@@ -172,7 +171,6 @@ public class VREP implements Simulator {
 		vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking);
 		
 		deconfigure();
-
 	}
 
 	private void deconfigure(){
