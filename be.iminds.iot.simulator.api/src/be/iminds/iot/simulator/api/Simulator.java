@@ -1,5 +1,7 @@
 package be.iminds.iot.simulator.api;
 
+import java.util.concurrent.TimeoutException;
+
 public interface Simulator {
 
 	// start/stop/pause simulator
@@ -10,7 +12,7 @@ public interface Simulator {
 	
 	void stop();
 	
-	void tick();
+	void tick() throws TimeoutException;
 	
 	// load scene
 	

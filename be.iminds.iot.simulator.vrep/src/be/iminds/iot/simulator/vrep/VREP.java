@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.Configuration;
@@ -129,9 +130,9 @@ public class VREP implements Simulator {
 	
 	@Override
 	public synchronized void start(boolean sync) {
-		vrep.simxSynchronous(clientID, sync);
+		checkOk(vrep.simxSynchronous(clientID, sync));
 		
-		vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking);
+		checkOk(vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking));
 		
 		configure();
 	}
@@ -160,17 +161,17 @@ public class VREP implements Simulator {
 
 	@Override
 	public synchronized void pause() {
-		vrep.simxPauseSimulation(clientID, vrep.simx_opmode_blocking);
-		
 		deconfigure();
+
+		checkOk(vrep.simxPauseSimulation(clientID, vrep.simx_opmode_blocking));
 	}
 
 	@Override
 	public synchronized void stop() {
-		// stop the simulation:
-		vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking);
-		
 		deconfigure();
+
+		// stop the simulation:
+		checkOk(vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking));
 	}
 
 	private void deconfigure(){
@@ -185,8 +186,12 @@ public class VREP implements Simulator {
 	}
 	
 	@Override
-	public void tick() {
-		vrep.simxSynchronousTrigger(clientID);
+	public void tick() throws TimeoutException {
+		int ret = vrep.simxSynchronousTrigger(clientID);
+		if(ret > 1){
+			throw new TimeoutException();
+		}
+		checkOk(ret);
 	}
 
 	@Override
@@ -196,7 +201,7 @@ public class VREP implements Simulator {
 			System.out.println("File "+file+" does not exist...");
 			return;
 		}
-		vrep.simxLoadScene(clientID, f.getAbsolutePath(), 0, vrep.simx_opmode_blocking);
+		checkOk(vrep.simxLoadScene(clientID, f.getAbsolutePath(), 0, vrep.simx_opmode_blocking));
 		
 		loadHandles();
 	}
@@ -225,7 +230,7 @@ public class VREP implements Simulator {
 		
 		FloatWA position = new FloatWA(3);
 		
-		vrep.simxGetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, vrep.simx_opmode_blocking);
+		checkOk(vrep.simxGetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, vrep.simx_opmode_blocking));
 		
 		return new Position(position.getArray()[0], position.getArray()[1], position.getArray()[2]);
 	}
@@ -247,7 +252,7 @@ public class VREP implements Simulator {
 		position.getArray()[1]= p.y;
 		position.getArray()[2]= p.z;
 		
-		vrep.simxSetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, vrep.simx_opmode_blocking);
+		checkOk(vrep.simxSetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, vrep.simx_opmode_blocking));
 	}
 
 	public void setPosition(String object, float x, float y, float z) {
@@ -282,7 +287,7 @@ public class VREP implements Simulator {
 		
 		FloatWA orientation = new FloatWA(3);
 		
-		vrep.simxGetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking);
+		checkOk(vrep.simxGetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking));
 		
 		return new Orientation(orientation.getArray()[0], orientation.getArray()[1], orientation.getArray()[2]);
 	}
@@ -304,7 +309,7 @@ public class VREP implements Simulator {
 		orientation.getArray()[1]= o.beta;
 		orientation.getArray()[2]= o.gamma;
 		
-		vrep.simxSetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking);
+		checkOk(vrep.simxSetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking));
 
 	}
 	
@@ -325,28 +330,33 @@ public class VREP implements Simulator {
 		IntWA intData = new IntWA(1);
 		FloatWA floatData = new FloatWA(1);
 		
-		int ret = vrep.simxGetObjectGroupData(clientID, vrep.sim_appobj_object_type, 0, objectHandles, intData, floatData, objectNames, vrep.simx_opmode_blocking);
-		if (ret==vrep.simx_return_ok){
-			int[] handles = objectHandles.getArray();
-			String[] names = objectNames.getArray();
-			for(int i=0;i<handles.length;i++){
-				String name = names[i];
-				int handle = handles[i];
-				this.objectHandles.put(name, handle);
-			}
+		checkOk(vrep.simxGetObjectGroupData(clientID, vrep.sim_appobj_object_type, 0, objectHandles, intData, floatData, objectNames, vrep.simx_opmode_blocking));
+		
+		int[] handles = objectHandles.getArray();
+		String[] names = objectNames.getArray();
+		for(int i=0;i<handles.length;i++){
+			String name = names[i];
+			int handle = handles[i];
+			this.objectHandles.put(name, handle);
 		}
 	}
 
 	@Override
 	public boolean checkCollisions(String object) {
 		IntW handle = new IntW(0);
-		int ret = vrep.simxGetCollisionHandle(clientID, object, handle, vrep.simx_opmode_blocking);
-		if (ret==vrep.simx_return_ok){
-			BoolW collision = new BoolW(false);
-			vrep.simxReadCollision(clientID, handle.getValue(), collision, vrep.simx_opmode_blocking);
-			return collision.getValue();
-		}
-		return false;
+		
+		checkOk(vrep.simxGetCollisionHandle(clientID, object, handle, vrep.simx_opmode_blocking));
+		
+		BoolW collision = new BoolW(false);
+		vrep.simxReadCollision(clientID, handle.getValue(), collision, vrep.simx_opmode_blocking);
+		return collision.getValue();
+	
 	}
 
+	
+	private void checkOk(int ret){
+		if(ret > 3){
+			throw new RuntimeException("Failed to execute VREP call "+ret);
+		}
+	}
 }
