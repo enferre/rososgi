@@ -9,13 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
 
 import be.iminds.iot.simulator.api.Orientation;
 import be.iminds.iot.simulator.api.Position;
@@ -33,95 +28,19 @@ import coppelia.remoteApi;
  * @author tverbele
  *
  */
-//TODO atm all function calls are done in blockig mode, some might be done better using the streaming mode?
-@Component(
-		immediate=true,
-		property = {"osgi.command.scope=vrep", 
-		"osgi.command.function=start",
-		"osgi.command.function=pause",
-		"osgi.command.function=stop",
-		"osgi.command.function=tick",
-		"osgi.command.function=loadScene",
-		"osgi.command.function=getPosition",
-		"osgi.command.function=setPosition",
-		"osgi.command.function=getOrientation",
-		"osgi.command.function=setOrientation",
-		"osgi.command.function=checkCollisions"		
-		})
 public class VREP implements Simulator {
 	
-	private remoteApi vrep; 
+	private remoteApi server; 
 	private int clientID;
 	
 	private Map<String, Integer> objectHandles = new HashMap<>();
 	
-	private Process process;
-	private String dir = "/opt/vrep-3.3.1";
-	
 	private List<Configuration> configurations = new ArrayList<>();
 	private ConfigurationAdmin ca;
 	
-	@Reference
-	void setConfigurationAdmin(ConfigurationAdmin ca){
+	public VREP(remoteApi server, ConfigurationAdmin ca){
+		this.server = server;
 		this.ca = ca;
-	}
-	
-	@Activate
-	void activate(BundleContext context) throws Exception {
-		vrep = new remoteApi();
-		vrep.simxFinish(-1); // just in case, close all opened connections
-		clientID = vrep.simxStart("127.0.0.1",19997,true,true, 100,5);
-		if(clientID == -1){
-			// no vrep running ... try to launch a local vrep process
-			String d = context.getProperty("vrep.dir");
-			if(d!=null){
-				dir = d;
-			}
-
-			boolean headless = false;
-			String h = context.getProperty("vrep.headless");
-			if(h!=null){
-				headless = Boolean.parseBoolean(h);
-			}
-			
-			try {
-				// add vrep dir to LD_LIBRARY_PATH and start vrep executable
-				File file = new File(dir);
-				ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep", headless ? "-h" : "");
-				builder.environment().put("LD_LIBRARY_PATH", builder.environment().get("LD_LIBRARY_PATH")+":"+file.getAbsolutePath());
-				builder.inheritIO();
-				process = builder.start();
-			} catch(Exception ex){
-				System.err.println("Error launching VREP ");
-			}
-
-			int tries = 0;
-			while(clientID == -1 && tries++ < 60){
-				clientID = vrep.simxStart("127.0.0.1",19997,true,true, 1000, 5);
-			}
-
-		}
-		
-		if(clientID == -1){
-			System.out.println("Failed to connect to VREP");
-			throw new Exception("Failed to connect to VREP");
-		}
-		
-		String scene = context.getProperty("vrep.scene");
-		if(scene != null){
-			loadScene(scene);
-		} else {
-			loadHandles();
-		}
-	}
-	
-	@Deactivate
-	void deactivate(){
-		vrep.simxFinish(clientID);
-		
-		if(process!=null){
-			process.destroy();
-		}
 	}
 	
 	public void start(){
@@ -130,16 +49,14 @@ public class VREP implements Simulator {
 	
 	@Override
 	public synchronized void start(boolean sync) {
-		checkOk(vrep.simxSynchronous(clientID, sync));
+		checkOk(server.simxSynchronous(clientID, sync));
 		
-		checkOk(vrep.simxStartSimulation(clientID, vrep.simx_opmode_blocking));
+		checkOk(server.simxStartSimulation(clientID, server.simx_opmode_blocking));
 		
 		configure();
 	}
 	
-	private void configure(){
-		// TODO Should we configure the bundles registering OSGi services here?
-		// based on the present objects we could construct multiple configurations?
+	void configure(){
 		try {
 			for(String name : objectHandles.keySet()){
 				if(name.equals("youBot")){
@@ -163,7 +80,7 @@ public class VREP implements Simulator {
 	public synchronized void pause() {
 		deconfigure();
 
-		checkOk(vrep.simxPauseSimulation(clientID, vrep.simx_opmode_blocking));
+		checkOk(server.simxPauseSimulation(clientID, server.simx_opmode_blocking));
 	}
 
 	@Override
@@ -171,10 +88,10 @@ public class VREP implements Simulator {
 		deconfigure();
 
 		// stop the simulation:
-		checkOk(vrep.simxStopSimulation(clientID,vrep.simx_opmode_blocking));
+		checkOk(server.simxStopSimulation(clientID,server.simx_opmode_blocking));
 	}
 
-	private void deconfigure(){
+	void deconfigure(){
 		for(Configuration c : configurations){
 			try {
 				c.delete();
@@ -187,7 +104,7 @@ public class VREP implements Simulator {
 	
 	@Override
 	public void tick() throws TimeoutException {
-		int ret = vrep.simxSynchronousTrigger(clientID);
+		int ret = server.simxSynchronousTrigger(clientID);
 		if(ret > 1){
 			throw new TimeoutException();
 		}
@@ -201,7 +118,7 @@ public class VREP implements Simulator {
 			System.out.println("File "+file+" does not exist...");
 			return;
 		}
-		checkOk(vrep.simxLoadScene(clientID, f.getAbsolutePath(), 0, vrep.simx_opmode_blocking));
+		checkOk(server.simxLoadScene(clientID, f.getAbsolutePath(), 0, server.simx_opmode_blocking));
 		
 		loadHandles();
 	}
@@ -230,7 +147,7 @@ public class VREP implements Simulator {
 		
 		FloatWA position = new FloatWA(3);
 		
-		checkOk(vrep.simxGetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, vrep.simx_opmode_blocking));
+		checkOk(server.simxGetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, server.simx_opmode_blocking));
 		
 		return new Position(position.getArray()[0], position.getArray()[1], position.getArray()[2]);
 	}
@@ -252,7 +169,7 @@ public class VREP implements Simulator {
 		position.getArray()[1]= p.y;
 		position.getArray()[2]= p.z;
 		
-		checkOk(vrep.simxSetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, vrep.simx_opmode_blocking));
+		checkOk(server.simxSetObjectPosition(clientID, objectHandle, relativeToObjectHandle, position, server.simx_opmode_blocking));
 	}
 
 	public void setPosition(String object, float x, float y, float z) {
@@ -287,7 +204,7 @@ public class VREP implements Simulator {
 		
 		FloatWA orientation = new FloatWA(3);
 		
-		checkOk(vrep.simxGetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking));
+		checkOk(server.simxGetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, server.simx_opmode_blocking));
 		
 		return new Orientation(orientation.getArray()[0], orientation.getArray()[1], orientation.getArray()[2]);
 	}
@@ -309,7 +226,7 @@ public class VREP implements Simulator {
 		orientation.getArray()[1]= o.beta;
 		orientation.getArray()[2]= o.gamma;
 		
-		checkOk(vrep.simxSetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, vrep.simx_opmode_blocking));
+		checkOk(server.simxSetObjectOrientation(clientID, objectHandle, relativeToObjectHandle, orientation, server.simx_opmode_blocking));
 
 	}
 	
@@ -322,7 +239,7 @@ public class VREP implements Simulator {
 	}
 
 	
-	private void loadHandles(){
+	void loadHandles(){
 		objectHandles.clear();
 		
 		IntWA objectHandles = new IntWA(1);
@@ -330,7 +247,7 @@ public class VREP implements Simulator {
 		IntWA intData = new IntWA(1);
 		FloatWA floatData = new FloatWA(1);
 		
-		checkOk(vrep.simxGetObjectGroupData(clientID, vrep.sim_appobj_object_type, 0, objectHandles, intData, floatData, objectNames, vrep.simx_opmode_blocking));
+		checkOk(server.simxGetObjectGroupData(clientID, server.sim_appobj_object_type, 0, objectHandles, intData, floatData, objectNames, server.simx_opmode_blocking));
 		
 		int[] handles = objectHandles.getArray();
 		String[] names = objectNames.getArray();
@@ -345,15 +262,14 @@ public class VREP implements Simulator {
 	public boolean checkCollisions(String object) {
 		IntW handle = new IntW(0);
 		
-		checkOk(vrep.simxGetCollisionHandle(clientID, object, handle, vrep.simx_opmode_blocking));
+		checkOk(server.simxGetCollisionHandle(clientID, object, handle, server.simx_opmode_blocking));
 		
 		BoolW collision = new BoolW(false);
-		vrep.simxReadCollision(clientID, handle.getValue(), collision, vrep.simx_opmode_blocking);
+		server.simxReadCollision(clientID, handle.getValue(), collision, server.simx_opmode_blocking);
 		return collision.getValue();
 	
 	}
 
-	
 	private void checkOk(int ret){
 		if(ret > 3){
 			throw new RuntimeException("Failed to execute VREP call "+ret);
