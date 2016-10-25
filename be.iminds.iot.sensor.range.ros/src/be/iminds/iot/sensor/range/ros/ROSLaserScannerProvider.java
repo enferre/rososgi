@@ -5,6 +5,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 import org.osgi.framework.BundleContext;
@@ -38,7 +39,8 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	
 	private volatile List<SensorListener> listeners = new ArrayList<>();
 
-	private UUID id = UUID.randomUUID();
+	private String name;
+	private UUID id;
 	private volatile be.iminds.iot.sensor.api.LaserScan currentScan = null;
 	
 	private Subscriber<LaserScan> subscriber;
@@ -50,7 +52,8 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		subscriber = connectedNode.newSubscriber("/scan",
+		String topic = name.replaceAll(" ", "_").toLowerCase()+"/scan";
+		subscriber = connectedNode.newSubscriber(topic,
 				LaserScan._TYPE);
 		subscriber.addMessageListener(new MessageListener<LaserScan>() {
 			@Override
@@ -67,6 +70,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 					// register LaserScanner service
 					Dictionary<String, Object> properties = new Hashtable<>();
 					properties.put("id", id.toString());
+					properties.put("name", name);
 					registration = context.registerService(LaserScanner.class, ROSLaserScannerProvider.this, properties);
 				} else {
 					currentScan = s;
@@ -143,6 +147,12 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
+		this.name = config.get("name").toString();
+		if(name == null){
+			Random r = new Random(System.currentTimeMillis());
+			name = "LaserScanner-"+r.nextInt(100);
+		}
+		this.id = UUID.nameUUIDFromBytes(name.getBytes());
 	}
 
 }

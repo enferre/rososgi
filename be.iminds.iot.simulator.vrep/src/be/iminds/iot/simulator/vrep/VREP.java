@@ -59,14 +59,14 @@ public class VREP implements Simulator {
 	void configure(){
 		try {
 			for(String name : objectHandles.keySet()){
-				if(name.equals("youBot")){
+				Hashtable<String, Object> t = new Hashtable<>();
+				t.put("name", name);
+				if(name.startsWith("youBot")){
 					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
-					Hashtable<String, Object> t = new Hashtable<>();
 					c.update(t);
 					configurations.add(c);
-				} else if(name.equals("hokuyo")){
+				} else if(name.startsWith("hokuyo")){
 					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
-					Hashtable<String, Object> t = new Hashtable<>();
 					c.update(t);
 					configurations.add(c);
 				}
