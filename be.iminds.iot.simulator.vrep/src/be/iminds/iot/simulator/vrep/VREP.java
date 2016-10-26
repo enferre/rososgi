@@ -34,6 +34,7 @@ public class VREP implements Simulator {
 	private int clientID;
 	
 	private Map<String, Integer> objectHandles = new HashMap<>();
+	private Map<String, String> entities = new HashMap<>();
 	
 	private List<Configuration> configurations = new ArrayList<>();
 	private ConfigurationAdmin ca;
@@ -58,19 +59,26 @@ public class VREP implements Simulator {
 	
 	void configure(){
 		try {
-			for(String name : objectHandles.keySet()){
+			entities.entrySet().stream().forEach(e ->{
+				String name = e.getKey();
+				String type = e.getValue();
+				
+				if(!objectHandles.containsKey(name)){
+					System.out.println("Entitiy "+name+" not existing in the simulator...");
+					return;
+				}
+				
 				Hashtable<String, Object> t = new Hashtable<>();
 				t.put("name", name);
-				if(name.startsWith("youBot")){
-					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
+				
+				try {
+					Configuration c = ca.createFactoryConfiguration(type, null);
 					c.update(t);
 					configurations.add(c);
-				} else if(name.startsWith("hokuyo")){
-					Configuration c = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
-					c.update(t);
-					configurations.add(c);
+				} catch(Exception ex){
+					ex.printStackTrace();
 				}
-			}
+			});
 		} catch(Exception e){
 			e.printStackTrace();
 		}
@@ -112,13 +120,15 @@ public class VREP implements Simulator {
 	}
 
 	@Override
-	public void loadScene(String file) {
+	public void loadScene(String file, Map<String, String> entities) {
 		File f = new File(file);
 		if(!f.exists()){
 			System.out.println("File "+file+" does not exist...");
 			return;
 		}
 		checkOk(server.simxLoadScene(clientID, f.getAbsolutePath(), 0, server.simx_opmode_blocking));
+		
+		this.entities = entities;
 		
 		loadHandles();
 	}

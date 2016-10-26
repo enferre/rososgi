@@ -1,5 +1,6 @@
 package be.iminds.iot.simulator.api;
 
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public interface Simulator {
@@ -16,7 +17,7 @@ public interface Simulator {
 	
 	// load scene
 	
-	void loadScene(String file);
+	void loadScene(String file, Map<String, String> entities);
 	
 	// get and set positions of objects
 	

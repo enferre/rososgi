@@ -1,6 +1,7 @@
 package be.iminds.iot.simulator.vrep;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 import org.osgi.framework.BundleContext;
@@ -134,7 +135,7 @@ public class VREPActivator {
 		vrep = new VREP(server, ca);
 		
 		if(scene != null){
-			vrep.loadScene(scene);
+			vrep.loadScene(scene, new HashMap<String, String>());
 		} else {
 			vrep.loadHandles();
 		}
