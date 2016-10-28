@@ -1,6 +1,8 @@
 package be.iminds.iot.robot.youbot.ros;
 
 import java.util.Collection;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -17,6 +19,7 @@ import geometry_msgs.Twist;
 
 public class BaseImpl implements OmniDirectional {
 
+	private final String name;
 	private final BundleContext context;
 	private ServiceRegistration registration;
 	
@@ -28,8 +31,9 @@ public class BaseImpl implements OmniDirectional {
 	private Timer timer = new Timer();
 
 	
-	public BaseImpl(BundleContext context,
+	public BaseImpl(String name, BundleContext context,
 			ConnectedNode node){
+		this.name = name;
 		this.context = context;
 		this.node = node;
 		
@@ -43,7 +47,10 @@ public class BaseImpl implements OmniDirectional {
 	public void register(){
 		pTwist = node.newPublisher("/cmd_vel", geometry_msgs.Twist._TYPE);
 		
-		registration = 	context.registerService(OmniDirectional.class, this, null);
+
+		Dictionary<String, Object> properties = new Hashtable<>();
+		properties.put("name", name);
+		registration = 	context.registerService(OmniDirectional.class, this, properties);
 	}
 	
 	public void unregister(){

@@ -17,6 +17,7 @@ import org.ros.node.NodeMain;
 	configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class YoubotRosController extends AbstractNodeMain {
 
+	private String name;
 	private ArmImpl arm;
 	private BaseImpl base;
 	
@@ -25,6 +26,11 @@ public class YoubotRosController extends AbstractNodeMain {
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
+		
+		name = config.get("name").toString();
+		if(name == null){
+			name = "Youbot";
+		}
 	}
 	
 	@Override
@@ -37,10 +43,10 @@ public class YoubotRosController extends AbstractNodeMain {
 		connectedNode.getTopicMessageFactory();
 
 		// this brings online arm and base services
-		arm = new ArmImpl(context, connectedNode);
+		arm = new ArmImpl(name, context, connectedNode);
 		arm.register();
 		
-		base = new BaseImpl(context, connectedNode);
+		base = new BaseImpl(name, context, connectedNode);
 		base.register();
 	}
 	

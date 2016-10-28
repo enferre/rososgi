@@ -35,6 +35,8 @@ import be.iminds.iot.robot.api.JointValue.Type;
 
 public class ArmImpl implements Arm {
 
+	private final String name;
+	
 	private final BundleContext context;
 	private final List<ServiceRegistration> registrations = new ArrayList<>();
 	
@@ -86,8 +88,9 @@ public class ArmImpl implements Arm {
 		0.0114f	
 	};
 	
-	public ArmImpl(BundleContext context,
+	public ArmImpl(String name, BundleContext context,
 			ConnectedNode node){
+		this.name = name;
 		this.context = context;
 		this.node = node;
 		
@@ -97,8 +100,8 @@ public class ArmImpl implements Arm {
 		// joints
 		joints = new ArrayList<>();
 		for(int i=0;i<config.length;i++){
-			String name = config[i];
-			JointDescription d = new JointDescription(name,
+			String jointName = config[i];
+			JointDescription d = new JointDescription(jointName,
 					positionMin[i], positionMax[i], 
 					0.0f, 1.5f, 0.0f, 1.0f); // TODO what are min and max velocities/torques?
 			JointImpl joint = new JointImpl(d, this);
@@ -176,9 +179,11 @@ public class ArmImpl implements Arm {
 			registrations.add(rJoint);
 		}
 		
-		ServiceRegistration rGripper = context.registerService(Gripper.class, gripper, null);
+		Dictionary<String, Object> properties = new Hashtable<>();
+		properties.put("name", name);
+		ServiceRegistration rGripper = context.registerService(Gripper.class, gripper, properties);
 		registrations.add(rGripper);
-		ServiceRegistration rArm = context.registerService(Arm.class, this, null);
+		ServiceRegistration rArm = context.registerService(Arm.class, this, properties);
 		registrations.add(rArm);
 	}
 	
