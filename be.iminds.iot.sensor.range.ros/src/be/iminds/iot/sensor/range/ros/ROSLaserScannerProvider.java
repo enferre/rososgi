@@ -52,7 +52,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		String topic = "/"+name.replaceAll(" ", "_").toLowerCase()+"/scan";
+		String topic = "/"+name.replaceAll("( )|#", "_").toLowerCase()+"/scan";
 		subscriber = connectedNode.newSubscriber(topic,
 				LaserScan._TYPE);
 		subscriber.addMessageListener(new MessageListener<LaserScan>() {

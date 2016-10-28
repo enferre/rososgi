@@ -49,7 +49,7 @@ public class ROSConfigurator {
 				Configuration nodeConfig;
 				Configuration subscriberConfig;
 				
-				String name = dict.get("name").replaceAll(" ", "_").toLowerCase(); // use name to remap topics
+				String name = dict.get("name").replaceAll("( )|#", "_").toLowerCase(); // use name to remap topics
 				String type = dict.get("type"); // use type to configure ros node to launch
 				switch(type){
 					case "youbot":
