@@ -1,5 +1,6 @@
 package be.iminds.iot.simulator.api;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -16,6 +17,9 @@ public interface Simulator {
 	void tick() throws TimeoutException;
 	
 	// load scene
+	default void loadScene(String file){
+		loadScene(file, new HashMap<String, String>());
+	}
 	
 	void loadScene(String file, Map<String, String> entities);
 	
