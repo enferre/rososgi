@@ -130,7 +130,9 @@ public class InputServlet extends HttpServlet {
 						.then(p -> arm.openGripper())
 						.then(p -> arm.setPosition(1, -1.3f))
 						.then(p -> arm.reset());
-					
+				default:
+					base.stop();
+					arm.stop();	
 			}
 		} else if(type.equals("keyup")){
 			switch(key){
