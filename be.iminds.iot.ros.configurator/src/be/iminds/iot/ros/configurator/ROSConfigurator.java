@@ -49,7 +49,7 @@ public class ROSConfigurator {
 				Configuration nodeConfig;
 				Configuration subscriberConfig;
 				
-				String name = dict.get("name"); // use name to remap topics
+				String name = dict.get("name").replaceAll(" ", "_").toLowerCase(); // use name to remap topics
 				String type = dict.get("type"); // use type to configure ros node to launch
 				switch(type){
 					case "youbot":
@@ -63,6 +63,7 @@ public class ROSConfigurator {
 						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
 						break;
 					case "hokuyo":
+						dict.put("ros.mappings", "scan:="+name+"/scan");
 						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
 						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
 						break;
