@@ -47,7 +47,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	
 	@Override
 	public GraphName getDefaultNodeName() {
-		return GraphName.of("laserscan/subscriber");
+		return GraphName.of("laserscan/subscriber/"+name.replaceAll("( )|#", "_"));
 	}
 
 	@Override
