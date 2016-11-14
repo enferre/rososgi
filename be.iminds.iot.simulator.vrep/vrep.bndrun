@@ -4,7 +4,9 @@
 	org.ros.rosjava_messages.brics_actuator;version='[0.7,0.8)',\
 	coppelia;version=latest,\
 	be.iminds.iot.simulator.vrep;version=latest,\
-	be.iminds.iot.robot.input;version=latest,\
+	be.iminds.iot.robot.input.servlet;version=latest,\
+	be.iminds.iot.robot.input.joystick;version=latest,\
+	be.iminds.iot.ros.joystick;version=latest,\
 	be.iminds.iot.robot.youbot.ros;version=latest,\
 	be.iminds.iot.sensor.range.ros;version=latest
 
@@ -12,6 +14,7 @@
 -runproperties.vrep: \
 	ros.core.native=true,\
 	vrep.dir=/opt/vrep-3.3.1,\
+	vrep.launch=true,\
 	vrep.scene=youbot_test.ttt
 	
 #	vrep.headless=true

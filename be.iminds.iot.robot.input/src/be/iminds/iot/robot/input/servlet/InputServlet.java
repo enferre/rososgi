@@ -1,4 +1,4 @@
-package be.iminds.iot.robot.input;
+package be.iminds.iot.robot.input.servlet;
 
 import java.io.IOException;
 

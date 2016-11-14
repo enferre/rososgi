@@ -3,7 +3,9 @@
 	osgi.promise,\
 	osgi.enterprise;version=5.0,\
 	be.iminds.iot.robot.api;version=latest,\
-	org.apache.felix.http.servlet-api
+	org.apache.felix.http.servlet-api,\
+	org.ros.rosjava,\
+	org.ros.rosjava_messages.sensor_msgs,\
+	org.ros.rosjava.message_generation
 Bundle-Version: 0.2.0
--includeresource: res=resources
-Private-Package: be.iminds.iot.robot.input
+-sub: *.bnd

@@ -43,10 +43,6 @@ public class NativeRosNode {
 	
 	@Activate
 	protected void activate(Map<String, Object> properties) throws Exception {
-		for(String k : properties.keySet()){
-			System.out.println(k+" : "+properties.get(k));
-		}
-		
 		// this also allows to build a ROS node driven by configuration
 		for(Entry<String, Object> entry : properties.entrySet()){
 			String key = entry.getKey();
