@@ -4,8 +4,6 @@
 	osgi.enterprise;version=5.0,\
 	be.iminds.iot.robot.api;version=latest,\
 	org.apache.felix.http.servlet-api,\
-	org.ros.rosjava,\
-	org.ros.rosjava_messages.sensor_msgs,\
-	org.ros.rosjava.message_generation
+	be.iminds.iot.ros.joystick;version=latest
 Bundle-Version: 0.2.0
 -sub: *.bnd
