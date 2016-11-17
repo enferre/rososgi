@@ -16,10 +16,10 @@ import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.topic.Subscriber;
 
-import be.iminds.iot.ros.joystick.api.JoystickEvent;
-import be.iminds.iot.ros.joystick.api.JoystickEvent.JoystickButton;
-import be.iminds.iot.ros.joystick.api.JoystickEvent.Type;
-import be.iminds.iot.ros.joystick.api.JoystickListener;
+import be.iminds.iot.input.joystick.api.JoystickEvent;
+import be.iminds.iot.input.joystick.api.JoystickListener;
+import be.iminds.iot.input.joystick.api.JoystickEvent.JoystickButton;
+import be.iminds.iot.input.joystick.api.JoystickEvent.Type;
 import sensor_msgs.Joy;
 
 @Component(service = NodeMain.class)

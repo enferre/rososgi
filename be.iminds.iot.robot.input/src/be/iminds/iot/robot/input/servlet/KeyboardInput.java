@@ -1,25 +1,19 @@
 package be.iminds.iot.robot.input.servlet;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.http.HttpService;
 
+import be.iminds.iot.input.keyboard.api.KeyboardEvent;
+import be.iminds.iot.input.keyboard.api.KeyboardEvent.Type;
+import be.iminds.iot.input.keyboard.api.KeyboardListener;
 import be.iminds.iot.robot.api.Arm;
 import be.iminds.iot.robot.api.OmniDirectional;
 
-@Component(service = { javax.servlet.Servlet.class }, 
-	    property = { "alias:String=/robot/control",
-					 "osgi.http.whiteboard.servlet.pattern=/robot/control", 
-				     "aiolos.proxy=false" }, 
+@Component( 
+	    property = {"aiolos.proxy=false" }, 
 		immediate = true)
-public class InputServlet extends HttpServlet {
+public class KeyboardInput implements KeyboardListener {
 
 	private Arm arm;
 	private OmniDirectional base;
@@ -41,19 +35,12 @@ public class InputServlet extends HttpServlet {
 		}
 	}
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		resp.sendRedirect("/robot/control.html");
-	}
 
 	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		String type = request.getParameter("type");
-		String key = request.getParameter("key");
+	public void onEvent(KeyboardEvent e){
 		// control base
-		if(type.equals("keydown")){
-			switch(key){
+		if(e.type == Type.PRESSED){
+			switch(e.key){
 				case "ArrowUp":
 				case "w":
 					vx = velocity;
@@ -134,8 +121,8 @@ public class InputServlet extends HttpServlet {
 					base.stop();
 					arm.stop();	
 			}
-		} else if(type.equals("keyup")){
-			switch(key){
+		} else if(e.type == Type.RELEASED){
+			switch(e.key){
 				case "ArrowUp":
 				case "w":
 				case "ArrowDown":

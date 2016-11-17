@@ -1,4 +1,4 @@
-package be.iminds.iot.ros.joystick.api;
+package be.iminds.iot.input.joystick.api;
 
 public interface JoystickListener {
 

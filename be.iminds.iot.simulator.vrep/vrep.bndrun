@@ -4,7 +4,8 @@
 	org.ros.rosjava_messages.brics_actuator;version='[0.7,0.8)',\
 	coppelia;version=latest,\
 	be.iminds.iot.simulator.vrep;version=latest,\
-	be.iminds.iot.robot.input.servlet;version=latest,\
+	be.iminds.iot.keyboard.servlet;version=latest,\
+	be.iminds.iot.robot.input.keyboard;version=latest,\
 	be.iminds.iot.robot.input.joystick;version=latest,\
 	be.iminds.iot.ros.joystick;version=latest,\
 	be.iminds.iot.robot.youbot.ros;version=latest,\
