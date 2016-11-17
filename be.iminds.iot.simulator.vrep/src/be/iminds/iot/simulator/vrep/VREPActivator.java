@@ -102,7 +102,7 @@ public class VREPActivator {
 		}
 		
 		// try to connect to an already running VREP
-		clientID = server.simxStart("127.0.0.1", 19997, true, true, 100, 5);
+		clientID = server.simxStart("127.0.0.1", 19997, true, true, 1000, 5);
 		
 		if(clientID == -1 && launch){
 			// no VREP running ... try to launch a local VREP process
