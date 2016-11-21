@@ -41,6 +41,7 @@ public class VREPActivator {
 	
 	private volatile boolean heartbeat = false;
 	private int interval = 10000;
+	private int port = 19997;
 	
 	@Activate
 	void activate(BundleContext context) throws Exception {
@@ -65,6 +66,11 @@ public class VREPActivator {
 		String h = context.getProperty("vrep.headless");
 		if(h!=null){
 			headless = Boolean.parseBoolean(h);
+		}
+		
+		String p = context.getProperty("vrep.port");
+		if(p!=null){
+			port = Integer.parseInt(p);
 		}
 		
 		scene = context.getProperty("vrep.scene");
@@ -102,14 +108,16 @@ public class VREPActivator {
 		}
 		
 		// try to connect to an already running VREP
-		clientID = server.simxStart("127.0.0.1", 19997, true, true, 1000, 5);
+		clientID = server.simxStart("127.0.0.1", port, true, true, 1000, 5);
 		
 		if(clientID == -1 && launch){
 			// no VREP running ... try to launch a local VREP process
 			try {
 				// add vrep dir to LD_LIBRARY_PATH and start vrep executable
 				File file = new File(dir);
-				ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep", headless ? "-h" : "");
+				ProcessBuilder builder = new ProcessBuilder(file.getAbsolutePath()+File.separator+"vrep",
+							headless ? "-h" : "",
+							port != 19997 ? "-gREMOTEAPISERVERSERVICE_"+port+"_FALSE_TRUE": "");
 				builder.environment().put("LD_LIBRARY_PATH", builder.environment().get("LD_LIBRARY_PATH")+":"+file.getAbsolutePath());
 				builder.inheritIO();
 				process = builder.start();
@@ -120,7 +128,7 @@ public class VREPActivator {
 
 			int tries = 0;
 			while(clientID == -1 && tries++ < 10){
-				clientID = server.simxStart("127.0.0.1", 19997, true, true, 1000, 5);
+				clientID = server.simxStart("127.0.0.1", port, true, true, 1000, 5);
 			}	
 
 		}
