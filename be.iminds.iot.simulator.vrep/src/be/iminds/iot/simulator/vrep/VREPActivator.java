@@ -42,10 +42,16 @@ public class VREPActivator {
 	private volatile boolean heartbeat = false;
 	private int interval = 10000;
 	private int port = 19997;
+	private String rosMasterURI = null;
 	
 	@Activate
 	void activate(BundleContext context) throws Exception {
 		this.context = context;
+		
+		String r = context.getProperty("ros.master.uri");
+		if(r!=null){
+			rosMasterURI = context.getProperty("ros.master.uri");
+		}
 		
 		String l = context.getProperty("vrep.launch");
 		if(l!=null){
@@ -119,6 +125,9 @@ public class VREPActivator {
 							headless ? "-h" : "",
 							port != 19997 ? "-gREMOTEAPISERVERSERVICE_"+port+"_FALSE_TRUE": "");
 				builder.environment().put("LD_LIBRARY_PATH", builder.environment().get("LD_LIBRARY_PATH")+":"+file.getAbsolutePath());
+				if(rosMasterURI != null){
+					builder.environment().put("ROS_MASTER_URI", rosMasterURI.toString());
+				}
 				builder.inheritIO();
 				process = builder.start();
 			} catch(Exception ex){

@@ -16,6 +16,8 @@
 	ros.core.native=true,\
 	vrep.dir=/opt/vrep-3.3.1,\
 	vrep.launch=true,\
-	vrep.scene=youbot_test.ttt
+	vrep.scene=youbot_test.ttt,\
+	vrep.port=20000,\
+	ros.master.uri=http://localhost:11312
 	
 #	vrep.headless=true

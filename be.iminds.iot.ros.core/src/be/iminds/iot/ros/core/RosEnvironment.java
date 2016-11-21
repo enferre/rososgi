@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
@@ -58,7 +59,8 @@ public class RosEnvironment implements Environment {
 			
 			if(startNative){
 				// native ROScore process
-				ProcessBuilder builder = new ProcessBuilder("roscore");
+				ProcessBuilder builder = new ProcessBuilder("roscore", "-p "+masterURI.getPort());
+				builder.environment().put("ROS_MASTER_URI", masterURI.toString());
 				builder.inheritIO();
 				nativeCore = builder.start();
 			} else {
@@ -98,17 +100,13 @@ public class RosEnvironment implements Environment {
 	}
 	
 	private String getVariable(String environmentKey, String propertyKey, BundleContext context){
-		String env = System.getenv(environmentKey);
-		if(env != null){
-			return env;
+		// then try context property
+		String ctx = context.getProperty(propertyKey);
+		if(ctx != null){
+			return ctx;
 		} else {
-			// then try context property
-			String ctx = context.getProperty(propertyKey);
-			if(ctx != null){
-				return ctx;
-			}
+			return System.getenv(environmentKey);
 		}
-		return null;
 	}
 	
 	@Override
