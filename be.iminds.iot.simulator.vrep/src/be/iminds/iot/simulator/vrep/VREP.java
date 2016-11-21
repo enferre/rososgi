@@ -265,6 +265,13 @@ public class VREP implements Simulator {
 			String name = names[i];
 			int handle = handles[i];
 			this.objectHandles.put(name, handle);
+			
+			// add some default entries...
+			if(name.equals("youBot"))
+				entities.put("youBot", "be.iminds.iot.robot.youbot.ros.Youbot");
+			else if(name.equals("hokuyo"))
+				entities.put("hokuyo", "be.iminds.iot.sensor.range.ros.LaserScanner");
+			
 		}
 	}
 
