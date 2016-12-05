@@ -59,6 +59,18 @@ public class KeyboardServlet extends HttpServlet {
 			throws ServletException, IOException {
 		KeyboardEvent.Type type = request.getParameter("type").equals("keydown") ? Type.PRESSED : Type.RELEASED;
 		String key = request.getParameter("key");
+		if(key==null){
+			// on chrome you only get code?!
+			// use code instead or convert to key or pass both?!
+			String code = request.getParameter("code");
+			if(code.startsWith("Key")){
+				key = code.substring(3).toLowerCase();
+			} else if(code.startsWith("Digit")){
+				key = code.substring(5).toLowerCase();
+			} else {
+				key = code;
+			}
+		}
 		
 		for(KeyboardListener l : listeners){
 			l.onEvent(new KeyboardEvent(type, key));
