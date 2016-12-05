@@ -104,7 +104,9 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 			registration.unregister();
 			currentScan = null;
 		}
-		subscriber.shutdown();
+		if(subscriber != null){
+			subscriber.shutdown();
+		}
 	}
 	
 	
