@@ -43,6 +43,7 @@ public class VREPActivator {
 	private int interval = 10000;
 	private int port = 19997;
 	private String rosMasterURI = null;
+	private int timeout = 5000;
 	
 	@Activate
 	void activate(BundleContext context) throws Exception {
@@ -63,7 +64,6 @@ public class VREPActivator {
 			interval = Integer.parseInt(i);
 		}
 		
-		
 		String d = context.getProperty("vrep.dir");
 		if(d!=null){
 			dir = d;
@@ -77,6 +77,11 @@ public class VREPActivator {
 		String p = context.getProperty("vrep.port");
 		if(p!=null){
 			port = Integer.parseInt(p);
+		}
+		
+		String t = context.getProperty("vrep.timeout");
+		if(t!=null){
+			timeout = Integer.parseInt(t);
 		}
 		
 		scene = context.getProperty("vrep.scene");
@@ -114,8 +119,7 @@ public class VREPActivator {
 		}
 		
 		// try to connect to an already running VREP
-		clientID = server.simxStart("127.0.0.1", port, true, true, 1000, 5);
-		System.out.println("STARTED! "+clientID);
+		clientID = server.simxStart("127.0.0.1", port, true, true, -timeout, 5);
 		if(clientID == -1 && launch){
 			// no VREP running ... try to launch a local VREP process
 			try {
@@ -137,7 +141,7 @@ public class VREPActivator {
 
 			int tries = 0;
 			while(clientID == -1 && tries++ < 10){
-				clientID = server.simxStart("127.0.0.1", port, true, true, 1000, 5);
+				clientID = server.simxStart("127.0.0.1", port, true, true, -timeout, 5);
 			}	
 
 		}
