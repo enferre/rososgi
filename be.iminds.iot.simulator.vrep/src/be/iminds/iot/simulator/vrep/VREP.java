@@ -286,6 +286,21 @@ public class VREP implements Simulator {
 		return collision.getValue();
 	
 	}
+	
+	@Override
+	public void setProperty(String object, String key, int value){
+		checkOk(server.simxSetIntegerSignal(clientID, object+"_"+key, value, server.simx_opmode_oneshot));
+	}
+	
+	@Override
+	public void setProperty(String object, String key, float value){
+		checkOk(server.simxSetFloatSignal(clientID, object+"_"+key, value, server.simx_opmode_oneshot));
+	}
+
+	@Override
+	public void setProperty(String object, String key, boolean value){
+		checkOk(server.simxSetIntegerSignal(clientID, object+"_"+key, value ? 1 : 0, server.simx_opmode_oneshot));
+	}
 
 	private void checkOk(int ret){
 		if(ret > 3){

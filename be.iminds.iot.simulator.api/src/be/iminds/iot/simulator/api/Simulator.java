@@ -46,4 +46,11 @@ public interface Simulator {
 	// check collisions
 	boolean checkCollisions(String object);
 	
+	// allow to set environment properties - implementation depends on the simulator
+	void setProperty(String object, String key, int value);
+	
+	void setProperty(String object, String key, float value);
+
+	void setProperty(String object, String key, boolean value);
+
 }
