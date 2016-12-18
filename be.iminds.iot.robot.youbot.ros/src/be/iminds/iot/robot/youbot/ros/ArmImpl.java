@@ -54,6 +54,9 @@ public class ArmImpl implements Arm {
 	private Subscriber<sensor_msgs.JointState> subscriber; 
 
 	private final Map<Target, Deferred<Arm>> targets = new ConcurrentHashMap<>();
+	// target threshold
+	private static float THRESHOLD = 0.002f;
+
 	
 	private final Timer timer = new Timer();
 	
@@ -96,6 +99,10 @@ public class ArmImpl implements Arm {
 		
 		this.factory = node.getTopicMessageFactory();
 
+		String t = context.getProperty("be.iminds.iot.robot.youbot.joint.threshold");
+		if(t != null){
+			THRESHOLD = Float.parseFloat(t);
+		}
 		
 		// joints
 		joints = new ArrayList<>();
@@ -463,8 +470,6 @@ public class ArmImpl implements Arm {
 	}
 	
 	private class Target {
-		
-		private static final float THRESHOLD = 0.002f;
 		
 		final Collection<JointValue> target;
 		
