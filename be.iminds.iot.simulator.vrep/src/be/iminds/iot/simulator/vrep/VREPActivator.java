@@ -32,6 +32,7 @@ public class VREPActivator {
 	
 	private boolean launch = false;
 	private boolean headless = false;
+	private boolean log = false;
 	private Process process;
 	private String dir = "/opt/vrep";
 	private String scene;
@@ -83,6 +84,11 @@ public class VREPActivator {
 		if(t!=null){
 			timeout = Integer.parseInt(t);
 		}
+	
+		String lg = context.getProperty("vrep.log");
+		if(lg!=null){
+			log = Boolean.parseBoolean(lg);
+		}
 		
 		scene = context.getProperty("vrep.scene");
 		
@@ -132,7 +138,8 @@ public class VREPActivator {
 				if(rosMasterURI != null){
 					builder.environment().put("ROS_MASTER_URI", rosMasterURI.toString());
 				}
-				builder.inheritIO();
+				if(log)
+					builder.inheritIO();
 				process = builder.start();
 			} catch(Exception ex){
 				System.err.println("Error launching VREP ");
