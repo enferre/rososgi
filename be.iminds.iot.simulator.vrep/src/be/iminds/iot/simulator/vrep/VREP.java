@@ -113,10 +113,16 @@ public class VREP implements Simulator {
 	@Override
 	public void tick() throws TimeoutException {
 		int ret = server.simxSynchronousTrigger(clientID);
-		if(ret > 1){
+		if(ret == 2){
+			// this is something weird that was experienced on OpenStack VMs :-/
+			// client should restart the simulator when this happens?
+			// TODO teardown the Simulator service?
+			throw new RuntimeException("Simulator stalled?!");
+		} else if(ret == 3){
 			throw new TimeoutException();
+		} else {
+			checkOk(ret);
 		}
-		checkOk(ret);
 	}
 
 	@Override
