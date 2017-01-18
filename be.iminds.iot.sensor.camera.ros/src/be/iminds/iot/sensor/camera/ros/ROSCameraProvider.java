@@ -53,12 +53,12 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 	
 	@Override
 	public GraphName getDefaultNodeName() {
-		return GraphName.of("camera/subscriber");
+		return GraphName.of("camera/subscriber"+name.replaceAll("( )|#", "_"));
 	}
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		subscriber = connectedNode.newSubscriber(name+"/image_raw",
+		subscriber = connectedNode.newSubscriber("/"+name.replaceAll("( )|#", "_").toLowerCase()+"/image_raw",
 				Image._TYPE);
 		subscriber.addMessageListener(new MessageListener<Image>() {
 			@Override
