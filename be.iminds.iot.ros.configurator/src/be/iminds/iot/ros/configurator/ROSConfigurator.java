@@ -25,71 +25,77 @@ public class ROSConfigurator {
 	
 	@Activate
 	void activate(){
-		// TODO configurable dir
-		File dir = new File(".");
-		if(!dir.isDirectory()){
-			System.out.println(dir.getAbsolutePath()+" is not a directory");
-		}
+		// launch on separate thread ... might run into threading issues when running on DS thread
+		new Thread(()->{ synchronized(ROSConfigurator.this){
 		
-		for(File f : dir.listFiles()){
-			if(f.isDirectory())
-				continue; // dont recurse
-			
-			if(!f.getName().endsWith(".config"))
-				continue;
-			
-			try {
-				Properties props = new Properties();
-				props.load(new FileInputStream(f));
-			
-				Dictionary<String, String> dict = new Hashtable<>();
-				props.entrySet().forEach(e -> dict.put((String)e.getKey(), (String)e.getValue()));
-				
-				// set ros package
-				Configuration nodeConfig;
-				Configuration subscriberConfig;
-				
-				String name = dict.get("name").replaceAll("( )|#", "_").toLowerCase(); // use name to remap topics
-				String type = dict.get("type"); // use type to configure ros node to launch
-				switch(type){
-					case "youbot":
-						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.youbot.Youbot", null);
-						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
-						break;
-					case "usb_cam":
-						dict.put("ros.mappings", "usb_cam/image_raw:="+name+"/image_raw,"
-								+ "usb_cam/camera_info:="+name+"/image_raw");
-						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera", null);
-						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
-						break;
-					case "hokuyo":
-						dict.put("ros.mappings", "scan:="+name+"/scan");
-						nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
-						subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
-						break;
-					default: 
-						continue;
-				}
-				
-				if(nodeConfig != null){
-					nodeConfig.update(dict);
-					configurations.add(nodeConfig);
-					
-					subscriberConfig.update(dict);
-					configurations.add(subscriberConfig);
-				}
-			} catch(IOException e){
-				System.err.println("Error reading config file "+f.getAbsolutePath());
+			// TODO configurable dir
+			File dir = new File(".");
+			if(!dir.isDirectory()){
+				System.out.println(dir.getAbsolutePath()+" is not a directory");
 			}
-		}
+			
+			for(File f : dir.listFiles()){
+				if(f.isDirectory())
+					continue; // dont recurse
+				
+				if(!f.getName().endsWith(".config"))
+					continue;
+				
+				try {
+					Properties props = new Properties();
+					props.load(new FileInputStream(f));
+				
+					Dictionary<String, String> dict = new Hashtable<>();
+					props.entrySet().forEach(e -> dict.put((String)e.getKey(), (String)e.getValue()));
+					
+					// set ros package
+					Configuration nodeConfig;
+					Configuration subscriberConfig;
+					
+					String name = dict.get("name").replaceAll("( )|#", "_").toLowerCase(); // use name to remap topics
+					String type = dict.get("type"); // use type to configure ros node to launch
+					switch(type){
+						case "youbot":
+							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.youbot.Youbot", null);
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
+							break;
+						case "usb_cam":
+							dict.put("ros.mappings", "usb_cam/image_raw:="+name+"/image_raw,"
+									+ "usb_cam/camera_info:="+name+"/image_raw");
+							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.camera.USBCamera", null);
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
+							break;
+						case "hokuyo":
+							dict.put("ros.mappings", "scan:="+name+"/scan");
+							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
+							break;
+						default: 
+							continue;
+					}
+					
+					if(nodeConfig != null){
+						nodeConfig.update(dict);
+						configurations.add(nodeConfig);
+						
+						subscriberConfig.update(dict);
+						configurations.add(subscriberConfig);
+					}
+				} catch(IOException e){
+					System.err.println("Error reading config file "+f.getAbsolutePath());
+				}
+			}
+		}}).start();
 	}
 	
 	@Deactivate
 	void deactivate(){
-		for(Configuration c : configurations){
-			try {
-				c.delete();
-			} catch (IOException e) {
+		synchronized(this){
+			for(Configuration c : configurations){
+				try {
+					c.delete();
+				} catch (IOException e) {
+				}
 			}
 		}
 	}
