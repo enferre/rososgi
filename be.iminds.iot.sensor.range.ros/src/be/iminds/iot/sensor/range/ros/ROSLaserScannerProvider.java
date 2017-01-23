@@ -1,6 +1,7 @@
 package be.iminds.iot.sensor.range.ros;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
@@ -63,6 +64,12 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 				s.minAngle = scan.getAngleMin();
 				s.maxAngle = scan.getAngleMax();
 				s.data = scan.getRanges();
+				// convert NaNery to zeros
+				for(int i = 0;i<s.data.length;i++){
+					if(Float.isNaN(s.data[i])){
+						s.data[i] = 0.0f;
+					}
+				}
 				
 				if(currentScan == null){
 					currentScan = s;
