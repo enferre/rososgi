@@ -91,6 +91,14 @@ public class ArmImpl implements Arm {
 		0.0114f	
 	};
 	
+	private float[] torqueMin = new float[]{
+		-17f, -17f, -8f, -2.7f, -1f, -1f, -1f	
+	};
+		
+	private float[] torqueMax = new float[]{
+		17f, 17f, 8f, 2.7f, 1f, 1f, 1f	
+	};
+	
 	public ArmImpl(String name, BundleContext context,
 			ConnectedNode node){
 		this.name = name;
@@ -110,7 +118,7 @@ public class ArmImpl implements Arm {
 			String jointName = config[i];
 			JointDescription d = new JointDescription(jointName,
 					positionMin[i], positionMax[i], 
-					0.0f, 1.5f, 0.0f, 1.0f); // TODO what are min and max velocities/torques?
+					-1.0f, 1f, torqueMin[i], torqueMax[i]); // TODO what are min and max velocities?
 			JointImpl joint = new JointImpl(d, this);
 			joints.add(joint);
 		}
@@ -134,7 +142,6 @@ public class ArmImpl implements Arm {
 		// commands for arm joints
 		this.pPos = node.newPublisher("/arm_1/arm_controller/position_command", brics_actuator.JointPositions._TYPE);
 		this.pVel = node.newPublisher("/arm_1/arm_controller/velocity_command", brics_actuator.JointVelocities._TYPE);;
-		// TODO torque_command is not supported atm
 		this.pTorq = node.newPublisher("/arm_1/arm_controller/torque_command", brics_actuator.JointTorques._TYPE);;
 		
 		// commands for gripper joints
@@ -156,8 +163,8 @@ public class ArmImpl implements Arm {
 					
 					joint.position = (float)jointState.getPosition()[i];
 					joint.velocity = (float)jointState.getVelocity()[i];
-// torque not supported	atm				
-//					joint.torque = (float)jointState.getEffort()[i];
+					if(jointState.getEffort().length > i)
+						joint.torque = (float)jointState.getEffort()[i];
 				}
 				
 				// check if target is resolved 
@@ -330,44 +337,45 @@ public class ArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setTorques(Collection<JointValue> torques) {
-		throw new UnsupportedOperationException();
 		
 		// check for collision with operations in progress
-//		for(JointValue v : torques){
-//			Iterator<Entry<Target, Deferred<Arm>>> it = targets.entrySet().iterator();
-//			while(it.hasNext()){
-//				Entry<Target, Deferred<Arm>> target = it.next();
-//				for(JointValue joint : target.getKey().target){
-//					if(joint.joint.equals(v.joint)){
-//						Deferred<Arm> deferred = target.getValue();
-//						try {		
-//							deferred.fail(new Exception("Operation interrupted!"));
-//						} catch(IllegalStateException ex){}
-//						it.remove();
-//					}
-//				}
-//			}
-//		}
-//		Deferred<Arm> deferred = new Deferred<Arm>();
+		for(JointValue v : torques){
+			Iterator<Entry<Target, Deferred<Arm>>> it = targets.entrySet().iterator();
+			while(it.hasNext()){
+				Entry<Target, Deferred<Arm>> target = it.next();
+				for(JointValue joint : target.getKey().target){
+					if(joint.joint.equals(v.joint)){
+						Deferred<Arm> deferred = target.getValue();
+						try {		
+							deferred.fail(new Exception("Operation interrupted!"));
+						} catch(IllegalStateException ex){}
+						it.remove();
+					}
+				}
+			}
+		}
+		Deferred<Arm> deferred = new Deferred<Arm>();
+		// TODO ... should we wait or immediately resolve?
+		deferred.resolve(this);
 //		Target target = new Target(torques);
 //		targets.put(target, deferred);
-//
-//		brics_actuator.JointTorques msg = pTorq.newMessage();
-//		List<brics_actuator.JointValue> tt = new ArrayList<>();
-//		for(JointValue torque : torques){
-//			brics_actuator.JointValue tor = factory.newFromType(brics_actuator.JointValue._TYPE);
-//			tor.setJointUri(torque.joint);
-//			tor.setUnit("Nm");
-//		
-//			JointDescription d = getJoint(torque.joint).getDescription();
-//			torque.value = clamp(torque.value, d.positionMin, d.positionMax);
-//			tor.setValue(torque.value);
-//			tt.add(tor);
-//		}
-//		msg.setTorques(tt);
-//		pTorq.publish(msg);
-//		
-//		return deferred.getPromise();
+
+		brics_actuator.JointTorques msg = pTorq.newMessage();
+		List<brics_actuator.JointValue> tt = new ArrayList<>();
+		for(JointValue torque : torques){
+			brics_actuator.JointValue tor = factory.newFromType(brics_actuator.JointValue._TYPE);
+			tor.setJointUri(torque.joint);
+			tor.setUnit("m^2 kg s^-2 rad^-1");
+		
+			JointDescription d = getJoint(torque.joint).getDescription();
+			torque.value = clamp(torque.value, d.torqueMin, d.torqueMax);
+			tor.setValue(torque.value);
+			tt.add(tor);
+		}
+		msg.setTorques(tt);
+		pTorq.publish(msg);
+
+		return deferred.getPromise();
 	}
 
 	

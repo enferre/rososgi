@@ -91,7 +91,7 @@ public class YoubotCLI {
 	}
 	
 	public void arm(){
-		arm.getState().stream().forEach(joint -> System.out.println(joint.joint+" : "+joint.position));
+		arm.getState().stream().forEach(joint -> System.out.println(joint.joint+" - pos: "+joint.position+" vel: "+joint.velocity+" torque: "+joint.torque));
 	}
 
 	// positions as index,position pairs
