@@ -22,5 +22,12 @@ public class MessageGenerator {
 			t.printStackTrace();
 		}
 	}
-	
+
+	public void generate(String packagePath){
+		try {
+			GenerateInterfaces.main(new String[]{"generated_msgs","--package-path="+packagePath});
+		} catch(Throwable t){
+			t.printStackTrace();
+		}
+	}
 }

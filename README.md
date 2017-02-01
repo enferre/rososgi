@@ -11,3 +11,5 @@ Interacting with a Youbot via ROS happens via the `/arm_1/*` and `/cmd_vel` comm
 To have an identical interface to the Youbot when simulating in VREP, the simulator.vrep.ros bundle will also interact with a simulated Youbot object in VREP and use the VREP ROS API to translate from VREP to the actual Youbout ROS topics.
 
 In the native world other ROS nodes can be started and connect to the system. In the OSGi world new bundles can subscribe/publish to other ROS topics and expose these as nice OSGi services.
+
+In order to subscribe/publish to ROS topics, or call ROS services, the required messages have to be available in the Java runtime. The be.iminds.iot.ros.msgs.generator bundle can be used to generate the required Java types that can then be wrapped in an OSGi bundle. It provides a generate command that will place all generated .java files in the generated_msgs directory. Optionally one can provide a custom ROS package path with the command.
