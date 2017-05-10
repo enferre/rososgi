@@ -49,8 +49,8 @@ public class ROSConfigurator {
 					props.entrySet().forEach(e -> dict.put((String)e.getKey(), (String)e.getValue()));
 					
 					// set ros package
-					Configuration nodeConfig;
-					Configuration subscriberConfig;
+					Configuration nodeConfig = null;
+					Configuration subscriberConfig = null;
 					
 					String name = dict.get("name").replaceAll("( )|#", "_").toLowerCase(); // use name to remap topics
 					String type = dict.get("type"); // use type to configure ros node to launch
@@ -70,6 +70,9 @@ public class ROSConfigurator {
 							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
 							break;
+						case "rover":
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.erlerover.ros.Rover", null);
+							break;	
 						default: 
 							continue;
 					}
@@ -77,7 +80,9 @@ public class ROSConfigurator {
 					if(nodeConfig != null){
 						nodeConfig.update(dict);
 						configurations.add(nodeConfig);
-						
+					}
+					
+					if(subscriberConfig != null){
 						subscriberConfig.update(dict);
 						configurations.add(subscriberConfig);
 					}
