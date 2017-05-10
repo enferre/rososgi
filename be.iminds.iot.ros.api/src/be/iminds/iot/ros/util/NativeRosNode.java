@@ -1,7 +1,6 @@
 package be.iminds.iot.ros.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -77,7 +76,6 @@ public class NativeRosNode {
 			cmd.addAll(rosParameters);
 			ProcessBuilder builder = new ProcessBuilder(cmd);
 			builder.inheritIO();
-			System.out.println(Arrays.toString(cmd.toArray()));
 			process = builder.start();
 		} catch(Exception e){
 			System.err.println("Error launching native ros node "+rosPackage+" "+rosNode);
