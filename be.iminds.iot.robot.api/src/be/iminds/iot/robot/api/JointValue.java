@@ -1,4 +1,4 @@
-package be.iminds.iot.robot.api.arm;
+package be.iminds.iot.robot.api;
 
 public class JointValue {
 

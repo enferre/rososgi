@@ -3,4 +3,5 @@ Bundle-Version: 0.3.0
 Export-Package: \
 	be.iminds.iot.robot.api,\
 	be.iminds.iot.robot.api.arm,\
-	be.iminds.iot.robot.api.omni
+	be.iminds.iot.robot.api.omni,\
+	be.iminds.iot.robot.api.rover

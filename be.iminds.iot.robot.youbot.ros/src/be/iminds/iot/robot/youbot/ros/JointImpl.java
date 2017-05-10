@@ -2,11 +2,11 @@ package be.iminds.iot.robot.youbot.ros;
 
 import java.util.Collections;
 
-import be.iminds.iot.robot.api.arm.Joint;
-import be.iminds.iot.robot.api.arm.JointDescription;
-import be.iminds.iot.robot.api.arm.JointState;
-import be.iminds.iot.robot.api.arm.JointValue;
-import be.iminds.iot.robot.api.arm.JointValue.Type;
+import be.iminds.iot.robot.api.Joint;
+import be.iminds.iot.robot.api.JointDescription;
+import be.iminds.iot.robot.api.JointState;
+import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.JointValue.Type;
 
 public class JointImpl implements Joint {
 

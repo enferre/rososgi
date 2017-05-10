@@ -1,7 +1,7 @@
-package be.iminds.iot.robot.api.arm;
+package be.iminds.iot.robot.api;
 
-import be.iminds.iot.robot.api.arm.JointDescription;
-import be.iminds.iot.robot.api.arm.JointState;
+import be.iminds.iot.robot.api.JointDescription;
+import be.iminds.iot.robot.api.JointState;
 
 public interface Joint {
 

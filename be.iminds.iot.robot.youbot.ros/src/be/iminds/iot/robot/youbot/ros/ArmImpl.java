@@ -29,13 +29,13 @@ import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
+import be.iminds.iot.robot.api.Joint;
+import be.iminds.iot.robot.api.JointDescription;
+import be.iminds.iot.robot.api.JointState;
+import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.JointValue.Type;
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.api.arm.Gripper;
-import be.iminds.iot.robot.api.arm.Joint;
-import be.iminds.iot.robot.api.arm.JointDescription;
-import be.iminds.iot.robot.api.arm.JointState;
-import be.iminds.iot.robot.api.arm.JointValue;
-import be.iminds.iot.robot.api.arm.JointValue.Type;
 import ik_solver_service.SolvePreferredPitchIK;
 import ik_solver_service.SolvePreferredPitchIKRequest;
 import ik_solver_service.SolvePreferredPitchIKResponse;

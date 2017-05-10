@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.osgi.util.promise.Promise;
 
+import be.iminds.iot.robot.api.JointDescription;
+import be.iminds.iot.robot.api.JointState;
+import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.Robot;
 
 public interface Arm extends Robot {
