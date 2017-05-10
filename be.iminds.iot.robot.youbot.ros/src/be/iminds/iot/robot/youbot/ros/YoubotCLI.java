@@ -3,8 +3,8 @@ package be.iminds.iot.robot.youbot.ros;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import be.iminds.iot.robot.api.Arm;
-import be.iminds.iot.robot.api.OmniDirectional;
+import be.iminds.iot.robot.api.arm.Arm;
+import be.iminds.iot.robot.api.omni.OmniDirectional;
 
 @Component(service={Object.class},
 	property = {"osgi.command.scope=youbot", 
@@ -21,6 +21,7 @@ import be.iminds.iot.robot.api.OmniDirectional;
 	"osgi.command.function=velocity",
 	"osgi.command.function=torque",
 	"osgi.command.function=move",
+	"osgi.command.function=pose",
 	"osgi.command.function=halt",
 	"osgi.command.function=arm"})
 public class YoubotCLI {
@@ -123,6 +124,10 @@ public class YoubotCLI {
 	
 	public void move(float vx, float vy, float va){
 		base.move(vx, vy, va);
+	}
+	
+	public void pose(float x, float y, float z){
+		arm.moveTo(x,y,z);
 	}
 	
 	public void halt(){

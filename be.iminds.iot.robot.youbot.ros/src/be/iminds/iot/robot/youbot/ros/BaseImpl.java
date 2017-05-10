@@ -13,8 +13,8 @@ import org.osgi.util.promise.Promise;
 import org.ros.node.ConnectedNode;
 import org.ros.node.topic.Publisher;
 
-import be.iminds.iot.robot.api.JointValue;
-import be.iminds.iot.robot.api.OmniDirectional;
+import be.iminds.iot.robot.api.arm.JointValue;
+import be.iminds.iot.robot.api.omni.OmniDirectional;
 import geometry_msgs.Twist;
 
 public class BaseImpl implements OmniDirectional {

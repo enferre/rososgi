@@ -5,5 +5,5 @@
 	be.iminds.iot.robot.api;version=latest,\
 	org.apache.felix.http.servlet-api,\
 	be.iminds.iot.input.api;version=latest
-Bundle-Version: 0.2.0
+Bundle-Version: 0.3.0
 -sub: *.bnd

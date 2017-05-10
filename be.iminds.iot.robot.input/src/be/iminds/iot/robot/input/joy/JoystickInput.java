@@ -5,8 +5,8 @@ import org.osgi.service.component.annotations.Reference;
 
 import be.iminds.iot.input.joystick.api.JoystickEvent;
 import be.iminds.iot.input.joystick.api.JoystickListener;
-import be.iminds.iot.robot.api.Arm;
-import be.iminds.iot.robot.api.OmniDirectional;
+import be.iminds.iot.robot.api.arm.Arm;
+import be.iminds.iot.robot.api.omni.OmniDirectional;
 
 @Component
 public class JoystickInput implements JoystickListener {

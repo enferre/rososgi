@@ -19,19 +19,26 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
+import org.ros.exception.RemoteException;
+import org.ros.exception.ServiceNotFoundException;
 import org.ros.message.MessageFactory;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
+import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
-import be.iminds.iot.robot.api.Arm;
-import be.iminds.iot.robot.api.Gripper;
-import be.iminds.iot.robot.api.Joint;
-import be.iminds.iot.robot.api.JointDescription;
-import be.iminds.iot.robot.api.JointState;
-import be.iminds.iot.robot.api.JointValue;
-import be.iminds.iot.robot.api.JointValue.Type;
+import be.iminds.iot.robot.api.arm.Arm;
+import be.iminds.iot.robot.api.arm.Gripper;
+import be.iminds.iot.robot.api.arm.Joint;
+import be.iminds.iot.robot.api.arm.JointDescription;
+import be.iminds.iot.robot.api.arm.JointState;
+import be.iminds.iot.robot.api.arm.JointValue;
+import be.iminds.iot.robot.api.arm.JointValue.Type;
+import ik_solver_service.SolvePreferredPitchIK;
+import ik_solver_service.SolvePreferredPitchIKRequest;
+import ik_solver_service.SolvePreferredPitchIKResponse;
 
 public class ArmImpl implements Arm {
 
@@ -53,6 +60,8 @@ public class ArmImpl implements Arm {
 	
 	private Subscriber<sensor_msgs.JointState> subscriber; 
 
+	private ServiceClient<SolvePreferredPitchIKRequest, SolvePreferredPitchIKResponse> ik;
+	
 	private final Map<Target, Deferred<Arm>> targets = new ConcurrentHashMap<>();
 	// target threshold
 	private static float THRESHOLD = 0.002f;
@@ -185,13 +194,19 @@ public class ArmImpl implements Arm {
 			}
 		});
 		
+		try {
+		     ik = node.newServiceClient("solve_preferred_pitch_ik", SolvePreferredPitchIK._TYPE);
+		} catch(ServiceNotFoundException e){
+			// do nothing ... moveTo method will just fail...
+		}
+		
 		// register OSGi services
 		for(Joint joint : joints){
 			Dictionary<String, Object> properties = new Hashtable<>();
 			properties.put("joint.name", joint.getName());
 			ServiceRegistration rJoint = context.registerService(Joint.class, joint, properties);
 			registrations.add(rJoint);
-		}
+		}	
 		
 		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put("name", name);
@@ -477,6 +492,55 @@ public class ArmImpl implements Arm {
 		return setPosition(joint, getState().get(joint).position);
 	}
 	
+	@Override
+	public Promise<Arm> moveTo(float x, float y, float z) {
+		Deferred<Arm> deferred = new Deferred<>();
+		
+		if(ik == null){
+			try {
+			     ik = node.newServiceClient("solve_preferred_pitch_ik", SolvePreferredPitchIK._TYPE);
+			} catch(ServiceNotFoundException e){
+				deferred.fail(e);
+				return deferred.getPromise();
+			}
+		}
+		
+		final SolvePreferredPitchIKRequest request = ik.newMessage();
+		request.setPreferredPitch(3*Math.PI/4);
+		request.setDesNormal(new double[]{-y, x, 0});
+		request.setDesPosition(new double[]{x, y, z});
+		
+		ik.call(request, new ServiceResponseListener<SolvePreferredPitchIKResponse>() {
+			
+			@Override
+			public void onSuccess(SolvePreferredPitchIKResponse response) {
+//				System.out.println("Solution");
+//				System.out.println("Feasible "+response.getFeasible());
+//				System.out.println("Arm bend up "+response.getArmBendedUp());
+//				System.out.println("Arm to front "+response.getArmToFront());
+//				System.out.println("Gripper downwards "+response.getGripperDownwards());
+//				System.out.println("Angles "+Arrays.toString(response.getJointAngles()));
+				
+				if(!response.getFeasible()){
+					deferred.fail(new RuntimeException("The requested trajectory is not feasible"));
+					return;
+				}
+				
+				double[] joints = response.getJointAngles();
+				deferred.resolveWith(setPositions((float)joints[0],(float)joints[1],
+						(float)joints[2],(float)joints[3],(float)joints[4]));
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				ex.printStackTrace();
+				deferred.fail(ex);
+			}
+		});
+		
+		return deferred.getPromise();
+	}
+	
 	private class Target {
 		
 		final Collection<JointValue> target;
@@ -529,4 +593,5 @@ public class ArmImpl implements Arm {
 		}
 		return value;
 	}
+
 }

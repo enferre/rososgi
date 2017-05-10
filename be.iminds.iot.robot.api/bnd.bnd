@@ -1,3 +1,6 @@
-Bundle-Version: 0.2.0
+Bundle-Version: 0.3.0
 -buildpath: osgi.promise
-Export-Package: be.iminds.iot.robot.api
+Export-Package: \
+	be.iminds.iot.robot.api,\
+	be.iminds.iot.robot.api.arm,\
+	be.iminds.iot.robot.api.omni

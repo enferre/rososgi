@@ -6,9 +6,9 @@ import org.osgi.service.http.HttpService;
 
 import be.iminds.iot.input.keyboard.api.KeyboardEvent;
 import be.iminds.iot.input.keyboard.api.KeyboardEvent.Type;
+import be.iminds.iot.robot.api.arm.Arm;
+import be.iminds.iot.robot.api.omni.OmniDirectional;
 import be.iminds.iot.input.keyboard.api.KeyboardListener;
-import be.iminds.iot.robot.api.Arm;
-import be.iminds.iot.robot.api.OmniDirectional;
 
 @Component( 
 	    property = {"aiolos.proxy=false" }, 
@@ -117,9 +117,8 @@ public class KeyboardInput implements KeyboardListener {
 						.then(p -> arm.setPosition(1, -1.3f))
 						.then(p -> arm.reset());
 					break;
-				default:
-					base.stop();
-					arm.stop();	
+				case "Backspace":
+					arm.reset();
 			}
 		} else if(e.type == Type.RELEASED){
 			switch(e.key){

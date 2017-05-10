@@ -1,9 +1,11 @@
-package be.iminds.iot.robot.api;
+package be.iminds.iot.robot.api.arm;
 
 import java.util.Collection;
 import java.util.List;
 
 import org.osgi.util.promise.Promise;
+
+import be.iminds.iot.robot.api.Robot;
 
 public interface Arm extends Robot {
 
@@ -43,4 +45,7 @@ public interface Arm extends Robot {
 	Promise<Arm> reset();
 	
 	Promise<Arm> stop(int joint);
+	
+	
+	Promise<Arm> moveTo(float x, float y, float z);
 }

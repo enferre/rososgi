@@ -5,6 +5,8 @@ import java.util.concurrent.CountDownLatch;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 
+import be.iminds.iot.robot.api.Robot;
+
 public interface Robot {
 
 	Promise<? extends Robot> waitFor(long time);
