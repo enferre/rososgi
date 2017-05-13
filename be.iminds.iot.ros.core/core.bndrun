@@ -33,6 +33,7 @@ aiolos.version='[0.6.0,0.7.0)'
 	org.ros.rosjava.message_generation;version='[0.2.1,0.2.2)',\
 	org.ros.rosjava_messages.rosgraph_msgs;version='[1.11.1,1.12)',\
 	org.ros.rosjava_messages.std_msgs;version='[0.5.9,0.6)',\
+	org.ros.rosjava_messages.std_srvs;version='[1.11.1,1.11.2)',\
 	org.ros.rosjava_messages.geometry_msgs;version='[1.11.7,1.11.8)',\
 	org.ros.rosjava_messages.sensor_msgs;version='[1.11.7,1.11.8)',\
 	be.iminds.iot.ros.core;version=latest
@@ -40,8 +41,6 @@ aiolos.version='[0.6.0,0.7.0)'
 	
 #	be.iminds.iot.ros.test.pub;version=latest,\
 #	be.iminds.iot.ros.test.sub;version=latest
-	
-	
 	
 -runsystempackages:\
 	javax.naming,\
