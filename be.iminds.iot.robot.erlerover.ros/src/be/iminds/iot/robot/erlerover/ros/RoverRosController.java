@@ -40,11 +40,14 @@ public class RoverRosController extends AbstractNodeMain {
 	
 	@Override
 	public void onStart(ConnectedNode connectedNode){
-		connectedNode.getTopicMessageFactory();
-
 		// this brings online Rover service
-		rover = new RoverImpl(name, context, connectedNode);
-		rover.register();
+		try {
+			rover = new RoverImpl(name, context, connectedNode);
+			rover.register();
+		} catch(Exception e){
+			System.out.println("Failed to bring online Rover service");
+			e.printStackTrace();
+		}
 	}
 	
 	@Override

@@ -9,21 +9,27 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
+import org.ros.exception.RemoteException;
 import org.ros.node.ConnectedNode;
+import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Publisher;
 
 import be.iminds.iot.robot.api.rover.Rover;
 import mavros_msgs.OverrideRCIn;
+import mavros_msgs.SetModeRequest;
+import mavros_msgs.SetModeResponse;
 
 public class RoverImpl implements Rover {
 
 	private final String name;
 	private final BundleContext context;
-	private ServiceRegistration registration;
+	private ServiceRegistration<Rover> registration;
 	
 	private final ConnectedNode node;
 	
 	private Publisher<mavros_msgs.OverrideRCIn> pRC;
+	private ServiceClient<mavros_msgs.SetModeRequest, mavros_msgs.SetModeResponse> setMode;
 	
 	private Deferred<Rover> deferred = null;
 	private Timer timer = new Timer();
@@ -39,12 +45,30 @@ public class RoverImpl implements Rover {
 		
 	}
 	
-	public void register(){
-		pRC = node.newPublisher("/mavros/rc/override", mavros_msgs.OverrideRCIn._TYPE);
+	public void register() throws Exception{
+		setMode = node.newServiceClient("/mavros/set_mode", mavros_msgs.SetMode._TYPE);
 		
-		Dictionary<String, Object> properties = new Hashtable<>();
-		properties.put("name", name);
-		registration = 	context.registerService(Rover.class, this, properties);
+		// set mode to MANUAL
+		final SetModeRequest request = setMode.newMessage();
+		request.setBaseMode((byte)0);
+		request.setCustomMode("MANUAL");
+		setMode.call(request, new ServiceResponseListener<SetModeResponse>() {
+			
+			@Override
+			public void onSuccess(SetModeResponse r) {
+				pRC = node.newPublisher("/mavros/rc/override", mavros_msgs.OverrideRCIn._TYPE);
+				
+				Dictionary<String, Object> properties = new Hashtable<>();
+				properties.put("name", name);
+				registration = 	context.registerService(Rover.class, RoverImpl.this, properties);
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				System.out.println("Failed to set mavros mode");
+				ex.printStackTrace();
+			}
+		});
 	}
 	
 	public void unregister(){
