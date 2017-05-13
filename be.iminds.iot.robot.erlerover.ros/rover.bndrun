@@ -3,6 +3,7 @@
 -runbundles.rover: \
 	org.ros.rosjava_messages.mavros_msgs;version='[0.17.3,0.18)',\
 	be.iminds.iot.ros.configurator;version=latest,\
-	be.iminds.iot.robot.erlerover.ros;version=latest
-
+	be.iminds.iot.robot.erlerover.ros;version=latest,\
+	be.iminds.iot.keyboard.servlet;version=latest,\
+	be.iminds.iot.robot.input.keyboard;version=latest
 	

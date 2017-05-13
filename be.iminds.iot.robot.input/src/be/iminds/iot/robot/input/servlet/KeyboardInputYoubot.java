@@ -13,7 +13,7 @@ import be.iminds.iot.input.keyboard.api.KeyboardListener;
 @Component( 
 	    property = {"aiolos.proxy=false" }, 
 		immediate = true)
-public class KeyboardInput implements KeyboardListener {
+public class KeyboardInputYoubot implements KeyboardListener {
 
 	private Arm arm;
 	private OmniDirectional base;

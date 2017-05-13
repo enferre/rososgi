@@ -9,7 +9,7 @@ import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.api.omni.OmniDirectional;
 
 @Component
-public class JoystickInput implements JoystickListener {
+public class JoystickInputYoubot implements JoystickListener {
 
 	private Arm arm;
 	private OmniDirectional base;	
