@@ -5,3 +5,4 @@
 	org.ros.rosjava_messages.trajectory_msgs;version=latest
 Bundle-Version: 2.4.13
 Bundle-Name: gazebo_msgs
+Export-Package: gazebo_msgs
