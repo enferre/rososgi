@@ -1,18 +1,21 @@
 package be.iminds.iot.simulator.gazebo;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import org.osgi.util.promise.Deferred;
 import org.ros.exception.RemoteException;
+import org.ros.message.MessageListener;
+import org.ros.message.Time;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Subscriber;
 
 import be.iminds.iot.simulator.api.Orientation;
 import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
+import rosgraph_msgs.Clock;
 import std_srvs.EmptyResponse;
 
 /**
@@ -28,14 +31,27 @@ public class Gazebo implements Simulator {
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> resetSimulation;
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> resetWorld;
 
+	private Subscriber<rosgraph_msgs.Clock> clock; 
 
+	private volatile boolean running = false;
+	private long millis = 0;
+	private long step = 100; // TODO make this configurable?
 	
 	public Gazebo(ConnectedNode node) throws Exception{
 		start = node.newServiceClient("/gazebo/unpause_physics", std_srvs.Empty._TYPE);
 		stop = node.newServiceClient("/gazebo/pause_physics",  std_srvs.Empty._TYPE);
 		resetSimulation = node.newServiceClient("/gazebo/reset_simulation",  std_srvs.Empty._TYPE);
 		resetWorld = node.newServiceClient("/gazebo/reset_world",  std_srvs.Empty._TYPE);
-		
+	
+		clock = node.newSubscriber("/clock", rosgraph_msgs.Clock._TYPE);
+		clock.addMessageListener(new MessageListener<rosgraph_msgs.Clock>() {
+			@Override
+			public void onNewMessage(Clock c) {
+				if(millis > 0 && c.getClock().compareTo(new Time((int)(millis / 1000), (int)((millis % 1000)*1000000))) >= 0){
+					pause();
+				}
+			}
+		});
 	}
 	
 	public void start(){
@@ -44,21 +60,25 @@ public class Gazebo implements Simulator {
 	
 	@Override
 	public synchronized void start(boolean sync) {
-		final Deferred<Void> deferred = new Deferred<>();
-		start.call(start.newMessage(), new ServiceResponseListener<EmptyResponse>() {
-			@Override
-			public void onFailure(RemoteException ex) {
-				deferred.fail(ex);
+		millis = 0;
+		running = true;
+		if(!sync){
+			final Deferred<Void> deferred = new Deferred<>();
+			start.call(start.newMessage(), new ServiceResponseListener<EmptyResponse>() {
+				@Override
+				public void onFailure(RemoteException ex) {
+					deferred.fail(ex);
+				}
+				@Override
+				public void onSuccess(EmptyResponse arg0) {
+					deferred.resolve(null);
+				}
+			});
+			try {
+				deferred.getPromise().getValue();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			@Override
-			public void onSuccess(EmptyResponse arg0) {
-				deferred.resolve(null);
-			}
-		});
-		try {
-			deferred.getPromise().getValue();
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 	
@@ -84,6 +104,7 @@ public class Gazebo implements Simulator {
 
 	@Override
 	public synchronized void stop() {
+		running = false;
 		final Deferred<Void> deferred = new Deferred<>();
 		stop.call(stop.newMessage(), new ServiceResponseListener<EmptyResponse>() {
 			@Override
@@ -122,6 +143,10 @@ public class Gazebo implements Simulator {
 
 	@Override
 	public void tick() throws TimeoutException {
+		if(running){
+			millis += step;
+			start();
+		}
 	}
 
 	@Override
