@@ -62,6 +62,7 @@ public class GazeboActivator extends AbstractNodeMain{
 				});
 				reg = context.registerService(Simulator.class, gazebo, properties);
 			} catch(Exception e){
+				//e.printStackTrace();
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e1) {

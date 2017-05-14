@@ -1,5 +1,7 @@
 package be.iminds.iot.simulator.gazebo;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -15,6 +17,9 @@ import org.ros.node.topic.Subscriber;
 import be.iminds.iot.simulator.api.Orientation;
 import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
+import gazebo_msgs.SpawnModelRequest;
+import gazebo_msgs.SpawnModelResponse;
+import geometry_msgs.Pose;
 import rosgraph_msgs.Clock;
 import std_srvs.EmptyResponse;
 
@@ -30,7 +35,11 @@ public class Gazebo implements Simulator {
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> stop;
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> resetSimulation;
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> resetWorld;
+	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnSDFModel;
+	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnURDFModel;
+	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnGazeboModel;
 
+	
 	private Subscriber<rosgraph_msgs.Clock> clock; 
 
 	private volatile boolean running = false;
@@ -42,7 +51,11 @@ public class Gazebo implements Simulator {
 		stop = node.newServiceClient("/gazebo/pause_physics",  std_srvs.Empty._TYPE);
 		resetSimulation = node.newServiceClient("/gazebo/reset_simulation",  std_srvs.Empty._TYPE);
 		resetWorld = node.newServiceClient("/gazebo/reset_world",  std_srvs.Empty._TYPE);
-	
+		spawnSDFModel = node.newServiceClient("/gazebo/spawn_sdf_model", gazebo_msgs.SpawnModel._TYPE);
+		spawnURDFModel = node.newServiceClient("/gazebo/spawn_urdf_model", gazebo_msgs.SpawnModel._TYPE);
+		spawnGazeboModel = node.newServiceClient("/gazebo/spawn_gazebo_model", gazebo_msgs.SpawnModel._TYPE);
+
+		
 		clock = node.newSubscriber("/clock", rosgraph_msgs.Clock._TYPE);
 		clock.addMessageListener(new MessageListener<rosgraph_msgs.Clock>() {
 			@Override
@@ -151,7 +164,48 @@ public class Gazebo implements Simulator {
 
 	@Override
 	public void loadScene(String file, Map<String, String> entities) {
+		// TODO introduce separate spawn_model function in Simulator?!
+		ServiceClient<SpawnModelRequest, SpawnModelResponse> spawnModel = null;
+		if(file.endsWith(".sdf")){
+			spawnModel = spawnSDFModel;
+		} else if(file.endsWith(".urdf")){
+			spawnModel = spawnURDFModel;
+		} else {
+			spawnModel = spawnGazeboModel;
+		}
+		try {
+			final Deferred<Void> deferred = new Deferred<>();
+			
+			File f = new File(file);
+			byte[] bytes = Files.readAllBytes(f.toPath());
+			String xml = new String(bytes);
+			
+			SpawnModelRequest req = spawnModel.newMessage();
+			req.setModelName(f.getName());
+			req.setModelXml(xml);
+			Pose p = req.getInitialPose();
+			req.setInitialPose(p);
+			
+			spawnModel.call(req, new ServiceResponseListener<SpawnModelResponse>() {
+				@Override
+				public void onFailure(RemoteException ex) {
+					deferred.fail(ex);
+				}
 
+				@Override
+				public void onSuccess(SpawnModelResponse resp) {
+					if(resp.getSuccess()){
+						deferred.resolve(null);
+					} else {
+						deferred.fail(new Exception(resp.getStatusMessage()));
+					}
+				}
+			});
+			
+			deferred.getPromise().getValue();
+		} catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	@Override
