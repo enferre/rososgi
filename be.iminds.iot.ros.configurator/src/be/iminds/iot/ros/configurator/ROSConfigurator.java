@@ -71,6 +71,7 @@ public class ROSConfigurator {
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
 							break;
 						case "rover":
+							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.erlerover.Rover", null);
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.erlerover.ros.Rover", null);
 							break;	
 						default: 
