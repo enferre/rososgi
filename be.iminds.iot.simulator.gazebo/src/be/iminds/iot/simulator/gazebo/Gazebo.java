@@ -165,6 +165,7 @@ public class Gazebo implements Simulator {
 	@Override
 	public void loadScene(String file, Map<String, String> entities) {
 		// TODO introduce separate spawn_model function in Simulator?!
+		// TODO could this load world files similar to what roslaunch does?!
 		ServiceClient<SpawnModelRequest, SpawnModelResponse> spawnModel = null;
 		if(file.endsWith(".sdf")){
 			spawnModel = spawnSDFModel;

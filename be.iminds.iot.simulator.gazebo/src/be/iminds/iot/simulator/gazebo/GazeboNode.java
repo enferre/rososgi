@@ -1,6 +1,7 @@
 package be.iminds.iot.simulator.gazebo;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import be.iminds.iot.ros.util.NativeRosNode;
 
@@ -10,13 +11,14 @@ import be.iminds.iot.ros.util.NativeRosNode;
  * @author tverbele
  *
  */
-@Component(immediate=true)
+@Component(immediate=true,
+	name="be.iminds.iot.simulator.gazebo.Native",
+	configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class GazeboNode extends NativeRosNode {
 	
 	public GazeboNode(){
 		super("gazebo_ros","gazebo");
 	}
-	
 	
 	protected void deactivate(){
 		super.deactivate();

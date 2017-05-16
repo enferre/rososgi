@@ -1,12 +1,17 @@
 package be.iminds.iot.simulator.gazebo;
 
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -26,10 +31,28 @@ public class GazeboActivator extends AbstractNodeMain{
 
 	private BundleContext context;
 	private ServiceRegistration<Simulator> reg;
-
+	
+	// in case we need to launch Gazebo ourselves
+	private ConfigurationAdmin ca;
+	private Configuration nativeConfig;
+	
+	private volatile boolean active = false;
+	
+	
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
+	}
+	
+	@Deactivate
+	void deactivate(){
+		active = false;
+		if(nativeConfig !=null){
+			try {
+				nativeConfig.delete();
+			} catch (IOException e) {
+			}
+		}
 	}
 	
 	@Override
@@ -39,9 +62,8 @@ public class GazeboActivator extends AbstractNodeMain{
 	
 	@Override
 	public void onStart(ConnectedNode connectedNode){
-		long start = System.currentTimeMillis();
-		long timeout = 60000;
-		while(reg == null && System.currentTimeMillis()-start < timeout){
+		active = true;
+		while(reg == null && active){
 			try {
 				Gazebo gazebo = new Gazebo(connectedNode);
 				gazebo.stop();
@@ -63,6 +85,13 @@ public class GazeboActivator extends AbstractNodeMain{
 				reg = context.registerService(Simulator.class, gazebo, properties);
 			} catch(Exception e){
 				//e.printStackTrace();
+				if(nativeConfig == null){
+					// try to load gazebo ourselves?
+					try {
+						nativeConfig = ca.createFactoryConfiguration("be.iminds.iot.simulator.gazebo.Native", null);
+						nativeConfig.update(new Hashtable());
+					} catch(Exception ex){}
+				}
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e1) {
@@ -79,5 +108,10 @@ public class GazeboActivator extends AbstractNodeMain{
 		if(reg != null){
 			reg.unregister();
 		}
+	}
+	
+	@Reference
+	void setConfigurationAdmin(ConfigurationAdmin ca){
+		this.ca = ca;
 	}
 }
