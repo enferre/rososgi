@@ -33,7 +33,6 @@ public class Gazebo implements Simulator {
 	
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> start;
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> stop;
-	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> resetSimulation;
 	private ServiceClient<std_srvs.EmptyRequest, std_srvs.EmptyResponse> resetWorld;
 	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnSDFModel;
 	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnURDFModel;
@@ -43,13 +42,14 @@ public class Gazebo implements Simulator {
 	private Subscriber<rosgraph_msgs.Clock> clock; 
 
 	private volatile boolean running = false;
+	private volatile boolean sync = false;
+	
 	private long millis = 0;
 	private long step = 100; // TODO make this configurable?
 	
 	public Gazebo(ConnectedNode node) throws Exception{
 		start = node.newServiceClient("/gazebo/unpause_physics", std_srvs.Empty._TYPE);
 		stop = node.newServiceClient("/gazebo/pause_physics",  std_srvs.Empty._TYPE);
-		resetSimulation = node.newServiceClient("/gazebo/reset_simulation",  std_srvs.Empty._TYPE);
 		resetWorld = node.newServiceClient("/gazebo/reset_world",  std_srvs.Empty._TYPE);
 		spawnSDFModel = node.newServiceClient("/gazebo/spawn_sdf_model", gazebo_msgs.SpawnModel._TYPE);
 		spawnURDFModel = node.newServiceClient("/gazebo/spawn_urdf_model", gazebo_msgs.SpawnModel._TYPE);
@@ -60,38 +60,41 @@ public class Gazebo implements Simulator {
 		clock.addMessageListener(new MessageListener<rosgraph_msgs.Clock>() {
 			@Override
 			public void onNewMessage(Clock c) {
-				if(millis > 0 && c.getClock().compareTo(new Time((int)(millis / 1000), (int)((millis % 1000)*1000000))) >= 0){
+				if(sync && c.getClock().compareTo(new Time((int)(millis / 1000), (int)((millis % 1000)*1000000))) >= 0){
 					pause();
+					millis = c.getClock().totalNsecs()/1000000;
 				}
 			}
 		});
 	}
 	
-	public void start(){
+	public synchronized void start(){
 		start(false);
 	}
 	
 	@Override
-	public synchronized void start(boolean sync) {
-		millis = 0;
+	public synchronized void start(boolean s) {
 		running = true;
-		if(!sync){
-			final Deferred<Void> deferred = new Deferred<>();
-			start.call(start.newMessage(), new ServiceResponseListener<EmptyResponse>() {
-				@Override
-				public void onFailure(RemoteException ex) {
-					deferred.fail(ex);
-				}
-				@Override
-				public void onSuccess(EmptyResponse arg0) {
-					deferred.resolve(null);
-				}
-			});
-			try {
-				deferred.getPromise().getValue();
-			} catch (Exception e) {
-				e.printStackTrace();
+		sync = s;
+		unpause();
+	}
+	
+	private synchronized void unpause(){
+		final Deferred<Void> deferred = new Deferred<>();
+		start.call(start.newMessage(), new ServiceResponseListener<EmptyResponse>() {
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
 			}
+			@Override
+			public void onSuccess(EmptyResponse arg0) {
+				deferred.resolve(null);
+			}
+		});
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -121,20 +124,11 @@ public class Gazebo implements Simulator {
 		final Deferred<Void> deferred = new Deferred<>();
 		stop.call(stop.newMessage(), new ServiceResponseListener<EmptyResponse>() {
 			@Override
-			public void onSuccess(EmptyResponse r) {
-				resetSimulation.call(resetSimulation.newMessage(), new ServiceResponseListener<EmptyResponse>() {
+			public void onSuccess(EmptyResponse paramMessageType) {
+				resetWorld.call(resetWorld.newMessage(), new ServiceResponseListener<EmptyResponse>() {
 					@Override
 					public void onSuccess(EmptyResponse paramMessageType) {
-						resetWorld.call(resetWorld.newMessage(), new ServiceResponseListener<EmptyResponse>() {
-							@Override
-							public void onSuccess(EmptyResponse paramMessageType) {
-								deferred.resolve(null);
-							}
-							@Override
-							public void onFailure(RemoteException ex) {
-								deferred.fail(ex);
-							}
-						});
+						deferred.resolve(null);
 					}
 					@Override
 					public void onFailure(RemoteException ex) {
@@ -158,7 +152,7 @@ public class Gazebo implements Simulator {
 	public void tick() throws TimeoutException {
 		if(running){
 			millis += step;
-			start();
+			unpause();
 		}
 	}
 
