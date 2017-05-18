@@ -1,4 +1,4 @@
-Bundle-Version: 0.1.0
+Bundle-Version: 0.3.0
 -buildpath: \
 	osgi.core;version=5.0,\
 	osgi.enterprise;version=5.0,\
