@@ -4,6 +4,8 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -28,6 +30,11 @@ public class RoverImpl implements Rover {
 	private Deferred<Rover> deferred = null;
 	private Timer timer = new Timer();
 
+	private volatile boolean active = false;
+	private float throttle = 0;
+	private float yaw = 0;
+	
+	private ExecutorService repeater = Executors.newSingleThreadExecutor();
 	
 	public RoverImpl(String name, BundleContext context,
 			ConnectedNode node){
@@ -37,17 +44,36 @@ public class RoverImpl implements Rover {
 		
 		// TODO expose odometry/IMU information?
 		
+
 	}
 	
 	public void register() throws Exception{
 		pRC = node.newPublisher("/mavros/rc/override", mavros_msgs.OverrideRCIn._TYPE);
-				
+		
+		active = true;
+		// keep repeating latest throttle/yaw
+		repeater.submit(()->{
+			while(active){
+				sendCmd();
+				try {
+					// TODO how often to repeat?
+					Thread.sleep(200);
+				} catch (Exception e) {
+				}
+			}
+			throttle = 0;
+			yaw = 0;
+			sendCmd();
+		});
+		
 		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put("name", name);
 		registration = 	context.registerService(Rover.class, RoverImpl.this, properties);
 	}
 	
 	public void unregister(){
+		active = false;
+		
 		if(registration != null){
 			registration.unregister();
 		}
@@ -64,18 +90,10 @@ public class RoverImpl implements Rover {
 		// will be resolved immediately
 		Deferred<Rover> d = new Deferred<>();
 
-		OverrideRCIn cmd = pRC.newMessage();
-		short[] channels = cmd.getChannels();
+		this.throttle = throttle;
+		this.yaw = yaw;
 		
-		// convert -1 .. 1 to values ranging between 1100 and 1900
-		short t = (short)(1500+throttle*400);
-		short y = (short)(1500+yaw*400);
-		
-		channels[0] = y;
-		channels[2] = t;
-		
-		cmd.setChannels(channels);
-		pRC.publish(cmd);
+		sendCmd();
 		
 		// resolve immediately
 		d.resolve(RoverImpl.this);
@@ -122,5 +140,20 @@ public class RoverImpl implements Rover {
 				// ignore if already resolved
 			}
 		}
+	}
+	
+	private void sendCmd(){
+		OverrideRCIn cmd = pRC.newMessage();
+		short[] channels = cmd.getChannels();
+		
+		// convert -1 .. 1 to values ranging between 1100 and 1900
+		short t = (short)(1500+throttle*400);
+		short y = (short)(1500+yaw*400);
+		
+		channels[0] = y;
+		channels[2] = t;
+		
+		cmd.setChannels(channels);
+		pRC.publish(cmd);
 	}
 }
