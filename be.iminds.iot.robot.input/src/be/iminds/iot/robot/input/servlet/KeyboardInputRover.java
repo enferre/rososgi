@@ -17,6 +17,7 @@ public class KeyboardInputRover implements KeyboardListener {
 	private Rover rover;
 	
 	private float throttle = 0;
+	private float speed = 0.15f;
 	private float yaw = 0;
 	
 	@Reference
@@ -37,12 +38,12 @@ public class KeyboardInputRover implements KeyboardListener {
 			switch(e.key){
 				case "ArrowUp":
 				case "w":
-					throttle = 1f;
+					throttle = speed;
 					rover.move(throttle, yaw);
 					break;
 				case "ArrowDown":
 				case "s":
-					throttle = -1f;
+					throttle = -speed;
 					rover.move(throttle, yaw);
 					break;
 				case "ArrowLeft":
@@ -55,6 +56,24 @@ public class KeyboardInputRover implements KeyboardListener {
 					yaw = 1f;
 					rover.move(throttle, yaw);
 					break;
+				case "p":
+					speed += 0.05f;
+					if(speed > 1){
+						speed = 1;
+					}
+					System.out.println("Set speed "+speed);
+					throttle = throttle > 0 ? speed : throttle < 0 ? -speed : 0;
+					rover.move(throttle, yaw);
+					break;
+				case "l":
+					speed -= 0.05f;
+					if(speed < 0.15){
+						speed = 0.15f;
+					}
+					System.out.println("Set speed "+speed);
+					throttle = throttle > 0 ? speed : throttle < 0 ? -speed : 0;
+					rover.move(throttle, yaw);
+					break;					
 			}
 		} else if(e.type == Type.RELEASED){
 			switch(e.key){
