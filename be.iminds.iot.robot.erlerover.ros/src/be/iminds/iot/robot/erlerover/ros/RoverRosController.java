@@ -11,6 +11,7 @@ import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 import org.ros.exception.RemoteException;
 import org.ros.exception.ServiceNotFoundException;
+import org.ros.message.MessageListener;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
@@ -18,12 +19,15 @@ import org.ros.node.Node;
 import org.ros.node.NodeMain;
 import org.ros.node.service.ServiceClient;
 import org.ros.node.service.ServiceResponseListener;
+import org.ros.node.topic.Subscriber;
 
 import mavros_msgs.ParamSetRequest;
 import mavros_msgs.ParamSetResponse;
 import mavros_msgs.ParamValue;
 import mavros_msgs.SetModeRequest;
 import mavros_msgs.SetModeResponse;
+import mavros_msgs.State;
+import sensor_msgs.LaserScan;
 
 @Component(service = {NodeMain.class},
 	name="be.iminds.iot.robot.erlerover.ros.Rover",
@@ -40,6 +44,9 @@ public class RoverRosController extends AbstractNodeMain {
 	private ServiceClient<ParamSetRequest, ParamSetResponse> setParam = null;
 	private ServiceClient<SetModeRequest, SetModeResponse> setMode = null;
 		
+	private Subscriber<mavros_msgs.State> subscriber;
+	private int count = 0;
+	
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
@@ -90,18 +97,34 @@ public class RoverRosController extends AbstractNodeMain {
 		// set SYSID_MYGCS to 1 for override control
 		setParam("SYSID_MYGCS", 1)   // retry until ok
 			.then(p -> setParam("FS_ACTION", 0))
-			.then(p -> setMode("MANUAL",0))
-			.then(p -> {
-				// this brings online Rover service
-				try {
-					rover = new RoverImpl(name, context, node);
-					rover.register();
-				} catch(Exception e){
-					System.out.println("Failed to bring online Rover service");
-					e.printStackTrace();
+			.then(p -> setMode("MANUAL",0));
+		
+		// wait until initialized before bringing Rover service online
+		subscriber = node.newSubscriber("/mavros/state", mavros_msgs.State._TYPE);
+		subscriber.addMessageListener(new MessageListener<State>() {
+			@Override
+			public void onNewMessage(State state) {
+				if(state.getConnected() && state.getMode().equals("MANUAL")){
+					count++;
+					if(count > 3){
+						// this brings online Rover service when armed
+						// apparently we don't get state.getArmed True when it is
+						// therefore we count the amount of messages that we are in MANUAL
+						// if we are in 3 subsequent MANUAL states we think it is ok
+						try {
+							rover = new RoverImpl(name, context, node);
+							rover.register();
+						} catch(Exception e){
+							System.out.println("Failed to bring online Rover service");
+							e.printStackTrace();
+						}
+						subscriber.shutdown();
+					} 
+				} else {
+					count = 0;
 				}
-				return null;
-			});
+			}
+		});
 	}
 	
 	@Override
