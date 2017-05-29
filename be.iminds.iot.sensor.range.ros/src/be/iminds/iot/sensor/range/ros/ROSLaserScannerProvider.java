@@ -1,7 +1,6 @@
 package be.iminds.iot.sensor.range.ros;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
@@ -41,6 +40,7 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 	private volatile List<SensorListener> listeners = new ArrayList<>();
 
 	private String name;
+	private String topic;
 	private UUID id;
 	private volatile be.iminds.iot.sensor.api.LaserScan currentScan = null;
 	
@@ -53,7 +53,6 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		String topic = "/"+name.replaceAll("( )|#", "_").toLowerCase()+"/scan";
 		subscriber = connectedNode.newSubscriber(topic,
 				LaserScan._TYPE);
 		subscriber.addMessageListener(new MessageListener<LaserScan>() {
@@ -64,10 +63,11 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 				s.minAngle = scan.getAngleMin();
 				s.maxAngle = scan.getAngleMax();
 				s.data = scan.getRanges();
-				// convert NaNery to zeros
+				float max = scan.getRangeMax();
+				// convert NaNery to range max
 				for(int i = 0;i<s.data.length;i++){
 					if(Float.isNaN(s.data[i])){
-						s.data[i] = 0.0f;
+						s.data[i] = max;
 					}
 				}
 				
@@ -161,6 +161,12 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 			Random r = new Random(System.currentTimeMillis());
 			name = "LaserScanner-"+r.nextInt(100);
 		}
+		if(config.containsKey("topic")){
+			topic = config.get("topic").toString();
+		} else {
+			topic = "/"+name.replaceAll("( )|#", "_").toLowerCase()+"/scan";
+		}
+		
 		this.id = UUID.nameUUIDFromBytes(name.getBytes());
 	}
 
