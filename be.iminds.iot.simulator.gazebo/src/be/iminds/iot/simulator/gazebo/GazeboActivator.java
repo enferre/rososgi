@@ -34,6 +34,7 @@ public class GazeboActivator extends AbstractNodeMain{
 	
 	// in case we need to launch Gazebo ourselves
 	private ConfigurationAdmin ca;
+	private boolean launchNative = false;
 	private Configuration nativeConfig;
 	
 	private volatile boolean active = false;
@@ -42,6 +43,10 @@ public class GazeboActivator extends AbstractNodeMain{
 	@Activate
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
+		String launch = context.getProperty("gazebo.launch");
+		if(launch != null){
+			launchNative = Boolean.parseBoolean(launch);
+		}
 	}
 	
 	@Deactivate
@@ -85,7 +90,7 @@ public class GazeboActivator extends AbstractNodeMain{
 				reg = context.registerService(Simulator.class, gazebo, properties);
 			} catch(Exception e){
 				//e.printStackTrace();
-				if(nativeConfig == null){
+				if(nativeConfig == null && launchNative){
 					// try to load gazebo ourselves?
 					try {
 						nativeConfig = ca.createFactoryConfiguration("be.iminds.iot.simulator.gazebo.Native", null);
