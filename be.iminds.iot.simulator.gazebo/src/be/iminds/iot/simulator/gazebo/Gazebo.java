@@ -19,7 +19,9 @@ import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
 import gazebo_msgs.SpawnModelRequest;
 import gazebo_msgs.SpawnModelResponse;
+import geometry_msgs.Point;
 import geometry_msgs.Pose;
+import geometry_msgs.Quaternion;
 import rosgraph_msgs.Clock;
 import std_srvs.EmptyResponse;
 
@@ -157,7 +159,7 @@ public class Gazebo implements Simulator {
 	}
 
 	@Override
-	public void loadScene(String file, Map<String, String> entities) {
+	public void loadScene(String file, Map<String, String> config) {
 		// TODO introduce separate spawn_model function in Simulator?!
 		// TODO could this load world files similar to what roslaunch does?!
 		ServiceClient<SpawnModelRequest, SpawnModelResponse> spawnModel = null;
@@ -168,6 +170,7 @@ public class Gazebo implements Simulator {
 		} else {
 			spawnModel = spawnGazeboModel;
 		}
+		
 		try {
 			final Deferred<Void> deferred = new Deferred<>();
 			
@@ -179,8 +182,27 @@ public class Gazebo implements Simulator {
 			req.setModelName(f.getName());
 			req.setModelXml(xml);
 			Pose p = req.getInitialPose();
+			Point point = p.getPosition();
+			Quaternion quaternion = p.getOrientation();
+			if(config.containsKey("pose")){
+				String pose = config.get("pose");
+				String[] numbers = pose.split(",");
+				if(numbers.length >= 3){
+					point.setX(Double.parseDouble(numbers[0].trim()));
+					point.setY(Double.parseDouble(numbers[1].trim()));
+					point.setZ(Double.parseDouble(numbers[2].trim()));
+				} 
+				if(numbers.length == 7){
+					quaternion.setW(Double.parseDouble(numbers[3].trim()));
+					quaternion.setX(Double.parseDouble(numbers[4].trim()));
+					quaternion.setY(Double.parseDouble(numbers[5].trim()));
+					quaternion.setZ(Double.parseDouble(numbers[6].trim()));
+				}
+				p.setPosition(point);
+				p.setOrientation(quaternion);
+			}			
 			req.setInitialPose(p);
-			
+
 			spawnModel.call(req, new ServiceResponseListener<SpawnModelResponse>() {
 				@Override
 				public void onFailure(RemoteException ex) {
