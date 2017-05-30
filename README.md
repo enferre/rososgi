@@ -1,4 +1,4 @@
-This repository contains OSGi bundles to interface with ROS (Robot Operating System)
+This repository contains OSGi bundles to interface with ROS (Robot Operating System), facilitating the creation of robotics environments for reinforcement learning with the [DIANNE framework](https://github.com/ibcn-cloudlet/dianne)
 
 ![ROS Youbot Architecture](architecture.png)
 
