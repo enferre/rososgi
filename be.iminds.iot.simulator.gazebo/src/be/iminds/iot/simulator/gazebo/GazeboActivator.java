@@ -59,6 +59,7 @@ public class GazeboActivator extends AbstractNodeMain{
 	private boolean launchNative = false;
 	private Configuration nativeConfig;
 	
+	private long step = 100;
 	private volatile boolean active = false;
 	
 	
@@ -68,6 +69,11 @@ public class GazeboActivator extends AbstractNodeMain{
 		String launch = context.getProperty("gazebo.launch");
 		if(launch != null){
 			launchNative = Boolean.parseBoolean(launch);
+		}
+		
+		String s = context.getProperty("gazebo.step");
+		if(s != null){
+			step = Long.parseLong(s);
 		}
 	}
 	
@@ -92,7 +98,7 @@ public class GazeboActivator extends AbstractNodeMain{
 		active = true;
 		while(reg == null && active){
 			try {
-				Gazebo gazebo = new Gazebo(connectedNode);
+				Gazebo gazebo = new Gazebo(connectedNode, step);
 				gazebo.stop();
 				
 				Hashtable<String, Object> properties = new Hashtable<String, Object>();

@@ -73,11 +73,13 @@ public class Gazebo implements Simulator {
 	private volatile boolean sync = false;
 	
 	private long millis = 0;
-	private long step = 100; // TODO make this configurable?
+	private long step;
 	
 	private volatile String scene = null;
 	
-	public Gazebo(ConnectedNode node) throws Exception{
+	public Gazebo(ConnectedNode node , long step) throws Exception{
+		this.step = step;
+		
 		start = node.newServiceClient("/gazebo/unpause_physics", std_srvs.Empty._TYPE);
 		stop = node.newServiceClient("/gazebo/pause_physics",  std_srvs.Empty._TYPE);
 		resetWorld = node.newServiceClient("/gazebo/reset_world",  std_srvs.Empty._TYPE);
