@@ -42,6 +42,11 @@ import be.iminds.iot.simulator.api.Position;
 import be.iminds.iot.simulator.api.Simulator;
 import gazebo_msgs.DeleteModelRequest;
 import gazebo_msgs.DeleteModelResponse;
+import gazebo_msgs.GetModelStateRequest;
+import gazebo_msgs.GetModelStateResponse;
+import gazebo_msgs.ModelState;
+import gazebo_msgs.SetModelStateRequest;
+import gazebo_msgs.SetModelStateResponse;
 import gazebo_msgs.SpawnModelRequest;
 import gazebo_msgs.SpawnModelResponse;
 import geometry_msgs.Point;
@@ -65,12 +70,14 @@ public class Gazebo implements Simulator {
 	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnURDFModel;
 	private ServiceClient<gazebo_msgs.SpawnModelRequest, gazebo_msgs.SpawnModelResponse> spawnGazeboModel;
 	private ServiceClient<gazebo_msgs.DeleteModelRequest, gazebo_msgs.DeleteModelResponse> deleteModel;
+	private ServiceClient<gazebo_msgs.GetModelStateRequest, gazebo_msgs.GetModelStateResponse> getModelState;
+	private ServiceClient<gazebo_msgs.SetModelStateRequest, gazebo_msgs.SetModelStateResponse> setModelState;
 
-	
 	private Subscriber<rosgraph_msgs.Clock> clock; 
 
 	private volatile boolean running = false;
 	private volatile boolean sync = false;
+	private Object lock = new Object();
 	
 	private long millis = 0;
 	private long step;
@@ -87,6 +94,8 @@ public class Gazebo implements Simulator {
 		spawnURDFModel = node.newServiceClient("/gazebo/spawn_urdf_model", gazebo_msgs.SpawnModel._TYPE);
 		spawnGazeboModel = node.newServiceClient("/gazebo/spawn_gazebo_model", gazebo_msgs.SpawnModel._TYPE);
 		deleteModel = node.newServiceClient("/gazebo/delete_model", gazebo_msgs.DeleteModel._TYPE);
+		getModelState = node.newServiceClient("/gazebo/get_model_state", gazebo_msgs.GetModelState._TYPE);
+		setModelState = node.newServiceClient("/gazebo/set_model_state", gazebo_msgs.SetModelState._TYPE);
 
 		
 		clock = node.newSubscriber("/clock", rosgraph_msgs.Clock._TYPE);
@@ -94,8 +103,11 @@ public class Gazebo implements Simulator {
 			@Override
 			public void onNewMessage(Clock c) {
 				if(sync && c.getClock().compareTo(new Time((int)(millis / 1000), (int)((millis % 1000)*1000000))) >= 0){
-					pause();
-					millis = c.getClock().totalNsecs()/1000000;
+					synchronized(lock){
+						pause();
+						millis = c.getClock().totalNsecs()/1000000;
+						lock.notifyAll();
+					}
 				}
 			}
 		});
@@ -184,11 +196,17 @@ public class Gazebo implements Simulator {
 	@Override
 	public void tick() throws TimeoutException {
 		if(running){
-			millis += step;
-			unpause();
+			synchronized(lock){
+				millis += step;
+				unpause();
+				try {
+					lock.wait();
+				} catch (InterruptedException e) {
+				}
+			}
 		}
 	}
-
+	
 	@Override
 	public void loadScene(String file, Map<String, String> config) {
 		// in case of gazebo we see the "scene" as a single model that can be loaded
@@ -261,24 +279,7 @@ public class Gazebo implements Simulator {
 			
 			if(orientation != null){
 				Quaternion q = p.getOrientation();
-				// Converting euler angles to quaternion
-				// Assuming euler angles in radians!
-				double c1 = Math.cos(orientation.alfa/2);
-				double s1 = Math.sin(orientation.alfa/2);
-				double c2 = Math.cos(orientation.beta/2);
-				double s2 = Math.sin(orientation.beta/2);
-				double c3 = Math.cos(orientation.gamma/2);
-				double s3 = Math.sin(orientation.gamma/2);
-				double c1c2 = c1*c2;
-				double s1s2 = s1*s2;
-				double w =c1c2*c3 - s1s2*s3;
-				double x =c1c2*s3 + s1s2*c3;
-				double y =s1*c2*c3 + c1*s2*s3;
-				double z =c1*s2*c3 - s1*c2*s3;
-				q.setW(w);
-				q.setX(x);
-				q.setY(y);
-				q.setZ(z);
+				orientationToQuaternion(orientation, q);
 				p.setOrientation(q);
 			}
 			
@@ -334,59 +335,165 @@ public class Gazebo implements Simulator {
 
 	@Override
 	public Position getPosition(String object) {
-		throw new UnsupportedOperationException();
+		return getPosition(object, null);
 	}
 
 	@Override
 	public void setPosition(String object, Position p) {
-		throw new UnsupportedOperationException();
+		setPosition(object, null, p);
 	}
 
 	@Override
 	public Position getPosition(String object, String relativeTo) {
-		throw new UnsupportedOperationException();
+		Pose pose;
+		try {
+			pose = getPose(object, relativeTo).getValue();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to get position for object "+object, e);
+		}
+		Position position = new Position(
+				(float)pose.getPosition().getX(), 
+				(float)pose.getPosition().getY(), 
+				(float)pose.getPosition().getZ());
+		return position;
 	}
 
 	@Override
 	public void setPosition(String object, String relativeTo, Position p) {
-		throw new UnsupportedOperationException();
+		try {
+			if(relativeTo == null){
+				relativeTo = "world";
+			}
+			
+			Pose pose = getPose(object, relativeTo).getValue();
+			
+			Point point = pose.getPosition();
+			point.setX(p.x);
+			point.setY(p.y);
+			point.setZ(p.z);
+			pose.setPosition(point);
+			
+			setPose(object, relativeTo, pose).getValue();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to get position for object "+object, e);
+		}
 	}
 		
 	public void setPosition(String object, float x, float y, float z) {
-		throw new UnsupportedOperationException();
+		setPosition(object, null, new Position(x,y,z));
 	}
 	
 	public void setPosition(String object, String relativeTo, float x, float y, float z) {
-		throw new UnsupportedOperationException();
+		setPosition(object, relativeTo, new Position(x,y,z));
 	}
 	
 	@Override
 	public Orientation getOrientation(String object) {
-		throw new UnsupportedOperationException();
+		return getOrientation(object, null);
 	}
 
 	@Override
 	public void setOrientation(String object, Orientation o) {
-		throw new UnsupportedOperationException();
+		setOrientation(object, null, o);
 	}
 
 	@Override
 	public Orientation getOrientation(String object, String relativeTo) {
-		throw new UnsupportedOperationException();
+		Pose pose;
+		try {
+			pose = getPose(object, relativeTo).getValue();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to get position for object "+object, e);
+		}
+		Orientation orientation = new Orientation();
+		quaternionToOrientation(pose.getOrientation(), orientation);
+		return orientation;
 	}
 
 	@Override
 	public void setOrientation(String object, String relativeTo, Orientation o) {
-		throw new UnsupportedOperationException();
+		try {
+			if(relativeTo == null){
+				relativeTo = "world";
+			}
+			
+			Pose pose = getPose(object, relativeTo).getValue();
+			
+			Quaternion q = pose.getOrientation();
+			orientationToQuaternion(o, q);
+			pose.setOrientation(q);
+			
+			setPose(object, relativeTo, pose).getValue();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to get position for object "+object, e);
+		}
 	}
 	
 	public void setOrientation(String object, float a, float b, float g) {
-		throw new UnsupportedOperationException();
+		setOrientation(object, new Orientation(a,b,g));
 	}
 	
 	public void setOrientation(String object, String relativeTo, float a, float b, float g) {
-		throw new UnsupportedOperationException();
+		setOrientation(object, relativeTo, new Orientation(a,b,g));
 	}
+	
+	private Promise<Pose> getPose(String object, String relativeTo){
+		final Deferred<Pose> deferred = new Deferred<>();
+		
+		GetModelStateRequest req = getModelState.newMessage();
+		req.setModelName(object);
+		if(relativeTo == null){
+			relativeTo = "world";
+		}
+		req.setRelativeEntityName(relativeTo);
+		
+		getModelState.call(req, new ServiceResponseListener<GetModelStateResponse>() {
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+
+			@Override
+			public void onSuccess(GetModelStateResponse resp) {
+				if(resp.getSuccess()){
+					deferred.resolve(resp.getPose());
+				} else {
+					deferred.fail(new Exception(resp.getStatusMessage()));
+				}
+			}
+		});
+		
+		return deferred.getPromise();
+	}
+	
+	private Promise<Void> setPose(String object, String relativeTo, Pose pose){
+		final Deferred<Void> deferred = new Deferred<>();
+		
+		SetModelStateRequest req = setModelState.newMessage();
+		ModelState state = req.getModelState();
+		state.setModelName(object);
+		state.setReferenceFrame(relativeTo);
+		state.setPose(pose);
+		
+		setModelState.call(req, new ServiceResponseListener<SetModelStateResponse>() {
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+
+			@Override
+			public void onSuccess(SetModelStateResponse resp) {
+				if(resp.getSuccess()){
+					deferred.resolve(null);
+				} else {
+					deferred.fail(new Exception(resp.getStatusMessage()));
+				}
+			}
+		});
+		
+		return deferred.getPromise();
+	}
+	
 
 	@Override
 	public boolean checkCollisions(String object) {
@@ -406,6 +513,51 @@ public class Gazebo implements Simulator {
 	@Override
 	public void setProperty(String object, String key, boolean value){
 		throw new UnsupportedOperationException();
+	}
+	
+	private void quaternionToOrientation(Quaternion q, Orientation o){
+		double ysqr = q.getY() * q.getY();
+
+		// roll (x-axis rotation)
+		double t0 = +2.0 * (q.getW() * q.getX() + q.getY() * q.getZ());
+		double t1 = +1.0 - 2.0 * (q.getX() * q.getX() + ysqr);
+		double roll = Math.atan2(t0, t1);
+
+		// pitch (y-axis rotation)
+		double t2 = +2.0 * (q.getW() * q.getY() - q.getZ() * q.getX());
+		t2 = t2 > 1.0 ? 1.0 : t2;
+		t2 = t2 < -1.0 ? -1.0 : t2;
+		double pitch = Math.asin(t2);
+
+		// yaw (z-axis rotation)
+		double t3 = +2.0 * (q.getW() * q.getZ() + q.getX() * q.getY());
+		double t4 = +1.0 - 2.0 * (ysqr + q.getZ() * q.getZ());  
+		double yaw = Math.atan2(t3, t4);
+		
+		o.alfa = (float)roll;
+		o.beta = (float)pitch;
+		o.gamma = (float)yaw;
+	}
+	
+	private void orientationToQuaternion(Orientation o, Quaternion q){
+		// Converting euler angles to quaternion
+		// Assuming euler angles in radians!
+		double t0 = Math.cos(o.gamma * 0.5);
+		double t1 = Math.sin(o.gamma * 0.5);
+		double t2 = Math.cos(o.alfa * 0.5);
+		double t3 = Math.sin(o.alfa * 0.5);
+		double t4 = Math.cos(o.beta * 0.5);
+		double t5 = Math.sin(o.beta * 0.5);
+
+		double w = t0 * t2 * t4 + t1 * t3 * t5;
+		double x = t0 * t3 * t4 - t1 * t2 * t5;
+		double y = t0 * t2 * t5 + t1 * t3 * t4;
+		double z = t1 * t2 * t4 - t0 * t3 * t5;
+		
+		q.setW(w);
+		q.setX(x);
+		q.setY(y);
+		q.setZ(z);
 	}
 
 }

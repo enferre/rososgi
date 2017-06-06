@@ -43,7 +43,7 @@ public interface Simulator {
 		loadScene(file, new HashMap<String, String>());
 	}
 	
-	void loadScene(String file, Map<String, String> entities);
+	void loadScene(String file, Map<String, String> config);
 	
 	// get and set positions of objects
 	
