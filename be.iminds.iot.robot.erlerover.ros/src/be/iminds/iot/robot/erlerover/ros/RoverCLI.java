@@ -30,7 +30,8 @@ import be.iminds.iot.robot.api.rover.Rover;
 @Component(service={Object.class},
 	property = {"osgi.command.scope=rover", 
 	"osgi.command.function=move",
-	"osgi.command.function=halt"})
+	"osgi.command.function=halt",
+	"osgi.command.function=cmd"})
 public class RoverCLI {
 
 	private Rover rover;
@@ -42,6 +43,11 @@ public class RoverCLI {
 	public void halt(){
 		rover.stop();
 	}
+	
+	public void cmd(short... channels){
+		((RoverImpl)rover).sendCmd(channels);
+	}
+	
 	
 	@Reference
 	public void setRover(Rover r){

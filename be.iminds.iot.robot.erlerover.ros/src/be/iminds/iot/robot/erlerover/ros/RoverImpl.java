@@ -178,4 +178,10 @@ public class RoverImpl implements Rover {
 		cmd.setChannels(channels);
 		pRC.publish(cmd);
 	}
+	
+	void sendCmd(short... channels){
+		OverrideRCIn cmd = pRC.newMessage();	
+		cmd.setChannels(channels);
+		pRC.publish(cmd);
+	}
 }
