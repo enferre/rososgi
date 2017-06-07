@@ -276,6 +276,17 @@ public class VREP implements Simulator {
 		setOrientation(object, relativeTo, new Orientation(a, b, g));
 	}
 
+	@Override
+	public void setPose(String object, Position p, Orientation o) {
+		setPosition(object, p);
+		setOrientation(object, o);
+	}
+
+	@Override
+	public void setPose(String object, String relativeTo, Position p, Orientation o) {
+		setPosition(object, relativeTo, p);
+		setOrientation(object, relativeTo, o);
+	}
 	
 	void loadHandles(){
 		objectHandles.clear();

@@ -437,6 +437,36 @@ public class Gazebo implements Simulator {
 		setOrientation(object, relativeTo, new Orientation(a,b,g));
 	}
 	
+	@Override
+	public void setPose(String object, Position p, Orientation o) {
+		setPose(object, null, p, o);
+	}
+
+	@Override
+	public void setPose(String object, String relativeTo, Position p, Orientation o) {
+		try {
+			if(relativeTo == null){
+				relativeTo = "world";
+			}
+			
+			Pose pose = getPose(object, relativeTo).getValue();
+			
+			Point point = pose.getPosition();
+			point.setX(p.x);
+			point.setY(p.y);
+			point.setZ(p.z);
+			pose.setPosition(point);
+			
+			Quaternion q = pose.getOrientation();
+			orientationToQuaternion(o, q);
+			pose.setOrientation(q);
+			
+			setPose(object, relativeTo, pose).getValue();
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to get position for object "+object, e);
+		}
+	}
+	
 	private Promise<Pose> getPose(String object, String relativeTo){
 		final Deferred<Pose> deferred = new Deferred<>();
 		

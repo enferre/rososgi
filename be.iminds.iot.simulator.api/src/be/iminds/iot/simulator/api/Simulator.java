@@ -65,6 +65,10 @@ public interface Simulator {
 	
 	void setOrientation(String object, String relativeTo, Orientation o);
 	
+	void setPose(String object, Position p, Orientation o);
+	
+	void setPose(String object, String relativeTo, Position p, Orientation o);
+	
 	// check collisions
 	boolean checkCollisions(String object);
 	
