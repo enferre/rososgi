@@ -88,7 +88,11 @@ public class ROSConfigurator {
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.camera.ros.Camera", null);
 							break;
 						case "hokuyo":
-							dict.put("ros.mappings", "scan:="+name+"/scan");
+							if(dict.get("topic")!= null){
+								dict.put("ros.mappings", "scan:="+dict.get("topic").substring(1));
+							} else {
+								dict.put("ros.mappings", "scan:="+name+"/scan");
+							}
 							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.range.URG", null);
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range.ros.LaserScanner", null);
 							break;
