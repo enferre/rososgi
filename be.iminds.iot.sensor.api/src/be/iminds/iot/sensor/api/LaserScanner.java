@@ -28,4 +28,8 @@ public interface LaserScanner extends Sensor {
 	
 	float getMaxAngle();
 	
+	float getMinRange();
+	
+	float getMaxRange();
+	
 }

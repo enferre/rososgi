@@ -84,12 +84,13 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 				s.src = id;
 				s.minAngle = scan.getAngleMin();
 				s.maxAngle = scan.getAngleMax();
+				s.minRange = scan.getRangeMin();
+				s.maxRange = scan.getRangeMax();
 				s.data = scan.getRanges();
-				float max = scan.getRangeMax();
 				// convert NaNery to range max
 				for(int i = 0;i<s.data.length;i++){
-					if(Float.isNaN(s.data[i])){
-						s.data[i] = max;
+					if(Float.isNaN(s.data[i]) || Float.isInfinite(s.data[i])){
+						s.data[i] = s.maxRange;
 					}
 				}
 				
@@ -127,6 +128,16 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 		return currentScan.maxAngle;
 	}
 
+	@Override
+	public float getMinRange() {
+		return currentScan.minRange;
+	}
+	
+	@Override
+	public float getMaxRange() {
+		return currentScan.maxRange;
+	}
+	
 	@Override
 	public void onShutdown(Node node) {
 		if(registration != null){
