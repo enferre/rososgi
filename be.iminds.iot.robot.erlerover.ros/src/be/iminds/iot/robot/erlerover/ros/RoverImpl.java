@@ -24,10 +24,10 @@ package be.iminds.iot.robot.erlerover.ros;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -50,7 +50,7 @@ public class RoverImpl implements Rover {
 	private Publisher<mavros_msgs.OverrideRCIn> pRC;
 	
 	private Deferred<Rover> deferred = null;
-	private Timer timer = new Timer();
+	private final static ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
 	private volatile boolean active = false;
 	private float throttle = 0;
@@ -130,7 +130,7 @@ public class RoverImpl implements Rover {
 		}
 		deferred = new Deferred<Rover>();
 
-		timer.schedule(new ResolveTask(deferred), time);
+		executor.schedule(new ResolveTask(deferred), time, TimeUnit.MILLISECONDS);
 	
 		return deferred.getPromise();
 	}
@@ -140,7 +140,7 @@ public class RoverImpl implements Rover {
 		return move(0, 0);
 	}
 	
-	private class ResolveTask extends TimerTask {
+	private class ResolveTask implements Runnable {
 		
 		private Deferred<Rover> deferred;
 		

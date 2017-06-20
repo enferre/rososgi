@@ -32,9 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.osgi.framework.BundleContext;
@@ -89,7 +90,7 @@ public class ArmImpl implements Arm {
 	private static float THRESHOLD = 0.002f;
 
 	
-	private final Timer timer = new Timer();
+	private final static ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 	
 	// TODO get from config? also look at be.iminds.iot.ros.simulator.vrep.youbot.Youbot
 	private String[] config = new String[]{
@@ -471,7 +472,7 @@ public class ArmImpl implements Arm {
 	@Override
 	public Promise<Arm> waitFor(long time) {
 		Deferred<Arm> deferred = new Deferred<Arm>();
-		timer.schedule(new ResolveTask(deferred), time);
+		executor.schedule(new ResolveTask(deferred), time, TimeUnit.MILLISECONDS);
 		return deferred.getPromise();
 	}
 	
@@ -480,7 +481,7 @@ public class ArmImpl implements Arm {
 		return setPositions(0.0f, 0.0f, 0.0f, 0.0f, 0.0f).then(p -> closeGripper());
 	}
 	
-	private class ResolveTask extends TimerTask {
+	private class ResolveTask implements Runnable {
 		
 		private Deferred<Arm> deferred;
 		

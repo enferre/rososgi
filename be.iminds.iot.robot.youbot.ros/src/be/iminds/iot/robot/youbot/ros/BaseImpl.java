@@ -25,8 +25,9 @@ package be.iminds.iot.robot.youbot.ros;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -50,7 +51,7 @@ public class BaseImpl implements OmniDirectional {
 	private Publisher<geometry_msgs.Twist> pTwist;
 	
 	private Deferred<OmniDirectional> deferred = null;
-	private Timer timer = new Timer();
+	private final static ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
 	
 	public BaseImpl(String name, BundleContext context,
@@ -122,7 +123,7 @@ public class BaseImpl implements OmniDirectional {
 		}
 		deferred = new Deferred<OmniDirectional>();
 
-		timer.schedule(new ResolveTask(deferred), time);
+		executor.schedule(new ResolveTask(deferred), time, TimeUnit.MILLISECONDS);
 	
 		return deferred.getPromise();
 	}
@@ -132,7 +133,7 @@ public class BaseImpl implements OmniDirectional {
 		return move(0, 0, 0);
 	}
 	
-	private class ResolveTask extends TimerTask {
+	private class ResolveTask implements Runnable {
 		
 		private Deferred<OmniDirectional> deferred;
 		
