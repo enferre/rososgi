@@ -22,10 +22,17 @@
  *******************************************************************************/
 package be.iminds.iot.ros.core;
 
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.ros.concurrent.DefaultScheduledExecutorService;
 import org.ros.node.DefaultNodeMainExecutor;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMain;
@@ -36,9 +43,29 @@ import be.iminds.iot.ros.api.Environment;
 @Component
 public class RosRuntime {
 
-	private NodeMainExecutor executor = DefaultNodeMainExecutor.newDefault();
+	private NodeMainExecutor executor;
+	private ThreadPoolExecutor pool;
+	private int threadCount = 0;
 	
 	private Environment env;
+	
+	public RosRuntime(){
+		// these parameters are equal as for CachedThreadPool ... change if useful
+		pool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, 
+				new SynchronousQueue<Runnable>(), new ThreadFactory() {	
+					@Override
+					public Thread newThread(Runnable r) {
+						return new Thread(r, "rosjava-pool-"+(threadCount++));
+					}
+				});
+		executor = DefaultNodeMainExecutor.newDefault(new DefaultScheduledExecutorService(pool));
+	}
+	
+
+	@Deactivate
+	void deactivate(){
+		executor.shutdown();
+	}
 	
 	@Reference
 	void setEnvironment(Environment e){
@@ -59,6 +86,11 @@ public class RosRuntime {
 	}
 	
 	void removeNode(NodeMain node){
-		executor.shutdownNodeMain(node);
+		try {
+			executor.shutdownNodeMain(node);
+		} catch(Throwable t){
+			t.printStackTrace();
+		}
 	}
+	
 }
