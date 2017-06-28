@@ -31,7 +31,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
-import be.iminds.iot.ros.api.Environment;
+import be.iminds.iot.ros.api.Ros;
 
 public class NativeRosNode {
 
@@ -113,7 +113,7 @@ public class NativeRosNode {
 	}
 	
 	@Reference
-	void setROSEnvironment(Environment e){
+	void setROSEnvironment(Ros e){
 		// make sure ROS core is running before activating a native node
 	}
 	

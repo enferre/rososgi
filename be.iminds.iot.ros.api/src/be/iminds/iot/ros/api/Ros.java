@@ -22,31 +22,55 @@
  *******************************************************************************/
 package be.iminds.iot.ros.api;
 
+import java.io.File;
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
+
+import org.ros.node.NodeMain;
 
 public interface Ros {
 
-	URI getMasterURI();
+	URI masterURI();
 	
-	URI getNodeURI(String node);
+	String masterHost();
 	
-	Collection<String> getNodes();
+	int masterPort();
 	
-	Collection<String> getTopics();
+	String distro();
 	
-	Collection<String> getPublishers(String topic);
+	String namespace();
 	
-	Collection<String> getSubscribers(String topic);
 	
-	String getTopicType(String topic);
+	File root();
 	
-	Collection<String> getServices();
+	List<File> packagePath();
 	
-	Collection<String> getProviders(String service);
+
+	URI nodeURI(String node);
+	
+	Collection<String> nodes();
+	
+	Collection<String> topics();
+	
+	Collection<String> publishers(String topic);
+	
+	Collection<String> subscribers(String topic);
+	
+	String topicType(String topic);
+	
+	Collection<String> services();
+	
+	Collection<String> providers(String service);
+	
+	String env();
 	
 	void setParameter(String key, Object value);
 	
 	<T> T getParameter(String key, Class<T> type);
 	
+	
+	void addNode(NodeMain node);
+	
+	void removeNode(NodeMain node);
 }
