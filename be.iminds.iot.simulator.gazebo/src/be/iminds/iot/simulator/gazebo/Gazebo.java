@@ -531,17 +531,22 @@ public class Gazebo implements Simulator {
 	}
 	
 	@Override
-	public void setProperty(String object, String key, int value){
+	public void setProperty(String key, int value){
 		throw new UnsupportedOperationException();
 	}
 	
 	@Override
-	public void setProperty(String object, String key, float value){
+	public void setProperty(String key, float value){
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void setProperty(String object, String key, boolean value){
+	public void setProperty(String key, boolean value){
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Object getProperty(String key){
 		throw new UnsupportedOperationException();
 	}
 	

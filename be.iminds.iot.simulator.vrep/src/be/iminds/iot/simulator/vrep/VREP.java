@@ -77,6 +77,7 @@ public class VREP implements Simulator {
 		checkOk(server.simxStartSimulation(clientID, server.simx_opmode_blocking));
 		
 		configure();
+		
 	}
 	
 	void configure(){
@@ -111,6 +112,7 @@ public class VREP implements Simulator {
 		deconfigure();
 
 		checkOk(server.simxPauseSimulation(clientID, server.simx_opmode_blocking));
+		
 	}
 
 	@Override
@@ -119,6 +121,7 @@ public class VREP implements Simulator {
 
 		// stop the simulation:
 		checkOk(server.simxStopSimulation(clientID,server.simx_opmode_blocking));
+		
 	}
 
 	void deconfigure(){
@@ -321,26 +324,34 @@ public class VREP implements Simulator {
 		checkOk(server.simxGetCollisionHandle(clientID, object, handle, server.simx_opmode_blocking));
 		
 		BoolW collision = new BoolW(false);
-		server.simxReadCollision(clientID, handle.getValue(), collision, server.simx_opmode_blocking);
+		checkOk(server.simxReadCollision(clientID, handle.getValue(), collision, server.simx_opmode_blocking));
 		return collision.getValue();
 	
 	}
 	
 	@Override
-	public void setProperty(String object, String key, int value){
-		checkOk(server.simxSetIntegerSignal(clientID, object+"_"+key, value, server.simx_opmode_oneshot));
+	public void setProperty(String key, int value){
+		checkOk(server.simxSetIntegerSignal(clientID, key, value, server.simx_opmode_oneshot));
 	}
 	
 	@Override
-	public void setProperty(String object, String key, float value){
-		checkOk(server.simxSetFloatSignal(clientID, object+"_"+key, value, server.simx_opmode_oneshot));
+	public void setProperty(String key, float value){
+		checkOk(server.simxSetFloatSignal(clientID, key, value, server.simx_opmode_oneshot));
 	}
 
 	@Override
-	public void setProperty(String object, String key, boolean value){
-		checkOk(server.simxSetIntegerSignal(clientID, object+"_"+key, value ? 1 : 0, server.simx_opmode_oneshot));
+	public void setProperty(String key, boolean value){
+		checkOk(server.simxSetIntegerSignal(clientID, key, value ? 1 : 0, server.simx_opmode_oneshot));
 	}
 
+	@Override
+	public Object getProperty(String key){
+		IntW value = new IntW(0);
+		checkOk(server.simxGetIntegerSignal(clientID, key,  value, server.simx_opmode_blocking));
+		return value.getValue();
+	}
+
+	
 	private void checkOk(int ret){
 		if(ret > 3){
 			throw new RuntimeException("Failed to execute VREP call "+ret);
