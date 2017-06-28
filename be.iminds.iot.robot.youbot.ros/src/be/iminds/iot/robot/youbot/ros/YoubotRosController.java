@@ -28,10 +28,10 @@ import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Deactivate;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
-import org.ros.node.Node;
 import org.ros.node.NodeMain;
 
 @Component(service = {NodeMain.class},
@@ -55,6 +55,17 @@ public class YoubotRosController extends AbstractNodeMain {
 		}
 	}
 	
+	@Deactivate
+	void deactivate(){
+		try {
+			base.stop();
+			arm.reset();
+		} catch(Exception e){}
+		
+		arm.unregister();
+		base.unregister();
+	}
+	
 	@Override
 	public GraphName getDefaultNodeName() {
 		return GraphName.of("youbot/controller");
@@ -71,16 +82,4 @@ public class YoubotRosController extends AbstractNodeMain {
 		base = new BaseImpl(name, context, connectedNode);
 		base.register();
 	}
-	
-	@Override
-	public void onShutdown(Node node) {
-		try {
-			base.stop();
-			arm.reset();
-		} catch(Exception e){}
-		
-		arm.unregister();
-		base.unregister();
-	}
-
 }
