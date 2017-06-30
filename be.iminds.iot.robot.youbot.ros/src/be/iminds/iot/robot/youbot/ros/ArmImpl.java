@@ -150,7 +150,7 @@ public class ArmImpl implements Arm {
 			String jointName = config[i];
 			JointDescription d = new JointDescription(jointName,
 					positionMin[i], positionMax[i], 
-					-1.0f, 1f, torqueMin[i], torqueMax[i]); // TODO what are min and max velocities?
+					-1.57f, 1.57f, torqueMin[i], torqueMax[i]); // TODO what are min and max velocities? Pi/2?
 			JointImpl joint = new JointImpl(d, this);
 			joints.add(joint);
 		}
@@ -363,7 +363,7 @@ public class ArmImpl implements Arm {
 			vel.setUnit("s^-1 rad");
 			
 			JointDescription d = getJoint(velocity.joint).getDescription();
-			velocity.value = clamp(velocity.value, d.positionMin, d.positionMax);
+			velocity.value = clamp(velocity.value, d.velocityMin, d.velocityMax);
 			vel.setValue(velocity.value);
 			vv.add(vel);
 		}
