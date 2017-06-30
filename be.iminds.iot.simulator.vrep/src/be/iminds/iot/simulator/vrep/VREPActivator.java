@@ -66,7 +66,7 @@ public class VREPActivator {
 	private int interval = 10000;
 	private int port = 19997;
 	private String rosMasterURI = null;
-	private int timeout = 5000;
+	private int timeout = 10000;
 	
 	@Activate
 	void activate(BundleContext context) throws Exception {

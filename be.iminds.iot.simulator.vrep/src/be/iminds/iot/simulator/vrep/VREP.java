@@ -144,7 +144,7 @@ public class VREP implements Simulator {
 			// TODO teardown the Simulator service?
 			throw new RuntimeException("Simulator stalled?!");
 		} else if(ret == 3){
-			throw new TimeoutException();
+			throw new TimeoutException("V-REP timed out!");
 		} else {
 			checkOk(ret);
 		}
