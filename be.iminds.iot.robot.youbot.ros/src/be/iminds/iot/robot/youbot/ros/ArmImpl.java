@@ -218,9 +218,9 @@ public class ArmImpl implements Arm {
 		});
 		
 		try {
-		     ik = node.newServiceClient("solve_preferred_pitch_ik", SolvePreferredPitchIK._TYPE);
-		} catch(ServiceNotFoundException e){
-			// do nothing ... moveTo method will just fail...
+		     ik = node.newServiceClient("/solve_ik_server/solve_preferred_pitch_ik", SolvePreferredPitchIK._TYPE);
+		} catch(Exception e){
+			// do nothing ... moveTo method will just fail when no ik service present
 		}
 		
 		// register OSGi services
@@ -521,18 +521,17 @@ public class ArmImpl implements Arm {
 		
 		if(ik == null){
 			try {
-			     ik = node.newServiceClient("solve_preferred_pitch_ik", SolvePreferredPitchIK._TYPE);
+			     ik = node.newServiceClient("/solve_ik_server/solve_preferred_pitch_ik", SolvePreferredPitchIK._TYPE);
 			} catch(ServiceNotFoundException e){
 				deferred.fail(e);
 				return deferred.getPromise();
 			}
 		}
-		
+
 		final SolvePreferredPitchIKRequest request = ik.newMessage();
 		request.setPreferredPitch(3*Math.PI/4);
 		request.setDesNormal(new double[]{-y, x, 0});
 		request.setDesPosition(new double[]{x, y, z});
-		
 		ik.call(request, new ServiceResponseListener<SolvePreferredPitchIKResponse>() {
 			
 			@Override

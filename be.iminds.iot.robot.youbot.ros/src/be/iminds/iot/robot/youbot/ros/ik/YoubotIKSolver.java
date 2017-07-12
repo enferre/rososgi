@@ -26,7 +26,14 @@ import org.osgi.service.component.annotations.Component;
 
 import be.iminds.iot.ros.util.NativeRosNode;
 
-@Component(immediate=true)
+@Component(immediate=true,
+	property={
+			"lox=0.033",
+			"loz=0.246",  // move z to ground plane of mobile base
+			"l2=0.155",
+			"l3=0.135",
+			"l4=0.316", // tip of festo gripper
+	})
 public class YoubotIKSolver extends NativeRosNode {
 
 	public YoubotIKSolver(){
