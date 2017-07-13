@@ -87,9 +87,12 @@ public class ROSLaserScannerProvider extends AbstractNodeMain implements LaserSc
 				s.minRange = scan.getRangeMin();
 				s.maxRange = scan.getRangeMax();
 				s.data = scan.getRanges();
-				// convert NaNery to range max
 				for(int i = 0;i<s.data.length;i++){
-					if(Float.isNaN(s.data[i]) || Float.isInfinite(s.data[i])){
+					if(Float.isNaN(s.data[i])){
+						// convert NaN to 0
+						s.data[i] = 0.0f;
+					} else if(Float.isInfinite(s.data[i])){
+						// convert infinite to range max
 						s.data[i] = s.maxRange;
 					}
 				}
