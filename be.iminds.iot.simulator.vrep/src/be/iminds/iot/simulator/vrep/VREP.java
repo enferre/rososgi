@@ -166,7 +166,7 @@ public class VREP implements Simulator {
 		}
 		checkOk(server.simxLoadScene(clientID, f.getAbsolutePath(), 0, server.simx_opmode_blocking));
 		
-		this.entities = entities;
+		this.entities = new HashMap<>(entities);
 		
 		loadHandles();
 	}
