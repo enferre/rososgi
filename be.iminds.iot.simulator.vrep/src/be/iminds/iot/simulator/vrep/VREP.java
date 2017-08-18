@@ -67,11 +67,18 @@ public class VREP implements Simulator {
 	}
 	
 	public void start(){
-		start(false);
+		start(false, 0.1f);
 	}
 	
 	@Override
-	public synchronized void start(boolean sync) {
+	public void start(boolean sync) {
+		start(sync, 0.1f);
+	}
+	
+	@Override
+	public synchronized void start(boolean sync, float step) {
+		checkOk(server.simxSetFloatingParameter(clientID, server.sim_floatparam_simulation_time_step, step, server.simx_opmode_blocking));
+		
 		checkOk(server.simxSynchronous(clientID, sync));
 		
 		checkOk(server.simxStartSimulation(clientID, server.simx_opmode_blocking));

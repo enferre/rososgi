@@ -29,8 +29,10 @@ import java.util.concurrent.TimeoutException;
 public interface Simulator {
 
 	// start/stop/pause simulator
-	
 	void start(boolean sync);
+	
+	// start with simulation step in seconds
+	void start(boolean sync, float step);
 	
 	void pause();
 	
