@@ -548,9 +548,9 @@ public class ArmImpl implements Arm {
 					return;
 				}
 				
-				double[] joints = response.getJointAngles();
-				deferred.resolveWith(setPositions((float)joints[0],(float)joints[1],
-						(float)joints[2],(float)joints[3],(float)joints[4]));
+				double[] jointPositions = response.getJointAngles();
+				deferred.resolveWith(setPositions((float)jointPositions[0],(float)jointPositions[1],
+						(float)jointPositions[2],(float)jointPositions[3], joints.get(4).position));
 			}
 			
 			@Override
