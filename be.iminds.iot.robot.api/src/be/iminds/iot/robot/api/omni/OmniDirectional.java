@@ -35,7 +35,7 @@ import be.iminds.iot.robot.api.Robot;
  * @author tverbele
  *
  */
-public interface OmniDirectional extends Robot {
+public interface OmniDirectional extends Robot<OmniDirectional> {
 
 	Promise<OmniDirectional> setVelocities(Collection<JointValue> velocities);
 	

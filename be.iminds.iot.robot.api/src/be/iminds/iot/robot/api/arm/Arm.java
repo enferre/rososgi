@@ -32,7 +32,7 @@ import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.Robot;
 
-public interface Arm extends Robot {
+public interface Arm extends Robot<Arm> {
 
 	List<JointDescription> getJoints();
 	

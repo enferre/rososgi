@@ -29,18 +29,18 @@ import org.osgi.util.promise.Promise;
 
 import be.iminds.iot.robot.api.Robot;
 
-public interface Robot {
+public interface Robot<T extends Robot<T>> {
 
-	Promise<? extends Robot> waitFor(long time);
+	Promise<T> waitFor(long time);
 
-	default Promise<? extends Robot> waitFor(Promise<?> condition){
-		final Deferred<Robot> d = new Deferred<Robot>();
+	default Promise<T> waitFor(Promise<?> condition){
+		final Deferred<T> d = new Deferred<T>();
 		condition.then( p -> d.resolveWith(waitFor(0)), p -> d.fail(p.getFailure()));
 		return d.getPromise();
 	}
 	
-	default Promise<? extends Robot> waitFor(Promise<?>... conditions){
-		final Deferred<Robot> d = new Deferred<Robot>();
+	default Promise<T> waitFor(Promise<?>... conditions){
+		final Deferred<T> d = new Deferred<T>();
 		final CountDownLatch latch = new CountDownLatch(conditions.length);
 		for(Promise<?> condition : conditions){
 			condition.then(p -> {
@@ -54,6 +54,16 @@ public interface Robot {
 		return d.getPromise();
 	}
 	
-	Promise<? extends Robot> stop();
+	// rename of the waitFor, results in nicer chaining
+	// robot.move().until().then(p -> ...)
+	default Promise<T> until(Promise<?> condition){
+		return waitFor(condition);
+	}
+	
+	default Promise<T> until(Promise<?>... conditions){
+		return waitFor(conditions);
+	}
+	
+	Promise<T> stop();
 	
 }

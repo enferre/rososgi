@@ -32,7 +32,7 @@ import be.iminds.iot.robot.api.Robot;
  * @author tverbele
  *
  */
-public interface Rover extends Robot {
+public interface Rover extends Robot<Rover> {
 
 	public Promise<Rover> move(float throttle, float yaw);
 	
