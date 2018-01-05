@@ -44,7 +44,7 @@ public class BaseImpl implements OmniDirectional {
 
 	private final String name;
 	private final BundleContext context;
-	private ServiceRegistration registration;
+	private ServiceRegistration<OmniDirectional> registration;
 	
 	private final ConnectedNode node;
 	
@@ -70,7 +70,6 @@ public class BaseImpl implements OmniDirectional {
 	public void register(){
 		pTwist = node.newPublisher("/cmd_vel", geometry_msgs.Twist._TYPE);
 		
-
 		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put("name", name);
 		registration = 	context.registerService(OmniDirectional.class, this, properties);

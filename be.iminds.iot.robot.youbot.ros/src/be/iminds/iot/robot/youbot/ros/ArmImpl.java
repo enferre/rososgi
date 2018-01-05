@@ -68,7 +68,7 @@ public class ArmImpl implements Arm {
 	private final String name;
 	
 	private final BundleContext context;
-	private final List<ServiceRegistration> registrations = new ArrayList<>();
+	private final List<ServiceRegistration<?>> registrations = new ArrayList<>();
 	
 	private final List<JointImpl> joints;
 	private final Gripper gripper;
@@ -227,20 +227,20 @@ public class ArmImpl implements Arm {
 		for(Joint joint : joints){
 			Dictionary<String, Object> properties = new Hashtable<>();
 			properties.put("joint.name", joint.getName());
-			ServiceRegistration rJoint = context.registerService(Joint.class, joint, properties);
+			ServiceRegistration<Joint> rJoint = context.registerService(Joint.class, joint, properties);
 			registrations.add(rJoint);
 		}	
 		
 		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put("name", name);
-		ServiceRegistration rGripper = context.registerService(Gripper.class, gripper, properties);
+		ServiceRegistration<Gripper> rGripper = context.registerService(Gripper.class, gripper, properties);
 		registrations.add(rGripper);
-		ServiceRegistration rArm = context.registerService(Arm.class, this, properties);
+		ServiceRegistration<Arm> rArm = context.registerService(Arm.class, this, properties);
 		registrations.add(rArm);
 	}
 	
 	public void unregister(){
-		for(ServiceRegistration r : registrations){
+		for(ServiceRegistration<?> r : registrations){
 			r.unregister();
 		}
 		registrations.clear();
