@@ -111,17 +111,8 @@ public class Gazebo implements Simulator {
 		});
 	}
 	
-	public synchronized void start(){
-		start(false, 0.1f);
-	}
-	
 	@Override
-	public synchronized void start(boolean s) {
-		start(s, 0.1f);
-	}
-	
-	@Override
-	public synchronized void start(boolean s, float step) {
+	public synchronized void start(boolean s, float step, Map<String, Object> config) {
 		this.step = (long)(step*1000);
 		this.running = true;
 		this.sync = s;
@@ -165,6 +156,11 @@ public class Gazebo implements Simulator {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	@Override
+	public synchronized void resume(){
+		unpause();
 	}
 
 	@Override
@@ -535,20 +531,10 @@ public class Gazebo implements Simulator {
 	}
 	
 	@Override
-	public void setProperty(String key, int value){
+	public void setProperty(String key, Object value){
 		throw new UnsupportedOperationException();
 	}
 	
-	@Override
-	public void setProperty(String key, float value){
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setProperty(String key, boolean value){
-		throw new UnsupportedOperationException();
-	}
-
 	@Override
 	public Object getProperty(String key){
 		throw new UnsupportedOperationException();

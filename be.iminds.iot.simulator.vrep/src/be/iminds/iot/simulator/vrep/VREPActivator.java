@@ -185,7 +185,7 @@ public class VREPActivator {
 		vrep = new VREP(server, ca);
 		
 		if(scene != null){
-			vrep.loadScene(scene, new HashMap<String, String>());
+			vrep.loadScene(scene, null);
 		} else {
 			vrep.loadHandles();
 		}

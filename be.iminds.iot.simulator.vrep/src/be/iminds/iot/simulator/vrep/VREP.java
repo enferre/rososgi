@@ -24,11 +24,13 @@ package be.iminds.iot.simulator.vrep;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
 
 import org.osgi.service.cm.Configuration;
@@ -61,23 +63,47 @@ public class VREP implements Simulator {
 	private List<Configuration> configurations = new ArrayList<>();
 	private ConfigurationAdmin ca;
 	
+	private Map<String, Integer> parameterKeys = new HashMap<>();
+
+	
 	public VREP(remoteApi server, ConfigurationAdmin ca){
 		this.server = server;
 		this.ca = ca;
-	}
-	
-	public void start(){
-		start(false, 0.1f);
+		
+		Field[] declaredFields = remoteApi.class.getDeclaredFields();
+		for(Field f : declaredFields){
+			if(java.lang.reflect.Modifier.isStatic(f.getModifiers())){
+				if(f.getType().isAssignableFrom(Integer.class)){
+					try {
+						parameterKeys.put(f.getName(), (Integer)(f.get(this.server)));
+					} catch(Exception e){}
+				}
+			}
+		}
 	}
 	
 	@Override
-	public void start(boolean sync) {
-		start(sync, 0.1f);
-	}
-	
-	@Override
-	public synchronized void start(boolean sync, float step) {
+	public synchronized void start(boolean sync, float step, Map<String, Object> config) {
 		checkOk(server.simxSetFloatingParameter(clientID, server.sim_floatparam_simulation_time_step, step, server.simx_opmode_blocking));
+		
+		if(config != null){
+			
+			for(Entry<String, Object> e : config.entrySet()){
+				if(!parameterKeys.containsKey(e.getKey())){
+					System.out.println("Invalid configuration key: "+e.getKey());
+					continue;
+				}
+				
+				Object v = e.getValue();
+				if(v instanceof Integer){
+					checkOk(server.simxSetIntegerParameter(clientID, parameterKeys.get(e.getKey()), (Integer)v, server.simx_opmode_blocking));
+				} else if(v instanceof Float){
+					checkOk(server.simxSetFloatingParameter(clientID, parameterKeys.get(e.getKey()), (Float)v, server.simx_opmode_blocking));
+				} else if(v instanceof Boolean){
+					checkOk(server.simxSetBooleanParameter(clientID, parameterKeys.get(e.getKey()), (Boolean)v, server.simx_opmode_blocking));
+				}
+			}
+		}
 		
 		checkOk(server.simxSynchronous(clientID, sync));
 		
@@ -119,9 +145,15 @@ public class VREP implements Simulator {
 		deconfigure();
 
 		checkOk(server.simxPauseSimulation(clientID, server.simx_opmode_blocking));
-		
 	}
 
+	@Override
+	public void resume() {
+		checkOk(server.simxStartSimulation(clientID, server.simx_opmode_blocking));
+		
+		configure();
+	}
+	
 	@Override
 	public synchronized void stop() {
 		deconfigure();
@@ -337,20 +369,16 @@ public class VREP implements Simulator {
 	}
 	
 	@Override
-	public void setProperty(String key, int value){
-		checkOk(server.simxSetIntegerSignal(clientID, key, value, server.simx_opmode_oneshot));
+	public void setProperty(String key, Object value){
+		if(value instanceof Integer){
+			checkOk(server.simxSetIntegerSignal(clientID, key, (Integer)value, server.simx_opmode_oneshot));
+		} else if(value instanceof Float){
+			checkOk(server.simxSetFloatSignal(clientID, key, (Float)value, server.simx_opmode_oneshot));
+		} else if(value instanceof Boolean){
+			checkOk(server.simxSetIntegerSignal(clientID, key, ((Boolean)value) ? 1 : 0, server.simx_opmode_oneshot));
+		}
 	}
 	
-	@Override
-	public void setProperty(String key, float value){
-		checkOk(server.simxSetFloatSignal(clientID, key, value, server.simx_opmode_oneshot));
-	}
-
-	@Override
-	public void setProperty(String key, boolean value){
-		checkOk(server.simxSetIntegerSignal(clientID, key, value ? 1 : 0, server.simx_opmode_oneshot));
-	}
-
 	@Override
 	public Object getProperty(String key){
 		IntW value = new IntW(0);
