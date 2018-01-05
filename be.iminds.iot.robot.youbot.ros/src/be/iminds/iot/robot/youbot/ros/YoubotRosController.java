@@ -57,6 +57,8 @@ public class YoubotRosController extends AbstractNodeMain {
 	
 	@Deactivate
 	void deactivate(){
+		// TODO on the real robot we get a deactivate when initializing configuration?!
+		//System.out.println("Deactivate Youbot ROS Controller?!");
 		try {
 			base.stop();
 			arm.reset();

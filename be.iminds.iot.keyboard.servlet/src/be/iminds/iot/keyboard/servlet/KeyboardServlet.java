@@ -75,6 +75,11 @@ public class KeyboardServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 	}
+	
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		doPost(req, resp);
+	}
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -97,6 +102,8 @@ public class KeyboardServlet extends HttpServlet {
 		for(KeyboardListener l : listeners){
 			l.onEvent(new KeyboardEvent(type, key));
 		}
+		
+		response.getWriter().close();
 	}
 
 }

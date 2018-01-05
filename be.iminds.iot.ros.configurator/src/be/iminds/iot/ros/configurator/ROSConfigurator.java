@@ -79,6 +79,7 @@ public class ROSConfigurator {
 					switch(type){
 						case "youbot":
 							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.youbot.Youbot", null);
+							// TODO it seems this configuration gets added twice, which might screw up stuff!
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.youbot.ros.Youbot", null);
 							break;
 						case "usb_cam":

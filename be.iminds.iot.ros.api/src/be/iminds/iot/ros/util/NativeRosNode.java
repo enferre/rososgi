@@ -107,6 +107,7 @@ public class NativeRosNode {
 	
 	@Deactivate
 	protected void deactivate(){
+		// help ... destroy doesn't gracefully ends the child process ... might not be enough :-/
 		if(process!=null){
 			process.destroy();
 		}
