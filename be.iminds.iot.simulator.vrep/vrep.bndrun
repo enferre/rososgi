@@ -14,10 +14,12 @@
 	
 -runproperties.vrep: \
 	ros.core.native=true,\
-	vrep.dir=/opt/vrep-3.3.1,\
+	vrep.dir=/opt/vrep,\
 	vrep.launch=true,\
-	vrep.scene=youbot_test.ttt,\
-	vrep.port=20000,\
-	ros.master.uri=http://localhost:11312
+	be.iminds.iot.robot.youbot.joint.threshold=0.0075
 	
+#	vrep.port=20000,\
+#	ros.master.uri=http://localhost:11312
+
+#	vrep.scene=youbot_test.ttt,\
 #	vrep.headless=true
