@@ -1,8 +1,7 @@
 -include ../be.iminds.iot.ros.core/core.bndrun
 
 -runbundles.moveit: \
--runbundles: \
-	org.ros.rosjava_messages.actionlib_msgs;version=latest,\
+    org.ros.rosjava_messages.actionlib_msgs;version=latest,\
 	org.ros.rosjava_messages.moveit_msgs;version=latest,\
 	org.ros.rosjava_messages.object_recognition_msgs;version=latest,\
 	org.ros.rosjava_messages.octomap_msgs;version=latest,\

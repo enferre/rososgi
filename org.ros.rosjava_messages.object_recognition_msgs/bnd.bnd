@@ -1,5 +1,6 @@
 -buildpath: \
 	org.ros.rosjava.message_generation,\
+	org.ros.rosjava_messages.actionlib_msgs,\
 	org.ros.rosjava_messages.shape_msgs,\
 	org.ros.rosjava_messages.sensor_msgs,\
 	org.ros.rosjava_messages.geometry_msgs,\

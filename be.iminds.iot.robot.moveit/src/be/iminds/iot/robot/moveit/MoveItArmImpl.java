@@ -25,20 +25,23 @@ package be.iminds.iot.robot.moveit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
+import org.ros.exception.RemoteException;
 import org.ros.message.MessageFactory;
 import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.service.ServiceClient;
+import org.ros.node.service.ServiceResponseListener;
 import org.ros.node.topic.Publisher;
 import org.ros.node.topic.Subscriber;
 
@@ -48,15 +51,17 @@ import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.arm.Arm;
+import geometry_msgs.Pose;
+import geometry_msgs.PoseStamped;
 import moveit_msgs.Constraints;
-import moveit_msgs.ExecuteTrajectoryGoal;
+import moveit_msgs.GetPositionIKRequest;
+import moveit_msgs.GetPositionIKResponse;
 import moveit_msgs.JointConstraint;
 import moveit_msgs.MotionPlanRequest;
 import moveit_msgs.MoveGroupActionGoal;
 import moveit_msgs.MoveGroupGoal;
-import moveit_msgs.MoveItErrorCodes;
+import moveit_msgs.PositionIKRequest;
 import moveit_msgs.RobotState;
-import moveit_msgs.RobotTrajectory;
 
 public class MoveItArmImpl implements Arm {
 
@@ -68,17 +73,17 @@ public class MoveItArmImpl implements Arm {
 	
 	private final ConnectedNode node;
 	private final MessageFactory factory;
-	private Publisher<moveit_msgs.MoveGroupActionGoal> plan;
-	private Publisher<moveit_msgs.ExecuteTrajectoryGoal> execute;
-
-	// TODO add cancel?
-	private Subscriber<moveit_msgs.MoveGroupActionResult> planResult; 
-	private Subscriber<moveit_msgs.ExecuteTrajectoryResult> executeResult; 
+	
+	private String move_group;
+	private Publisher<moveit_msgs.MoveGroupActionGoal> moveIt;
+	private Publisher<actionlib_msgs.GoalID> moveItCancel;
+	private Subscriber<moveit_msgs.MoveGroupActionResult> moveItResult; 
 
 	private Subscriber<sensor_msgs.JointState> subscriber; 
-	private Map<String, JointState> state = new HashMap<>();
+	private List<JointState> state = new ArrayList<>();
 	
 	private ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
+	private Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
 	
 	public MoveItArmImpl(String name, BundleContext context,
 			ConnectedNode node){
@@ -89,11 +94,12 @@ public class MoveItArmImpl implements Arm {
 		this.factory = node.getTopicMessageFactory();
 	}
 	
-	public void register(String joint_states, String move_group, String execute_trajectory, String compute_ik){
-		// commands for plan / execute
-		this.plan = node.newPublisher(move_group+"/goal", moveit_msgs.MoveGroupActionGoal._TYPE);
-		this.execute = node.newPublisher(execute_trajectory+"/goal", moveit_msgs.ExecuteTrajectoryResult._TYPE);
+	public void register(String joint_states, String move_group_topic, String move_group, String compute_ik){
+		this.move_group = move_group;
 		
+		// commands for plan / execute
+		moveIt = node.newPublisher(move_group_topic+"/goal", moveit_msgs.MoveGroupActionGoal._TYPE);
+		moveItCancel = node.newPublisher(move_group_topic+"/cancel", actionlib_msgs.GoalID._TYPE);
 		
 		// add subscribers
 		subscriber = node.newSubscriber(joint_states,
@@ -104,9 +110,10 @@ public class MoveItArmImpl implements Arm {
 				// update JointImpl internal state1
 				for(int i=0;i<jointState.getName().size();i++){
 					String name = jointState.getName().get(i);
-					JointState joint = state.get(name);
+					JointState joint = getJoint(name);
 					if(joint==null){
-						state.put(name, new JointState(name, 0, 0, 0));
+						joint = new JointState(name, 0, 0, 0);
+						state.add(joint);
 					}
 					
 					joint.position = (float)jointState.getPosition()[i];
@@ -118,41 +125,31 @@ public class MoveItArmImpl implements Arm {
 			}
 		});
 
-		planResult = node.newSubscriber(move_group+"/result",
+		moveItResult = node.newSubscriber(move_group_topic+"/result",
 				moveit_msgs.MoveGroupActionResult._TYPE);
-		planResult.addMessageListener(new MessageListener<moveit_msgs.MoveGroupActionResult>() {
+		moveItResult.addMessageListener(new MessageListener<moveit_msgs.MoveGroupActionResult>() {
 			@Override
 			public void onNewMessage(moveit_msgs.MoveGroupActionResult result) {
 				GoalStatus status = result.getStatus();
+				UUID id = UUID.fromString(result.getStatus().getGoalId().getId());
+				Deferred<Arm> deferred = inprogress.remove(id);
+				if(deferred == null) {
+					System.out.println("WTF? No deferred for "+id);
+					return;
+				}
 				
 				if(status.getStatus() == 3) {
 					// success
-					RobotTrajectory trajectory = result.getResult().getPlannedTrajectory();
-				
-					ExecuteTrajectoryGoal goal = execute.newMessage();
-					goal.setTrajectory(trajectory);
-					execute.publish(goal);
+					System.out.println("TRAJECTORY PLANNING SUCCESS!");
+					deferred.resolve(MoveItArmImpl.this);
 				} else {
-					// TODO fail promise?
+					// fail promise?
+					System.out.println("TRAJECTORY PLANNING FAILED :-(!");
+					deferred.fail(new Exception(status.getText()));
 				}
 			}
 		});
 
-		executeResult = node.newSubscriber(execute_trajectory+"/result",
-				moveit_msgs.ExecuteTrajectoryResult._TYPE);
-		executeResult.addMessageListener(new MessageListener<moveit_msgs.ExecuteTrajectoryResult>() {
-			@Override
-			public void onNewMessage(moveit_msgs.ExecuteTrajectoryResult result) {
-				MoveItErrorCodes errcode = result.getErrorCode();
-				if(errcode.getVal() == 1) {
-					// success, resolve promise
-				} else {
-					// fail promise
-				}
-				
-			}
-		});
-		
 		try {
 		     ik = node.newServiceClient(compute_ik, moveit_msgs.GetPositionIK._TYPE);
 		} catch(Exception e){
@@ -182,10 +179,9 @@ public class MoveItArmImpl implements Arm {
 		}
 		registrations.clear();
 		
-		plan.shutdown();
-		execute.shutdown();
-		planResult.shutdown();
-		executeResult.shutdown();
+		moveIt.shutdown();
+		moveItCancel.shutdown();
+		moveItResult.shutdown();
 		subscriber.shutdown();
 	}
 	
@@ -198,8 +194,20 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> stop() {
-		// TODO Auto-generated method stub
-		return null;
+		Deferred<Arm> deferred = new Deferred<>();
+		if(!inprogress.isEmpty()) {
+			inprogress.entrySet().forEach(e ->{
+				GoalID gid = moveItCancel.newMessage();
+				gid.setId(e.getKey().toString());
+				deferred.resolveWith(e.getValue().getPromise());
+				moveItCancel.publish(gid);
+				
+			});
+		} else {
+			// ok to resolve immediately here?
+			deferred.resolve(this);
+		}
+		return deferred.getPromise();
 	}
 
 	@Override
@@ -210,7 +218,7 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public List<JointState> getState() {
-		return state.values().stream()
+		return state.stream()
 				.map(s -> new JointState(s.joint, s.position, s.velocity, s.torque))
 				.collect(Collectors.toList());
 	}
@@ -277,7 +285,10 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setPositions(Collection<JointValue> positions) {
-		MoveGroupActionGoal goalMsg = plan.newMessage();
+		// TODO first cancel any currently running movement?
+
+		// now give new instructions
+		MoveGroupActionGoal goalMsg = moveIt.newMessage();
 		MoveGroupGoal goal = goalMsg.getGoal();
 		MotionPlanRequest req = goal.getRequest();
 		
@@ -305,9 +316,7 @@ public class MoveItArmImpl implements Arm {
 		c.setJointConstraints(jointConstraints);
 		constraints.add(c);
 		req.setGoalConstraints(constraints);
-		
-		// TODO make configurable
-		req.setGroupName("panda_arm_hand");
+		req.setGroupName(move_group);
 		
 		// TODO control velocity / acceleration
 		req.setMaxAccelerationScalingFactor(1.0);
@@ -316,12 +325,16 @@ public class MoveItArmImpl implements Arm {
 		goal.setRequest(req);
 		
 		GoalID goalId = factory.newFromType(actionlib_msgs.GoalID._TYPE);
-		goalId.setId(UUID.randomUUID().toString());
+		UUID gid = UUID.randomUUID();
+		goalId.setId(gid.toString());
 		goalMsg.setGoalId(goalId);
 		
-		plan.publish(goalMsg);
+		Deferred<Arm> deferred = new Deferred<>();
+		inprogress.put(gid, deferred);
 		
-		return null;
+		moveIt.publish(goalMsg);
+		
+		return deferred.getPromise();
 	}
 
 	@Override
@@ -336,21 +349,77 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> reset() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("Reset not supported via MoveIt...");
 	}
 
 	@Override
 	public Promise<Arm> stop(int joint) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("Stop per joint not supported via MoveIt...");
 	}
 
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z) {
-		// TODO Auto-generated method stub
-		return null;
+		final Deferred<Arm> deferred = new Deferred<>();
+		calculateIK(x, y, z).then(jointValues -> {deferred.resolveWith(setPositions(jointValues.getValue()));return null;},
+				p -> deferred.fail(p.getFailure()));
+		return deferred.getPromise();
 	}
 
-
+	private JointState getJoint(String name) {
+		for(JointState s : state) {
+			if(s.joint.equals(name)) {
+				return s;
+			}
+		}
+		return null;
+	}
+	
+	private Promise<List<JointValue>> calculateIK(float x, float y, float z){
+		final Deferred<List<JointValue>> deferred = new Deferred<>();
+		
+		GetPositionIKRequest request = ik.newMessage();
+		PositionIKRequest req = request.getIkRequest();
+		
+		// move group
+		req.setGroupName(move_group);
+		
+		// set start state
+		List<JointState> s = getState();
+		RobotState startState = req.getRobotState();
+		sensor_msgs.JointState jointState = startState.getJointState();
+		jointState.setName(s.stream().map(js -> js.joint).collect(Collectors.toList()));
+		jointState.setPosition(s.stream().mapToDouble(js -> (double) js.position).toArray());
+		
+		// set target pose
+		PoseStamped spose = req.getPoseStamped();
+		Pose p = spose.getPose();
+		p.getPosition().setX(x);
+		p.getPosition().setY(y);
+		p.getPosition().setZ(z);
+		
+		ik.call(request, new ServiceResponseListener<GetPositionIKResponse>() {
+			
+			@Override
+			public void onSuccess(GetPositionIKResponse response) {
+				if(response.getErrorCode().getVal() == 1) {
+					// success
+					List<JointValue> values = new ArrayList<>();
+					sensor_msgs.JointState s = response.getSolution().getJointState();
+					for(int i=0;i<s.getPosition().length;i++) {
+						values.add(new JointValue(s.getName().get(i), JointValue.Type.POSITION, (float)s.getPosition()[i]));
+					}
+					deferred.resolve(values);
+				} else {
+					// failed?
+					deferred.fail(new Exception("Failed to calculate IK solution"));
+				}
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+		});
+		return deferred.getPromise();
+	}
 }

@@ -35,8 +35,8 @@ import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 
 @Component(service = {NodeMain.class},
-	name="be.iminds.iot.robot.moveit.Arm",
-	configurationPolicy=ConfigurationPolicy.REQUIRE)
+	name="be.iminds.iot.robot.moveit.Arm")
+//TODO require configuration!
 public class MoveItRosController extends AbstractNodeMain {
 
 	private String name;
@@ -48,16 +48,15 @@ public class MoveItRosController extends AbstractNodeMain {
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
 		
-		name = config.get("name").toString();
-		if(name == null){
+		if(config.containsKey("name")) {
+			name = config.get("name").toString();
+		} else {
 			name = "MoveItArm";
 		}
 	}
 	
 	@Deactivate
 	void deactivate(){
-		// TODO on the real robot we get a deactivate when initializing configuration?!
-		//System.out.println("Deactivate Youbot ROS Controller?!");
 		try {
 			arm.reset();
 		} catch(Exception e){}
@@ -72,10 +71,12 @@ public class MoveItRosController extends AbstractNodeMain {
 	
 	@Override
 	public void onStart(ConnectedNode connectedNode){
+		System.out.println("ON START!");
+		
 		connectedNode.getTopicMessageFactory();
 
 		// this brings online arm and base services
 		arm = new MoveItArmImpl(name, context, connectedNode);
-		arm.register("/panda/joint_states","/panda/move_group","/panda/execute_trajectory","/panda/compute_ik");
+		arm.register("/panda/joint_states","/panda/move_group","panda_arm_hand","/panda/compute_ik");
 	}
 }
