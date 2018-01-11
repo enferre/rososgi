@@ -100,7 +100,11 @@ public class ROSConfigurator {
 						case "rover":
 							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.erlerover.Rover", null);
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.erlerover.ros.Rover", null);
-							break;	
+							break;
+						case "panda":
+							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.panda.Panda", null);
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.moveit.Arm", null);
+							break;
 						default: 
 							continue;
 					}
