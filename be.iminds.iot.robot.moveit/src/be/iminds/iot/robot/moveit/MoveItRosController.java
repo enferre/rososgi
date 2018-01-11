@@ -27,6 +27,7 @@ import java.util.Map;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -34,8 +35,8 @@ import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 
 @Component(service = {NodeMain.class},
-	name="be.iminds.iot.robot.moveit.Arm")
-//TODO require configuration!
+	name="be.iminds.iot.robot.moveit.Arm",
+	configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class MoveItRosController extends AbstractNodeMain {
 
 	private String name;
