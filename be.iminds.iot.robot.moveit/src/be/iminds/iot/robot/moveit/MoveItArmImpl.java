@@ -51,6 +51,9 @@ import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.arm.Arm;
+import control_msgs.GripperCommand;
+import control_msgs.GripperCommandActionGoal;
+import control_msgs.GripperCommandGoal;
 import geometry_msgs.Pose;
 import geometry_msgs.PoseStamped;
 import moveit_msgs.Constraints;
@@ -70,7 +73,6 @@ public class MoveItArmImpl implements Arm {
 	private final BundleContext context;
 	private final List<ServiceRegistration<?>> registrations = new ArrayList<>();
 	
-	
 	private final ConnectedNode node;
 	private final MessageFactory factory;
 	
@@ -78,6 +80,9 @@ public class MoveItArmImpl implements Arm {
 	private Publisher<moveit_msgs.MoveGroupActionGoal> moveIt;
 	private Publisher<actionlib_msgs.GoalID> moveItCancel;
 	private Subscriber<moveit_msgs.MoveGroupActionResult> moveItResult; 
+
+	private Publisher<control_msgs.GripperCommandActionGoal> gripper;
+	private Subscriber<control_msgs.GripperCommandActionResult> gripperResult;
 
 	private Subscriber<sensor_msgs.JointState> subscriber; 
 	private List<JointState> state = new ArrayList<>();
@@ -94,12 +99,15 @@ public class MoveItArmImpl implements Arm {
 		this.factory = node.getTopicMessageFactory();
 	}
 	
-	public void register(String joint_states, String move_group_topic, String move_group, String compute_ik){
+	public void register(String joint_states, String move_group_topic, String move_group, String compute_ik, String gripper_topic){
 		this.move_group = move_group;
 		
 		// commands for plan / execute
 		moveIt = node.newPublisher(move_group_topic+"/goal", moveit_msgs.MoveGroupActionGoal._TYPE);
 		moveItCancel = node.newPublisher(move_group_topic+"/cancel", actionlib_msgs.GoalID._TYPE);
+
+		// commands for gripper
+		gripper = node.newPublisher(gripper_topic+"/goal", control_msgs.GripperCommandActionGoal._TYPE);
 		
 		// add subscribers
 		subscriber = node.newSubscriber(joint_states,
@@ -140,35 +148,46 @@ public class MoveItArmImpl implements Arm {
 				
 				if(status.getStatus() == 3) {
 					// success
-					System.out.println("TRAJECTORY PLANNING SUCCESS!");
 					deferred.resolve(MoveItArmImpl.this);
 				} else {
 					// fail promise?
-					System.out.println("TRAJECTORY PLANNING FAILED :-(!");
 					deferred.fail(new Exception(status.getText()));
 				}
 			}
 		});
 
+		gripperResult = node.newSubscriber(gripper_topic+"/result",
+				control_msgs.GripperCommandActionResult._TYPE);
+		gripperResult.addMessageListener(new MessageListener<control_msgs.GripperCommandActionResult>() {
+			@Override
+			public void onNewMessage(control_msgs.GripperCommandActionResult result) {
+				GoalStatus status = result.getStatus();
+				UUID id = UUID.fromString(result.getStatus().getGoalId().getId());
+				Deferred<Arm> deferred = inprogress.remove(id);
+				if(deferred == null) {
+					System.out.println("WTF? No deferred for "+id);
+					return;
+				}
+				
+				if(status.getStatus() == 3) {
+					// success
+					deferred.resolve(MoveItArmImpl.this);
+				} else {
+					// fail promise?
+					deferred.fail(new Exception(status.getText()));
+				}
+			}
+		});
+		
 		try {
 		     ik = node.newServiceClient(compute_ik, moveit_msgs.GetPositionIK._TYPE);
 		} catch(Exception e){
 			// do nothing ... moveTo method will just fail when no ik service present
 		}
 		
-//		// register OSGi services
-//		for(Joint joint : joints){
-//			Dictionary<String, Object> properties = new Hashtable<>();
-//			properties.put("joint.name", joint.getName());
-//			ServiceRegistration<Joint> rJoint = context.registerService(Joint.class, joint, properties);
-//			registrations.add(rJoint);
-//		}	
-//		
 		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put("name", name);
-//		ServiceRegistration<Gripper> rGripper = context.registerService(Gripper.class, gripper, properties);
-//		registrations.add(rGripper);
-//		
+
 		ServiceRegistration<Arm> rArm = context.registerService(Arm.class, this, properties);
 		registrations.add(rArm);
 	}
@@ -267,20 +286,35 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> openGripper() {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO configure max opening?
+		return openGripper(0.08f);
 	}
 
 	@Override
 	public Promise<Arm> openGripper(float opening) {
-		// TODO Auto-generated method stub
-		return null;
+		Deferred<Arm> deferred = new Deferred<>();
+		
+		UUID id = UUID.randomUUID();
+		inprogress.put(id, deferred);
+	
+		GripperCommandActionGoal cmdMsg = gripper.newMessage();
+		GripperCommandGoal goal = cmdMsg.getGoal();
+		GripperCommand cmd = goal.getCommand();
+		cmd.setPosition(opening);
+		
+		GoalID goalId = factory.newFromType(actionlib_msgs.GoalID._TYPE);
+		UUID gid = UUID.randomUUID();
+		goalId.setId(gid.toString());
+		cmdMsg.setGoalId(goalId);
+		
+		gripper.publish(cmdMsg);
+		
+		return deferred.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> closeGripper() {
-		// TODO Auto-generated method stub
-		return null;
+		return openGripper(0);
 	}
 
 	@Override

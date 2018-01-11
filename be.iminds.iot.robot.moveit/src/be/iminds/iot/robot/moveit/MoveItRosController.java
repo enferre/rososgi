@@ -27,7 +27,6 @@ import java.util.Map;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.ros.namespace.GraphName;
 import org.ros.node.AbstractNodeMain;
@@ -71,12 +70,10 @@ public class MoveItRosController extends AbstractNodeMain {
 	
 	@Override
 	public void onStart(ConnectedNode connectedNode){
-		System.out.println("ON START!");
-		
 		connectedNode.getTopicMessageFactory();
 
 		// this brings online arm and base services
 		arm = new MoveItArmImpl(name, context, connectedNode);
-		arm.register("/panda/joint_states","/panda/move_group","panda_arm_hand","/panda/compute_ik");
+		arm.register("/panda/joint_states","/panda/move_group","panda_arm_hand","/panda/compute_ik","/panda/franka_gripper_node/gripper_action");
 	}
 }

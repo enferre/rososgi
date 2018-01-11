@@ -9,7 +9,8 @@
 	org.ros.rosjava_messages.sensor_msgs,\
 	org.ros.rosjava_messages.geometry_msgs,\
 	org.ros.rosjava_messages.actionlib_msgs,\
-	org.ros.rosjava_messages.moveit_msgs;version=latest
+	org.ros.rosjava_messages.moveit_msgs;version=latest,\
+	org.ros.rosjava_messages.control_msgs;version=latest
 Bundle-Version: 0.1.0
 Export-Package: \
 	be.iminds.iot.robot.api.arm,\
