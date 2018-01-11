@@ -90,16 +90,31 @@ public class NativeRosNode {
 			}
 		}
 		
+		boolean roslaunch = false;
+		if(rosNode.endsWith(".launch")) {
+			roslaunch = true;
+		}
+		
 		try {
 			List<String> cmd = new ArrayList<>();
-			if(rosNode.endsWith(".launch")) {
+			if(roslaunch) {
 				cmd.add("roslaunch");
 			} else {
 				cmd.add("rosrun");
 			}
 			cmd.add(rosPackage);
 			cmd.add(rosNode);
-			cmd.addAll(rosParameters);
+			if(roslaunch) {
+				// remove underscores in case of roslaunch
+				List<String> launchParams = new ArrayList<>();
+				for(String param : rosParameters) {
+					launchParams.add(param.substring(1));
+				}
+				cmd.addAll(launchParams);
+			} else {
+				cmd.addAll(rosParameters);
+			}
+			System.out.println(cmd);
 			ProcessBuilder builder = new ProcessBuilder(cmd);
 			builder.inheritIO();
 			process = builder.start();
