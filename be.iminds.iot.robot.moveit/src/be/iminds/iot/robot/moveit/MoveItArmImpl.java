@@ -126,7 +126,9 @@ public class MoveItArmImpl implements Arm {
 					}
 					
 					joint.position = (float)jointState.getPosition()[i];
-					joint.velocity = (float)jointState.getVelocity()[i];
+					if(jointState.getVelocity().length > i)
+						joint.velocity = (float)jointState.getVelocity()[i];
+					
 					if(jointState.getEffort().length > i)
 						joint.torque = (float)jointState.getEffort()[i];
 				}
