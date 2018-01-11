@@ -28,6 +28,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import be.iminds.iot.ros.util.NativeRosNode;
 
 @Component(immediate=true,
+		service=FrankaControl.class,
 		configurationPid="be.iminds.iot.ros.panda.Panda",
 		configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class FrankaControl extends NativeRosNode {

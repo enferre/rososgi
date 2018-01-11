@@ -24,6 +24,7 @@ package be.iminds.iot.ros.panda;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Reference;
 
 import be.iminds.iot.ros.util.NativeRosNode;
 
@@ -37,6 +38,11 @@ public class FrankaMoveIt extends NativeRosNode {
 			  "panda_moveit.launch", 
 			  "arm_id:=panda",
 			  "controller:=effort");
+	}
+	
+	@Reference
+	void setFrankaControl(FrankaControl control) {
+		// depend on franka control to be launched first!
 	}
 }
 
