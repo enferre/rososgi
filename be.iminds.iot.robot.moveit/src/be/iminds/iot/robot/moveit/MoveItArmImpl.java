@@ -88,6 +88,7 @@ public class MoveItArmImpl implements Arm {
 	private List<JointState> state = new ArrayList<>();
 	
 	private ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
+	
 	private Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
 	
 	public MoveItArmImpl(String name, BundleContext context,
@@ -139,7 +140,15 @@ public class MoveItArmImpl implements Arm {
 			@Override
 			public void onNewMessage(moveit_msgs.MoveGroupActionResult result) {
 				GoalStatus status = result.getStatus();
-				UUID id = UUID.fromString(result.getStatus().getGoalId().getId());
+				UUID id;
+				try {
+					id = UUID.fromString(result.getStatus().getGoalId().getId());
+				} catch(IllegalArgumentException e) {
+					// ignore if goal id is not a uuid 
+					return;
+				}
+				
+				
 				Deferred<Arm> deferred = inprogress.remove(id);
 				if(deferred == null) {
 					System.out.println("WTF? No deferred for "+id);
@@ -162,7 +171,14 @@ public class MoveItArmImpl implements Arm {
 			@Override
 			public void onNewMessage(control_msgs.GripperCommandActionResult result) {
 				GoalStatus status = result.getStatus();
-				UUID id = UUID.fromString(result.getStatus().getGoalId().getId());
+				UUID id;
+				try {
+					id = UUID.fromString(result.getStatus().getGoalId().getId());
+				} catch(IllegalArgumentException e) {
+					// ignore if goal id is not a uuid 
+					return;
+				}
+				
 				Deferred<Arm> deferred = inprogress.remove(id);
 				if(deferred == null) {
 					System.out.println("WTF? No deferred for "+id);
@@ -201,14 +217,15 @@ public class MoveItArmImpl implements Arm {
 		moveIt.shutdown();
 		moveItCancel.shutdown();
 		moveItResult.shutdown();
+		gripper.shutdown();
+		gripperResult.shutdown();
 		subscriber.shutdown();
 	}
 	
 	
 	@Override
 	public Promise<Arm> waitFor(long time) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("waitFor not implemented...");
 	}
 
 	@Override
@@ -294,9 +311,6 @@ public class MoveItArmImpl implements Arm {
 	public Promise<Arm> openGripper(float opening) {
 		Deferred<Arm> deferred = new Deferred<>();
 		
-		UUID id = UUID.randomUUID();
-		inprogress.put(id, deferred);
-	
 		GripperCommandActionGoal cmdMsg = gripper.newMessage();
 		GripperCommandGoal goal = cmdMsg.getGoal();
 		GripperCommand cmd = goal.getCommand();
@@ -304,6 +318,7 @@ public class MoveItArmImpl implements Arm {
 		
 		GoalID goalId = factory.newFromType(actionlib_msgs.GoalID._TYPE);
 		UUID gid = UUID.randomUUID();
+		inprogress.put(gid, deferred);
 		goalId.setId(gid.toString());
 		cmdMsg.setGoalId(goalId);
 		
@@ -430,6 +445,11 @@ public class MoveItArmImpl implements Arm {
 		p.getPosition().setX(x);
 		p.getPosition().setY(y);
 		p.getPosition().setZ(z);
+		p.getOrientation().setX(1.0);
+		p.getOrientation().setY(0.0);
+		p.getOrientation().setZ(0.0);
+		p.getOrientation().setW(0.0);
+		
 		
 		ik.call(request, new ServiceResponseListener<GetPositionIKResponse>() {
 			
