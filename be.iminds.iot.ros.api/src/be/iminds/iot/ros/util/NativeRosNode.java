@@ -92,7 +92,11 @@ public class NativeRosNode {
 		
 		try {
 			List<String> cmd = new ArrayList<>();
-			cmd.add("rosrun");
+			if(rosNode.endsWith(".launch")) {
+				cmd.add("roslaunch");
+			} else {
+				cmd.add("rosrun");
+			}
 			cmd.add(rosPackage);
 			cmd.add(rosNode);
 			cmd.addAll(rosParameters);

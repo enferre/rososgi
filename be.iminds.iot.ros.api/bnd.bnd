@@ -1,4 +1,4 @@
-Bundle-Version: 0.3.0
+Bundle-Version: 0.4.0
 Export-Package: \
 	be.iminds.iot.ros.api,\
 	be.iminds.iot.ros.util
