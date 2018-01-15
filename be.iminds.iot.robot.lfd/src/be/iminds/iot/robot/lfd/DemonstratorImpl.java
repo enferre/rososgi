@@ -191,6 +191,7 @@ public class DemonstratorImpl implements Demonstrator {
 		});
 		
 		writer.println();
+		writer.flush();
 
 		current.steps.add(step);
 		
@@ -223,7 +224,7 @@ public class DemonstratorImpl implements Demonstrator {
 	}	
 	
 	@Override
-	public Promise<Void> execute(String demonstration) {
+	public Promise<Void> execute(String demonstration, boolean reversed) {
 		Demonstration d = new Demonstration();
 		d.name = demonstration;
 		
@@ -251,38 +252,44 @@ public class DemonstratorImpl implements Demonstrator {
 			e.printStackTrace();
 		}
 		
-		return execute(d);
+		return execute(d, reversed);
 	}
 	
 	@Override
-	public Promise<Void> execute(Demonstration d) {
-		return execute(d, 0);
+	public Promise<Void> execute(Demonstration d, boolean reversed) {
+		if(reversed) {
+			return execute(d, d.steps.size()-1, reversed);
+		} else {
+			return execute(d, 0, reversed);
+		}
 	}
 	
-	private Promise<Void> execute(Demonstration d, int step){
+	private Promise<Void> execute(Demonstration d, int step, boolean reversed){
 		Deferred<Void> deferred = new Deferred<>();
-		if(step == d.steps.size()) {
+		if(reversed && step < 0) {
+			deferred.resolve(null);
+		} else if(step == d.steps.size()) {
 			deferred.resolve(null);
 		} else {
 			Step toExecute = d.steps.get(step);
-			deferred.resolveWith(execute(toExecute).then(p -> execute(d, step+1)));
+			deferred.resolveWith(execute(toExecute, reversed).then(p -> reversed ? execute(d, step-1, reversed) : execute(d, step+1, reversed)));
 		}
 			
 		return deferred.getPromise();
 	}
 
 	@Override
-	public Promise<Void> execute(Step step) {
+	public Promise<Void> execute(Step step, boolean reversed) {
 		List<JointValue> target = arm.getState().stream()
 				.map(js -> js.joint)
 				.map(joint -> new JointValue(joint, JointValue.Type.POSITION, Float.parseFloat(step.properties.get(joint))))
 				.collect(Collectors.toList());
 
 		if(step.type == Type.PICK) {
-			float gripperOpening = 0.0f;
+			float gripperOpening = reversed ? 0.08f : 0.0f;
 			return arm.setPositions(target).then(p -> arm.openGripper(gripperOpening)).then(p -> null);			
 		} else if(step.type == Type.PLACE) {
-			float gripperOpening = 0.08f;
+			float gripperOpening = reversed ? 0.0f : 0.08f;
 			return arm.setPositions(target).then(p -> arm.openGripper(gripperOpening)).then(p -> null);
 		} else {
 			return arm.setPositions(target).then(p -> null);
@@ -296,7 +303,7 @@ public class DemonstratorImpl implements Demonstrator {
 
 	
 	private void toFile(String fileName, Frame f) throws Exception {
-		System.out.println(f.width+" "+f.height+" "+f.encoding);
+		// TODO faster writing to file required?
 		BufferedImage img = new BufferedImage(f.width, f.height,
 				BufferedImage.TYPE_INT_RGB);
 		
@@ -319,7 +326,6 @@ public class DemonstratorImpl implements Demonstrator {
 			}
 		}
 		
-		// TODO faster writing to file required?
 		String formatName = fileName.substring(fileName.length()-3);
 		ImageIO.write(img, formatName, new File(fileName));
 	}

@@ -36,11 +36,23 @@ public interface Demonstrator {
 	
 	void cancel();
 	
-	Promise<Void> execute(String demonstration);
+	default Promise<Void> execute(String demonstration){
+		return execute(demonstration, false);
+	}
 	
-	Promise<Void> execute(Demonstration d);
+	default Promise<Void> execute(Demonstration d){
+		return execute(d, false);
+	}
 	
-	Promise<Void> execute(Step step);
+	default Promise<Void> execute(Step step){
+		return execute(step, false);
+	}
+	
+	Promise<Void> execute(String demonstration, boolean reversed);
+	
+	Promise<Void> execute(Demonstration d, boolean reversed);
+	
+	Promise<Void> execute(Step step, boolean reversed);
 	
 	// introduce cancelable promises?!
 	void stop();
