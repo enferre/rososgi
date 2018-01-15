@@ -50,6 +50,7 @@ import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.lfd.api.Demonstration;
 import be.iminds.iot.robot.lfd.api.Demonstrator;
 import be.iminds.iot.robot.lfd.api.Step;
+import be.iminds.iot.robot.lfd.api.Step.Type;
 import be.iminds.iot.sensor.api.Camera;
 import be.iminds.iot.sensor.api.Frame;
 
@@ -60,7 +61,8 @@ import be.iminds.iot.sensor.api.Frame;
 		  "osgi.command.function=finish",
 		  "osgi.command.function=cancel",
 		  "osgi.command.function=execute",
-		  "osgi.command.function=stop"},
+		  "osgi.command.function=stop",
+		  "osgi.command.function=guide"},
 	immediate=true)
 public class DemonstratorImpl implements Demonstrator {
 
@@ -77,6 +79,8 @@ public class DemonstratorImpl implements Demonstrator {
 
 	// For now only listen for cameras
 	private Map<String, Camera> sensors = new ConcurrentHashMap<>();
+
+	private ControllerManager ctrl;
 	
 	@Activate
 	void activate(BundleContext context) {
@@ -89,6 +93,11 @@ public class DemonstratorImpl implements Demonstrator {
 		if(!f.exists() || !f.isDirectory()) {
 			f.mkdirs();
 		}
+	}
+	
+	@Reference
+	void setControllerManager(ControllerManager c) {
+		this.ctrl = c;
 	}
 	
 	@Reference
@@ -148,13 +157,13 @@ public class DemonstratorImpl implements Demonstrator {
 		
 		// record robot state + camera images
 		Step step = new Step();
-		step.type = type;
+		step.type = Type.valueOf(type);
 		
 		// in case of pick/place, also do the gripper action!
-		if(step.type.equals("pick")) {
+		if(step.type == Type.PICK) {
 			opening = 0.0f;
 			arm.openGripper(opening);			
-		} else if(step.type.equals("place")) {
+		} else if(step.type == Type.PLACE) {
 			opening = 0.08f;
 			arm.openGripper(opening);
 		}
@@ -230,7 +239,7 @@ public class DemonstratorImpl implements Demonstrator {
 				Step step = new Step();
 				for(int i=0;i<keys.length;i++) {
 					if(keys[i].equals("type")) {
-						step.type = values[i];
+						step.type = Type.valueOf(values[i]);
 					} else {
 						step.properties.put(keys[i], values[i]);
 					}
@@ -269,12 +278,10 @@ public class DemonstratorImpl implements Demonstrator {
 				.map(joint -> new JointValue(joint, JointValue.Type.POSITION, Float.parseFloat(step.properties.get(joint))))
 				.collect(Collectors.toList());
 
-		// TODO use gripper opening
-		// TODO enum for Step type
-		if(step.type.equals("pick")) {
+		if(step.type == Type.PICK) {
 			float gripperOpening = 0.0f;
 			return arm.setPositions(target).then(p -> arm.openGripper(gripperOpening)).then(p -> null);			
-		} else if(step.type.equals("place")) {
+		} else if(step.type == Type.PLACE) {
 			float gripperOpening = 0.08f;
 			return arm.setPositions(target).then(p -> arm.openGripper(gripperOpening)).then(p -> null);
 		} else {
@@ -315,6 +322,20 @@ public class DemonstratorImpl implements Demonstrator {
 		// TODO faster writing to file required?
 		String formatName = fileName.substring(fileName.length()-3);
 		ImageIO.write(img, formatName, new File(fileName));
+	}
+
+	public void guide() {
+		guide(true);
+	}
+	
+	@Override
+	public void guide(boolean guide) {
+		// TODO configure controller?!
+		if(guide) {
+			ctrl.stop("effort_joint_trajectory_controller");
+		} else {
+			ctrl.start("effort_joint_trajectory_controller");
+		}
 	}
 
 }

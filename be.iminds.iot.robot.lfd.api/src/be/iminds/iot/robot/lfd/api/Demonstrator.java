@@ -45,6 +45,8 @@ public interface Demonstrator {
 	// introduce cancelable promises?!
 	void stop();
 
+	// set robot to guide mode
+	void guide(boolean guide);
 	
 	// TODO add methods to "record" trajectories?!
 }

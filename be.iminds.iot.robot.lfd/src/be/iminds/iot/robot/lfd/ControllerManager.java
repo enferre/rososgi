@@ -20,35 +20,18 @@
  *  Contributors:
  *      Tim Verbelen, Steven Bohez
  *******************************************************************************/
-package be.iminds.iot.robot.lfd.api;
-
-import java.util.HashMap;
-import java.util.Map;
+package be.iminds.iot.robot.lfd;
 
 /**
- * Represents one step in a demonstration
  */
-public class Step {
+public interface ControllerManager {
 
-	public enum Type {
-		START,
-		MOVE,
-		PICK,
-		PLACE
-	}
+	void load(String controller);
 	
-	public Type type;
+	void unload(String controller);
 	
-	// TODO: hard code the format?
-	// for now just map, allow both joint positions (robot specific) or cartesian coords?
-	public Map<String, String> properties = new HashMap<>();
+	void start(String controller);
 	
-	@Override
-	public String toString() {
-		StringBuilder b = new StringBuilder();
-		b.append("type\t").append(type).append("\t");
-		properties.entrySet().stream().forEach(e -> b.append(e.getKey()).append("\t").append(e.getValue()).append("\t"));
-		b.append("\n");
-		return b.toString();
-	}
+	void stop(String controller);
+	
 }
