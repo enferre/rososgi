@@ -34,4 +34,11 @@ public class Demonstration {
 	
 	public List<Step> steps = new ArrayList<>();
 	
+	@Override
+	public String toString() {
+		StringBuilder b = new StringBuilder();
+		b.append("name\t").append(name).append("\n");
+		steps.forEach(s -> b.append(s.toString()));
+		return b.toString();
+	}
 }
