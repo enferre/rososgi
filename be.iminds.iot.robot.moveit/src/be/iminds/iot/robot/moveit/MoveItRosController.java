@@ -75,6 +75,16 @@ public class MoveItRosController extends AbstractNodeMain {
 
 		// this brings online arm and base services
 		arm = new MoveItArmImpl(name, context, connectedNode);
-		arm.register("/panda/joint_states","/panda/move_group","panda_arm_hand","/panda/compute_ik","/panda/franka_gripper_node/gripper_action");
+		
+		String[] joints = new String[] {
+				"panda_joint1",
+				"panda_joint2",
+				"panda_joint3",
+				"panda_joint4",
+				"panda_joint5",
+				"panda_joint6",
+				"panda_joint7"};
+		
+		arm.register("/panda/joint_states","/panda/move_group","panda_arm_hand","/panda/compute_ik","/panda/franka_gripper_node/gripper_action", joints);
 	}
 }

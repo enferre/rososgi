@@ -100,7 +100,7 @@ public class MoveItArmImpl implements Arm {
 		this.factory = node.getTopicMessageFactory();
 	}
 	
-	public void register(String joint_states, String move_group_topic, String move_group, String compute_ik, String gripper_topic){
+	public void register(String joint_states, String move_group_topic, String move_group, String compute_ik, String gripper_topic, String[] joints){
 		this.move_group = move_group;
 		
 		// commands for plan / execute
@@ -109,6 +109,12 @@ public class MoveItArmImpl implements Arm {
 
 		// commands for gripper
 		gripper = node.newPublisher(gripper_topic+"/goal", control_msgs.GripperCommandActionGoal._TYPE);
+		
+		// init joint states
+		for(String j : joints) {
+			JointState jointState = new JointState(j, 0, 0, 0);
+			state.add(jointState);
+		}
 		
 		// add subscribers
 		subscriber = node.newSubscriber(joint_states,
@@ -121,8 +127,8 @@ public class MoveItArmImpl implements Arm {
 					String name = jointState.getName().get(i);
 					JointState joint = getJoint(name);
 					if(joint==null){
-						joint = new JointState(name, 0, 0, 0);
-						state.add(joint);
+						// only capture state of configured joints!
+						return;
 					}
 					
 					joint.position = (float)jointState.getPosition()[i];
@@ -356,13 +362,15 @@ public class MoveItArmImpl implements Arm {
 		c.setName("target positions");
 		List<JointConstraint> jointConstraints = new ArrayList<>();
 		for(JointValue v : positions) {
-			JointConstraint jc = factory.newFromType(moveit_msgs.JointConstraint._TYPE);
-			jc.setJointName(v.joint);
-			jc.setPosition(v.value);
-			jc.setToleranceAbove(0.0001);
-			jc.setToleranceBelow(0.0001);
-			jc.setWeight(1.0);
-			jointConstraints.add(jc);
+			if(getJoint(v.joint)!=null) { // only add joint constraint for configured joints!
+				JointConstraint jc = factory.newFromType(moveit_msgs.JointConstraint._TYPE);
+				jc.setJointName(v.joint);
+				jc.setPosition(v.value);
+				jc.setToleranceAbove(0.0001);
+				jc.setToleranceBelow(0.0001);
+				jc.setWeight(1.0);
+				jointConstraints.add(jc);
+			}
 		}
 		c.setJointConstraints(jointConstraints);
 		constraints.add(c);
