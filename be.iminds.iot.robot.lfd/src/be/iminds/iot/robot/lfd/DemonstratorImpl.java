@@ -73,6 +73,7 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	// For now limited to one Arm
 	private Arm arm;
+	private float opening = 0.08f;
 
 	// For now only listen for cameras
 	private Map<String, Camera> sensors = new ConcurrentHashMap<>();
@@ -148,14 +149,23 @@ public class DemonstratorImpl implements Demonstrator {
 		// record robot state + camera images
 		Step step = new Step();
 		step.type = type;
+		
+		// in case of pick/place, also do the gripper action!
+		if(step.type.equals("pick")) {
+			opening = 0.0f;
+			arm.openGripper(opening);			
+		} else if(step.type.equals("place")) {
+			opening = 0.08f;
+			arm.openGripper(opening);
+		}
+		
 		writer.print(type+"\t");
 		
 		arm.getState().stream().forEach(js -> {
 				step.properties.put(js.joint, ""+js.position);
-				writer.println(js.position+"\t");
+				writer.print(js.position+"\t");
 			});
 		// TODO get the gripper opening?!
-		float opening = 0.0f;
 		step.properties.put("gripper", ""+opening);
 		writer.print(opening+"\t");
 
@@ -219,7 +229,11 @@ public class DemonstratorImpl implements Demonstrator {
 				String[] values = line.split("\t");
 				Step step = new Step();
 				for(int i=0;i<keys.length;i++) {
-					step.properties.put(keys[i], values[i]);
+					if(keys[i].equals("type")) {
+						step.type = values[i];
+					} else {
+						step.properties.put(keys[i], values[i]);
+					}
 				}
 				d.steps.add(step);
 				line = reader.readLine();
