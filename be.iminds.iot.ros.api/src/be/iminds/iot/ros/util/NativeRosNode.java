@@ -36,7 +36,8 @@ import be.iminds.iot.ros.api.Ros;
 public class NativeRosNode {
 
 	protected Process process;
-	
+
+	protected String name;
 	protected String rosPackage;
 	protected String rosNode;
 	protected List<String> rosParameters = new ArrayList<>();
@@ -84,6 +85,8 @@ public class NativeRosNode {
 						rosParameters.add(mapping);
 					}
 				}	
+			} else if(key.equals("name")) {
+				name = entry.getValue().toString();
 			} else if(!key.contains(".")){ // ignore parameters with "." , most likely OSGi service props
 				// add as private parameters for ROS node
 				rosParameters.add("_"+key+":="+entry.getValue());
@@ -104,6 +107,13 @@ public class NativeRosNode {
 			}
 			cmd.add(rosPackage);
 			cmd.add(rosNode);
+			
+			// use name for setting the node name
+			if(name != null) {
+				cmd.add("__name:="+name);
+			}
+			
+			// add params to command
 			if(roslaunch) {
 				// remove underscores in case of roslaunch
 				List<String> launchParams = new ArrayList<>();
