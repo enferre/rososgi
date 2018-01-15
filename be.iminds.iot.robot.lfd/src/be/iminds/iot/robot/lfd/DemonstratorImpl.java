@@ -75,7 +75,6 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	// For now limited to one Arm
 	private Arm arm;
-	private float opening = 0.08f;
 
 	// For now only listen for cameras
 	private Map<String, Camera> sensors = new ConcurrentHashMap<>();
@@ -137,7 +136,6 @@ public class DemonstratorImpl implements Demonstrator {
 			arm.getState().stream().forEach(js -> {
 				writer.print(js.joint+"\t");
 			});
-			writer.print("gripper\t");
 			
 			sensors.entrySet().forEach(e -> {
 				writer.print(e.getKey()+"\t");
@@ -161,11 +159,9 @@ public class DemonstratorImpl implements Demonstrator {
 		
 		// in case of pick/place, also do the gripper action!
 		if(step.type == Type.PICK) {
-			opening = 0.0f;
-			arm.openGripper(opening);			
+			arm.closeGripper();	
 		} else if(step.type == Type.PLACE) {
-			opening = 0.08f;
-			arm.openGripper(opening);
+			arm.openGripper();
 		}
 		
 		writer.print(type+"\t");
@@ -174,9 +170,6 @@ public class DemonstratorImpl implements Demonstrator {
 				step.properties.put(js.joint, ""+js.position);
 				writer.print(js.position+"\t");
 			});
-		// TODO get the gripper opening?!
-		step.properties.put("gripper", ""+opening);
-		writer.print(opening+"\t");
 
 		// get frames for all cameras
 		sensors.entrySet().forEach(e -> {
@@ -286,11 +279,11 @@ public class DemonstratorImpl implements Demonstrator {
 				.collect(Collectors.toList());
 
 		if(step.type == Type.PICK) {
-			float gripperOpening = reversed ? 0.08f : 0.0f;
-			return arm.setPositions(target).then(p -> arm.openGripper(gripperOpening)).then(p -> null);			
+			return arm.setPositions(target)
+					.then(p -> reversed ? arm.openGripper() : arm.closeGripper()).then(p -> null);			
 		} else if(step.type == Type.PLACE) {
-			float gripperOpening = reversed ? 0.0f : 0.08f;
-			return arm.setPositions(target).then(p -> arm.openGripper(gripperOpening)).then(p -> null);
+			return arm.setPositions(target)
+					.then(p -> reversed ? arm.closeGripper() : arm.openGripper()).then(p -> null);
 		} else {
 			return arm.setPositions(target).then(p -> null);
 		}
