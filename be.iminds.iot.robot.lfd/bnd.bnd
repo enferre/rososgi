@@ -2,6 +2,10 @@
 	osgi.core;version=5.0,\
 	osgi.promise,\
 	osgi.enterprise;version=5.0,\
-	be.iminds.iot.robot.api;version=latest
+	be.iminds.iot.robot.api;version=latest,\
+	be.iminds.iot.sensor.api;version=latest,\
+	be.iminds.iot.robot.lfd.api;version=latest,\
+	com.google.gson
 Bundle-Version: 0.1.0
--sub: *.bnd
+Private-Package: be.iminds.iot.robot.lfd
+Export-Package: be.iminds.iot.robot.lfd.api
