@@ -7,6 +7,6 @@
 	org.ros.rosjava_messages.sensor_msgs,\
 	org.jboss.netty,\
 	be.iminds.iot.sensor.api;version=latest
-Bundle-Version: 0.2.0
+Bundle-Version: 0.3.0
 Private-Package: be.iminds.iot.sensor.camera.ros
 Export-Package: be.iminds.iot.robot.api

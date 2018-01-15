@@ -68,6 +68,8 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 	private volatile List<SensorListener> listeners = new ArrayList<>();
 
 	private String name;
+	private Dictionary<String, Object> properties = new Hashtable<>();
+
 	private UUID id = UUID.randomUUID();
 	private volatile Frame currentFrame = null;
 	
@@ -75,7 +77,7 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 	
 	@Override
 	public GraphName getDefaultNodeName() {
-		return GraphName.of("camera/subscriber"+name.replaceAll("( )|#", "_"));
+		return GraphName.of(name.replaceAll("( )|#", "_")+"/subscriber");
 	}
 
 	@Override
@@ -102,7 +104,7 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 						for(int j=0;j<f.height;j++){
 							for(int i=0;i<f.width;i++){
 								for(int k=0;k<3;k++){
-									f.data[k*f.width*f.height+j*f.height+i] =
+									f.data[k*f.width*f.height+j*f.width+i] =
 											(0xFF & data[ind++])/255.f;
 								}
 							}
@@ -115,8 +117,6 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 				
 				if(currentFrame == null){
 					// register Camera service
-					Dictionary<String, Object> properties = new Hashtable<>();
-					properties.put("id", id.toString());
 					registration = context.registerService(Camera.class, ROSCameraProvider.this, properties);
 				}
 				currentFrame = f;
@@ -200,5 +200,7 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 	void activate(BundleContext context, Map<String, Object> config){
 		this.context = context;
 		this.name = (String)config.get("name");
+		this.properties.put("id", id.toString());
+		config.entrySet().forEach(e -> this.properties.put(e.getKey(), e.getValue().toString()));
 	}
 }
