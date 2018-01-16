@@ -51,6 +51,7 @@ import controller_manager_msgs.UnloadControllerResponse;
 public class RosControllerManager extends AbstractNodeMain implements ControllerManager {
 
 	private String name;
+	private ConnectedNode node;
 	
 	private ServiceClient<controller_manager_msgs.LoadControllerRequest, controller_manager_msgs.LoadControllerResponse> load;
 	private ServiceClient<controller_manager_msgs.UnloadControllerRequest, controller_manager_msgs.UnloadControllerResponse> unload;
@@ -77,18 +78,18 @@ public class RosControllerManager extends AbstractNodeMain implements Controller
 	
 	@Override
 	public void onStart(ConnectedNode connectedNode){
-		// TODO make this configurable?!
-		try {
-			load = connectedNode.newServiceClient("/panda/controller_manager/load_controller", controller_manager_msgs.LoadController._TYPE);
-			unload = connectedNode.newServiceClient("/panda/controller_manager/unload_controller", controller_manager_msgs.UnloadController._TYPE);
-			swtch = connectedNode.newServiceClient("/panda/controller_manager/switch_controller", controller_manager_msgs.SwitchController._TYPE);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+		this.node = connectedNode;
+		// lazy load
 	}
 
 	@Override
 	public void load(String controller) {
+		if(load == null) {
+			loadControllerServices();
+			if(load == null) 
+				throw new RuntimeException("ROS controller load service unavailable");
+		}
+		
 		Deferred<Void> deferred = new Deferred<>();
 		LoadControllerRequest rq = load.newMessage();
 		rq.setName(controller);
@@ -117,6 +118,12 @@ public class RosControllerManager extends AbstractNodeMain implements Controller
 
 	@Override
 	public void unload(String controller) {
+		if(unload == null) {
+			loadControllerServices();
+			if(unload == null) 
+				throw new RuntimeException("ROS controller unload service unavailable");
+		}
+		
 		Deferred<Void> deferred = new Deferred<>();
 		UnloadControllerRequest rq = unload.newMessage();
 		rq.setName(controller);
@@ -145,6 +152,12 @@ public class RosControllerManager extends AbstractNodeMain implements Controller
 
 	@Override
 	public void start(String controller) {
+		if(swtch == null) {
+			loadControllerServices();
+			if(swtch == null) 
+				throw new RuntimeException("ROS controller switch service unavailable");
+		}
+
 		Deferred<Void> deferred = new Deferred<>();
 		SwitchControllerRequest rq = swtch.newMessage();
 		List<String> toStart = new ArrayList<>();
@@ -176,6 +189,12 @@ public class RosControllerManager extends AbstractNodeMain implements Controller
 	
 	@Override
 	public void stop(String controller) {
+		if(swtch == null) {
+			loadControllerServices();
+			if(swtch == null) 
+				throw new RuntimeException("ROS controller switch service unavailable");
+		}
+			
 		Deferred<Void> deferred = new Deferred<>();
 		SwitchControllerRequest rq = swtch.newMessage();
 		List<String> toStop = new ArrayList<>();
@@ -202,6 +221,17 @@ public class RosControllerManager extends AbstractNodeMain implements Controller
 			deferred.getPromise().getValue();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+	
+	private void loadControllerServices() {
+		// TODO make service uris configurable?!
+		try {
+			load = node.newServiceClient("/panda/controller_manager/load_controller", controller_manager_msgs.LoadController._TYPE);
+			unload = node.newServiceClient("/panda/controller_manager/unload_controller", controller_manager_msgs.UnloadController._TYPE);
+			swtch = node.newServiceClient("/panda/controller_manager/switch_controller", controller_manager_msgs.SwitchController._TYPE);
+		} catch(Exception e) {
+			//e.printStackTrace();
 		}
 	}
 }
