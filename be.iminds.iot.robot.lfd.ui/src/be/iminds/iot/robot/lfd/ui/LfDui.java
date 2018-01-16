@@ -83,71 +83,75 @@ public class LfDui extends HttpServlet {
 		response.setContentType("application/json");
 		String method = request.getParameter("method");
 
-		if(method.equals("demonstrations")){
-			JsonArray result = new JsonArray();
-			demonstrator.demonstrations().forEach(d -> result.add(new JsonPrimitive(d)));
-			response.getWriter().print(result.toString());
-			response.getWriter().flush();
-		} else if(method.equals("load")){
-			String name = request.getParameter("name");
-			Demonstration d = demonstrator.load(name);
-			response.getWriter().print(toJson(d));
-			response.getWriter().flush();
-		} else if(method.equals("step")) {
-			String name = request.getParameter("name");
-			String type = request.getParameter("type");
-			Step.Type t = Step.Type.valueOf(type);
-			Step s = demonstrator.step(name, t);
-			response.getWriter().print(toJson(s));
-			response.getWriter().flush();
-		} else if(method.equals("save")) {
-			String demonstrationJson = request.getParameter("demonstration");
-			JsonObject json = (JsonObject)parser.parse(demonstrationJson);
-			Demonstration d = demonstrationFromJson(json);
-			demonstrator.save(d);
-		} else if(method.equals("execute")) {
-			try {
-			boolean reversed = false;
-			if(request.getParameter("reversed") != null) {
-				reversed = Boolean.parseBoolean(request.getParameter("reversed"));
-			}
-			
-			String name =  request.getParameter("name");
-			if(name != null) {
+		try {
+			if(method.equals("demonstrations")){
+				JsonArray result = new JsonArray();
+				demonstrator.demonstrations().forEach(d -> result.add(new JsonPrimitive(d)));
+				response.getWriter().print(result.toString());
+				response.getWriter().flush();
+			} else if(method.equals("load")){
+				String name = request.getParameter("name");
 				Demonstration d = demonstrator.load(name);
-				demonstrator.execute(d, reversed)
-							.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});
-				return;
-			}
-			
-			String demonstrationJson = request.getParameter("demonstration");
-			if(demonstrationJson != null) {
+				response.getWriter().print(toJson(d));
+				response.getWriter().flush();
+			} else if(method.equals("step")) {
+				String name = request.getParameter("name");
+				String type = request.getParameter("type");
+				Step.Type t = Step.Type.valueOf(type);
+				Step s = demonstrator.step(name, t);
+				response.getWriter().print(toJson(s));
+				response.getWriter().flush();
+			} else if(method.equals("save")) {
+				String demonstrationJson = request.getParameter("demonstration");
 				JsonObject json = (JsonObject)parser.parse(demonstrationJson);
 				Demonstration d = demonstrationFromJson(json);
-				demonstrator.execute(d, reversed)
-							.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
-				return;
+				demonstrator.save(d);
+			} else if(method.equals("execute")) {
+				try {
+				boolean reversed = false;
+				if(request.getParameter("reversed") != null) {
+					reversed = Boolean.parseBoolean(request.getParameter("reversed"));
+				}
+				
+				String name =  request.getParameter("name");
+				if(name != null) {
+					Demonstration d = demonstrator.load(name);
+					demonstrator.execute(d, reversed)
+								.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});
+					return;
+				}
+				
+				String demonstrationJson = request.getParameter("demonstration");
+				if(demonstrationJson != null) {
+					JsonObject json = (JsonObject)parser.parse(demonstrationJson);
+					Demonstration d = demonstrationFromJson(json);
+					demonstrator.execute(d, reversed)
+								.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
+					return;
+				}
+				
+				String stepJson = request.getParameter("step");
+				if(stepJson != null) {
+					JsonObject json = (JsonObject)parser.parse(stepJson);
+					Step s = stepFromJson(json);
+					demonstrator.execute(s, reversed)
+								.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
+					return;
+				}
+				} catch(Throwable t) {
+					t.printStackTrace();
+				}
+			} else if(method.equals("stop")) {
+				demonstrator.stop();
+			} else if(method.equals("guide")) {
+				boolean guide = true;
+				if(request.getParameter("guide") != null) {
+					guide = Boolean.parseBoolean(request.getParameter("guide"));
+				}
+				demonstrator.guide(guide);
 			}
-			
-			String stepJson = request.getParameter("step");
-			if(stepJson != null) {
-				JsonObject json = (JsonObject)parser.parse(stepJson);
-				Step s = stepFromJson(json);
-				demonstrator.execute(s, reversed)
-							.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
-				return;
-			}
-			} catch(Throwable t) {
-				t.printStackTrace();
-			}
-		} else if(method.equals("stop")) {
-			demonstrator.stop();
-		} else if(method.equals("guide")) {
-			boolean guide = true;
-			if(request.getParameter("guide") != null) {
-				guide = Boolean.parseBoolean(request.getParameter("guide"));
-			}
-			demonstrator.guide(guide);
+		} catch(Throwable t) {
+			t.printStackTrace();
 		}
 	}
 	

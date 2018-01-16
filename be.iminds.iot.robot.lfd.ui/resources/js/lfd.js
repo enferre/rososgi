@@ -3,7 +3,10 @@
  */
 var currentMode = "teach";
 
-var currentDemonstration = {};
+var currentDemonstration = {
+		name: "untitled",
+		steps: []
+};
 
 /**
  * Set UI modus
@@ -96,10 +99,10 @@ $( document ).ready(function() {
  * record current state as step for current teaching
  */
 function step(type){
-	$.post("/lfd", {"method" : "step", "type" : type}, 
+	$.post("/lfd", {"method" : "step", "type" : type, "name" : currentDemonstration.name}, 
 			function( data ) {
 				var step = data;
-				step.n = currentDemonstation.steps.length;
+				step.n = currentDemonstration.steps.length;
 				currentDemonstration.steps.push(step);
 				var s = renderTemplate("step", step, $('#steps'));
 			}
