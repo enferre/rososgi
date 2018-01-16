@@ -38,6 +38,11 @@ html, body {
 	height: 100%;
 }
 
+.mCSB_container {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
 #canvas {
 	overflow: auto;
 }
@@ -129,6 +134,23 @@ html, body {
   background-color: transparent;
 }
 
+.teach-nav {
+ 	padding: 0;
+ 	float: left;
+ 	margin-left: 20%;
+}
+.teach-nav > li {
+  display: inline-block;
+  margin: 0 10px;
+}
+.teach-nav > li > a {
+  color: #888;
+}
+.teach-nav > li > a:hover,
+.teach-nav > li > a:focus {
+  background-color: transparent;
+}
+
 @media ( min-width : 768px) {
 	.masthead-brand {
 		float: left;
@@ -157,6 +179,13 @@ html, body {
 .number {
 	font-size: x-large;
 }
+
+#name {
+	margin-top: 15px;
+    text-align: center;
+    color: #888;
+    font-weight: bold;
+} 
 
 /*
  * Footer

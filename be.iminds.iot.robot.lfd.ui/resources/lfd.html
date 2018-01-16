@@ -40,8 +40,24 @@
 			<a href="#"><img class="logo" src="images/lfd.png" title="Logo"/></a>
 			<div class="inner">
 				<nav class='controls'>
-	                <ul id="teach-controls" class="nav save-load-nav control-group">
-						<li><a href="#" id="menu-step" onclick="step();return false;">Step</a></li>
+	                <ul id="save-load-controls" class="nav save-load-nav control-group">
+	                	<li><a href="#" id="menu-new" onclick="showNewDialog();return false;">New</a></li>
+						<li><a href="#" id="menu-load" onclick="showLoadDialog();return false;">Load</a></li>
+						<li><a href="#" id="menu-save" onclick="save();return false;">Save</a></li>
+	                </ul>
+                </nav>
+				
+				<nav class='controls'>
+	                <ul id="teach-controls" class="nav teach-nav control-group">
+						<li><a href="#" id="menu-step" onclick="step('MOVE');return false;">Step</a></li>
+						<li><a href="#" id="menu-pick" onclick="step('PICK');return false;">Pick</a></li>
+						<li><a href="#" id="menu-place" onclick="step('PLACE');return false;">Place</a></li>
+	                </ul>
+                </nav>
+                
+                <nav class='controls'>
+	                <ul id="play-controls" class="nav teach-nav control-group">
+						<li><a href="#" id="menu-reverse" onclick="reverse();return false;">Reverse</a></li>
 						<li><a href="#" id="menu-play" onclick="play();return false;">Play</a></li>
 						<li><a href="#" id="menu-stop" onclick="stop();return false;">Stop</a></li>
 	                </ul>
@@ -50,8 +66,7 @@
 				<nav class='controls'>
 					<ul id="actions" class="nav masthead-nav control-group">
 						<li><a href="#" id="menu-teach" class="active" onclick="setModus('teach');return false;">Teach</a></li>
-<!-- 						<li><a href="#" id="menu-demonstrations" onclick="setModus('demonstrations');return false;">Demonstrations</a></li> -->
-<!-- 						<li><a href="#" id="menu-recordings" onclick="setModus('recordings');return false;">Recordings</a></li> -->
+<!-- 						<li><a href="#" id="menu-record" onclick="setModus('record');return false;">Record</a></li> -->
 					</ul>
 				</nav>
 			</div>
@@ -59,136 +74,8 @@
 
 		<div class="container-fluid">
 			<div id="canvas" class="row">
-				<div class="item col-xs-12 col-md-6">
-					<div class="border col-md-12">
-				  		<div class="col-md-3">
-				  			<div class="number">1</div>
-				  			<ul style="list-style:none;">
-				  				<li>joint_1 : 0.0</li>
-				  				<li>joint_2 : 0.0</li>
-				  				<li>joint_3 : 0.0</li>
-				  				<li>joint_4 : 0.0</li>
-				  				<li>joint_5 : 0.0</li>
-				  				<li>joint_6 : 0.0</li>
-				  				<li>joint_7 : 0.0</li>
-				  				<li>gripper : 0.08</li>
-				  			</ul>
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera1.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera2.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera3.jpg">				  		
-				  		</div>
-			     	</div>
-				</div>
-				
-				<div class="item col-xs-12 col-md-6">
-					<div class="border col-md-12">
-				  		<div class="col-md-3">
-				  			<div class="number">2</div>
-				  			<ul style="list-style:none;">
-				  				<li>joint_1 : 0.0</li>
-				  				<li>joint_2 : 0.0</li>
-				  				<li>joint_3 : 0.0</li>
-				  				<li>joint_4 : 0.0</li>
-				  				<li>joint_5 : 0.0</li>
-				  				<li>joint_6 : 0.0</li>
-				  				<li>joint_7 : 0.0</li>
-				  				<li>gripper : 0.08</li>
-				  			</ul>
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera1.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera2.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera3.jpg">				  		
-				  		</div>
-			     	</div>
-				</div>
-				<div class="item col-xs-12 col-md-6">
-					<div class="border col-md-12">
-				  		<div class="col-md-3">
-				  			<div class="number">3</div>
-				  			<ul style="list-style:none;">
-				  				<li>joint_1 : 0.0</li>
-				  				<li>joint_2 : 0.0</li>
-				  				<li>joint_3 : 0.0</li>
-				  				<li>joint_4 : 0.0</li>
-				  				<li>joint_5 : 0.0</li>
-				  				<li>joint_6 : 0.0</li>
-				  				<li>joint_7 : 0.0</li>
-				  				<li>gripper : 0.08</li>
-				  			</ul>
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera1.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera2.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera3.jpg">				  		
-				  		</div>
-			     	</div>
-				</div>
-				<div class="item col-xs-12 col-md-6">
-					<div class="border col-md-12">
-				  		<div class="col-md-3">
-				  			<div class="number">4</div>
-				  			<ul style="list-style:none;">
-				  				<li>joint_1 : 0.0</li>
-				  				<li>joint_2 : 0.0</li>
-				  				<li>joint_3 : 0.0</li>
-				  				<li>joint_4 : 0.0</li>
-				  				<li>joint_5 : 0.0</li>
-				  				<li>joint_6 : 0.0</li>
-				  				<li>joint_7 : 0.0</li>
-				  				<li>gripper : 0.08</li>
-				  			</ul>
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera1.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera2.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera3.jpg">				  		
-				  		</div>
-			     	</div>
-				</div>
-				<div class="item col-xs-12 col-md-6">
-					<div class="border col-md-12">
-				  		<div class="col-md-3">
-				  			<div class="number">5</div>
-				  			<ul style="list-style:none;">
-				  				<li>joint_1 : 0.0</li>
-				  				<li>joint_2 : 0.0</li>
-				  				<li>joint_3 : 0.0</li>
-				  				<li>joint_4 : 0.0</li>
-				  				<li>joint_5 : 0.0</li>
-				  				<li>joint_6 : 0.0</li>
-				  				<li>joint_7 : 0.0</li>
-				  				<li>gripper : 0.08</li>
-				  			</ul>
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera1.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera2.jpg">				  		
-				  		</div>
-				  		<div class="col-md-3">
-							<img class="camera" src="images/camera3.jpg">				  		
-				  		</div>
-			     	</div>
+				<div id="name" class="col-xs-12 col-md-12 col-lg-12"></div>
+				<div id="steps">
 				</div>		
 			</div>
 		</div>
@@ -201,6 +88,87 @@
 		</footer>
 	</div>
 
+
+	<!-- Templates -->
+	<script type="x-tmpl-mustache" id="step">
+	<div class="item col-xs-12 col-md-6">
+		<div class="border col-md-12">
+			<div class="col-md-3">
+				<div class="number">{{n}}</div>
+				{{type}}
+				<ul class="properties" style="list-style:none;">
+					<li>joint 1 : {{panda_joint1}}</li>
+				  	<li>joint 2 : {{panda_joint2}}</li>
+				  	<li>joint 3 : {{panda_joint3}}</li>
+				  	<li>joint 4 : {{panda_joint4}}</li>
+				  	<li>joint 5 : {{panda_joint5}}</li>
+				  	<li>joint 6 : {{panda_joint6}}</li>
+				  	<li>joint 7 : {{panda_joint7}}</li>
+				 </ul>
+			</div>
+			<div class="images">
+				<div class="col-md-3">
+					<img class="camera" src="{{camera0}}">				  		
+				</div>
+				<div class="col-md-3">
+					<img class="camera" src="{{camera1}}">				  		
+				</div>
+				<div class="col-md-3">
+					<img class="camera" src="{{camera2}}">				  		
+				</div>
+			</div>
+			<button class="submit btn btn-secondary pull-right" onclick="play('{{n}}')">Play</button>
+		</div>
+	</div>
+	</script>
+
+	<script type="x-tmpl-mustache" id="dialog">
+	<div class="modal fade module-modal {{type}}" id="dialog-{{id}}" tabindex="-1" role="dialog">
+		<div class="modal-dialog module-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span>&#215;</span>
+					</button>
+					<h4 class="modal-title">{{title}}</h4>
+				</div>
+				<div class="modal-body">
+					<div class="content"></div>
+					<br/>
+					<form role="form" class="form-horizontal" onsubmit="{return false;}">
+						<input class="module-id" type="hidden" name="id" value="{{id}}"/>
+						<div class="form-items"></div>
+						<!-- hidden submit button enabling on enter when applicable -->
+						<button type=submit class="submit" hidden> 
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button class="cancel btn btn-danger pull-left">{{cancel}}</button>
+					<button class="submit btn btn-primary">{{submit}}</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	</script>
+	
+	<script type="x-tmpl-mustache" id="form-item">
+	<div class="form-group">
+		<label class="col-sm-3 control-label">{{name}}</label>
+		<div class="col-sm-7">
+			<input type="{{type}}" class="form-control {{id}}" name="{{id}}" value="{{value}}" />
+		</div>
+	</div>
+	</script>
+	
+	<script type="x-tmpl-mustache" id="form-dropdown">
+	<div class="form-group">
+		<label class="col-sm-3 control-label">{{name}}</label>
+		<div class="col-sm-7">
+			<select class="form-control options">
+			</select>
+		</div>
+	</div>
+	</script>
 	
 	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 	<script src="js/lib/jquery.min.js"></script>

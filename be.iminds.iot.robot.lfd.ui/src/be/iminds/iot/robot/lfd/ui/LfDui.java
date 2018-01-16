@@ -22,6 +22,7 @@
  *******************************************************************************/
 package be.iminds.iot.robot.lfd.ui;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
@@ -33,12 +34,29 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.http.HttpService;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+
+import be.iminds.iot.robot.lfd.api.Demonstration;
+import be.iminds.iot.robot.lfd.api.Demonstrator;
+import be.iminds.iot.robot.lfd.api.Step;
+
 @Component(service={javax.servlet.Servlet.class},
 	property={"alias:String=/lfd",
 		 	  "osgi.http.whiteboard.servlet.pattern=/lfd"},
 	immediate=true)
 public class LfDui extends HttpServlet {
 
+	private static final long serialVersionUID = 1L;
+
+	private Demonstrator demonstrator;
+	
+	private JsonParser parser = new JsonParser();
+	
+	private String imagePrefix = File.separator+"lfd"+File.separator+"images"+File.separator;
+	
 	@Reference
 	void setHttpService(HttpService http){
 		try {
@@ -49,6 +67,11 @@ public class LfDui extends HttpServlet {
 		}
 	}
 	
+	@Reference
+	void setDemonstrator(Demonstrator d) {
+		this.demonstrator = d;
+	}
+	
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.sendRedirect("/lfd/ui/lfd.html");
@@ -57,5 +80,128 @@ public class LfDui extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		response.setContentType("application/json");
+		String method = request.getParameter("method");
+
+		if(method.equals("demonstrations")){
+			JsonArray result = new JsonArray();
+			demonstrator.demonstrations().forEach(d -> result.add(new JsonPrimitive(d)));
+			response.getWriter().print(result.toString());
+			response.getWriter().flush();
+		} else if(method.equals("load")){
+			String name = request.getParameter("name");
+			Demonstration d = demonstrator.load(name);
+			response.getWriter().print(toJson(d));
+			response.getWriter().flush();
+		} else if(method.equals("step")) {
+			String name = request.getParameter("name");
+			String type = request.getParameter("type");
+			Step.Type t = Step.Type.valueOf(type);
+			Step s = demonstrator.step(name, t);
+			response.getWriter().print(toJson(s));
+			response.getWriter().flush();
+		} else if(method.equals("save")) {
+			String demonstrationJson = request.getParameter("demonstration");
+			JsonObject json = (JsonObject)parser.parse(demonstrationJson);
+			Demonstration d = demonstrationFromJson(json);
+			demonstrator.save(d);
+		} else if(method.equals("execute")) {
+			try {
+			boolean reversed = false;
+			if(request.getParameter("reversed") != null) {
+				reversed = Boolean.parseBoolean(request.getParameter("reversed"));
+			}
+			
+			String name =  request.getParameter("name");
+			if(name != null) {
+				Demonstration d = demonstrator.load(name);
+				demonstrator.execute(d, reversed)
+							.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});
+				return;
+			}
+			
+			String demonstrationJson = request.getParameter("demonstration");
+			if(demonstrationJson != null) {
+				JsonObject json = (JsonObject)parser.parse(demonstrationJson);
+				Demonstration d = demonstrationFromJson(json);
+				demonstrator.execute(d, reversed)
+							.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
+				return;
+			}
+			
+			String stepJson = request.getParameter("step");
+			if(stepJson != null) {
+				JsonObject json = (JsonObject)parser.parse(stepJson);
+				Step s = stepFromJson(json);
+				demonstrator.execute(s, reversed)
+							.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
+				return;
+			}
+			} catch(Throwable t) {
+				t.printStackTrace();
+			}
+		} else if(method.equals("stop")) {
+			demonstrator.stop();
+		} else if(method.equals("guide")) {
+			boolean guide = true;
+			if(request.getParameter("guide") != null) {
+				guide = Boolean.parseBoolean(request.getParameter("guide"));
+			}
+			demonstrator.guide(guide);
+		}
+	}
+	
+	private JsonObject toJson(Step step) {
+		JsonObject s = new JsonObject();
+		s.add("type", new JsonPrimitive(""+step.type));
+		step.properties.entrySet().forEach(e -> {
+			String key = e.getKey();
+			String value = e.getValue();
+			if(value.endsWith(".jpg")) {
+				// remap image urls
+				value = imagePrefix+value;
+			}
+			s.add(key, new JsonPrimitive(value));
+		});
+		return s;
+	}
+	
+	private JsonObject toJson(Demonstration demonstration) {
+		JsonObject d = new JsonObject();
+		d.add("name", new JsonPrimitive(demonstration.name));
+		JsonArray s = new JsonArray();
+		demonstration.steps.forEach(step -> s.add(toJson(step)));
+		d.add("steps", s);
+		return d;
+	}
+	
+	private Demonstration demonstrationFromJson(JsonObject json) {
+		Demonstration d = new Demonstration();
+		d.name = json.get("name").getAsString();
+		
+		JsonArray steps = json.getAsJsonArray("steps");
+		steps.forEach(jsonStep -> {
+			JsonObject jsonObject = ((JsonObject)jsonStep);
+			Step step = stepFromJson(jsonObject);
+			d.steps.add(step);
+		});
+		return d;
+	}
+	
+	private Step stepFromJson(JsonObject json) {
+		Step step = new Step();
+		step.type = Step.Type.valueOf( json.get("type").getAsString());
+		json.entrySet().forEach(e -> {
+			if(!e.getKey().equals("type")) {
+				String key = e.getKey();
+				String value = e.getValue().getAsString();
+				if(value.startsWith(imagePrefix)) {
+					// map back to original image paths
+					value = value.substring(imagePrefix.length());
+				}
+				step.properties.put(key, value);
+			}
+		});
+		return step;
 	}
 }
