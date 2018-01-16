@@ -116,9 +116,14 @@ public class NativeRosNode {
 			// add params to command
 			if(roslaunch) {
 				// remove underscores in case of roslaunch
+				// TODO are underscores required sometimes anyway?!
 				List<String> launchParams = new ArrayList<>();
 				for(String param : rosParameters) {
-					launchParams.add(param.substring(1));
+					if(param.startsWith("_"))
+						launchParams.add(param.substring(1));
+					else
+						launchParams.add(param);
+
 				}
 				cmd.addAll(launchParams);
 			} else {
