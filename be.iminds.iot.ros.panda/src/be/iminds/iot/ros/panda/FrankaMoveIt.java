@@ -43,6 +43,11 @@ public class FrankaMoveIt extends NativeRosNode {
 	@Reference
 	void setFrankaControl(FrankaControl control) {
 		// depend on franka control to be launched first!
+		try {
+			Thread.sleep(1000);
+		} catch(InterruptedException e) {
+			
+		}
 	}
 }
 
