@@ -164,16 +164,26 @@ html, body {
  * Item
  */
 .border {
-	height:250px;
+	display:block;
     border-radius: 15px;
     background: #E7E7E7;
     margin-top: 20px;
     padding: 20px;
 }
 
+.item {
+	overflow: hidden;
+}
+
+.image {
+	overflow: hidden;
+}
+
 .camera {
-	margin: 40px 5px;
-	height: 8em;
+	max-width:100%; 
+  	max-height:100%;
+  	margin: 10px;
+  	display:block;
 }
 
 .number {
