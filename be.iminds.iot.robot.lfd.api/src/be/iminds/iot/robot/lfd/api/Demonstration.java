@@ -38,7 +38,7 @@ public class Demonstration {
 	public String toString() {
 		StringBuilder b = new StringBuilder();
 		b.append("name\t").append(name).append("\n");
-		steps.forEach(s -> b.append(s.toString()));
+		steps.forEach(s -> b.append(s.toString()+"\n"));
 		return b.toString();
 	}
 }

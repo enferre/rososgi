@@ -29,6 +29,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,11 +56,12 @@ import be.iminds.iot.sensor.api.Camera;
 import be.iminds.iot.sensor.api.Frame;
 
 @Component(
+	service= {Demonstrator.class, Object.class},
 	property={"osgi.command.scope=lfd",
-		  "osgi.command.function=start",
+		  "osgi.command.function=demonstrations",
+		  "osgi.command.function=load",
 		  "osgi.command.function=step",
-		  "osgi.command.function=finish",
-		  "osgi.command.function=cancel",
+		  "osgi.command.function=save",
 		  "osgi.command.function=execute",
 		  "osgi.command.function=stop",
 		  "osgi.command.function=guide"},
@@ -67,11 +69,6 @@ import be.iminds.iot.sensor.api.Frame;
 public class DemonstratorImpl implements Demonstrator {
 
 	private String demonstrationsLocation = "demonstrations";
-	
-	// For now limited to single recording
-	private Demonstration current;
-	
-	private PrintWriter writer;
 	
 	// For now limited to one Arm
 	private Arm arm;
@@ -116,46 +113,108 @@ public class DemonstratorImpl implements Demonstrator {
 	}
 	
 	@Override
-	public void start(String name) {
-		current = new Demonstration();
-		current.name = name;
-
-		File demoLocation = new File(demonstrationsLocation+File.separator+current.name+File.separator+"images");
-		if(demoLocation.exists()) {
-			throw new RuntimeException("Invalid location, already exists: "+demoLocation.getAbsolutePath());
+	public List<String> demonstrations(){
+		List<String> demonstrations = new ArrayList<>();
+		File demonstrationsDir = new File(demonstrationsLocation);
+		File[] sub = demonstrationsDir.listFiles();
+		for(File dir : sub) {
+			if(dir.isDirectory()) {
+				demonstrations.add(dir.getName());
+			}
 		}
-		demoLocation.mkdirs();
+		return demonstrations;
+	}
+	
+	@Override
+	public Demonstration load(String name) {
+		Demonstration d = new Demonstration();
+		d.name = name;
 		
-		File csv = new File(demonstrationsLocation+File.separator+current.name+File.separator+"steps.csv");
-		try {
-			
-			writer = new PrintWriter(new FileWriter(csv));
+		// check if demonstration exits
+		File demoLocation = new File(demonstrationsLocation+File.separator+name);
+		if(!demoLocation.exists()) {
+			// create new demonstration and images directory
+			File imageDir = new File(demonstrationsLocation+File.separator+name+File.separator+"images");
+			imageDir.mkdirs();
+			return d;
+		}
+		
+		// load steps from csv data
+		File csv = new File(demonstrationsLocation+File.separator+name+File.separator+"steps.csv");
+		if(csv.exists()) {
+			try (BufferedReader reader = new BufferedReader(new FileReader(csv))){
+				String header = reader.readLine();
+				String[] keys = header.split("\t");
+				
+				String line = reader.readLine();
+				while(line != null) {
+					String[] values = line.split("\t");
+					Step step = new Step();
+					for(int i=0;i<keys.length;i++) {
+						if(keys[i].equals("type")) {
+							step.type = Type.valueOf(values[i]);
+						} else {
+							step.properties.put(keys[i], values[i]);
+						}
+					}
+					d.steps.add(step);
+					line = reader.readLine();
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return d;
+	}
+	
+	@Override
+	public void save(Demonstration d) {
+		// write steps in csv file
+		if(d.steps.size() == 0) {
+			// no steps to save
+			return;
+		}
+		
+		File csv = new File(demonstrationsLocation+File.separator+d.name+File.separator+"steps.csv");
+		try(PrintWriter	writer = new PrintWriter(new FileWriter(csv))){
 			// write header
+			Step s = d.steps.get(0);
+			
 			writer.print("type\t");
-
-			arm.getState().stream().forEach(js -> {
-				writer.print(js.joint+"\t");
+			List<String> header = s.properties.keySet().stream().sorted().collect(Collectors.toList());
+			header.forEach(h -> writer.print(h+"\t"));
+			writer.println();
+			
+			// write steps
+			d.steps.forEach(step -> {
+				writer.write(s.type+"\t");
+				header.stream()
+					.map(h -> step.properties.get(h))
+					.forEach(value -> writer.print(value+"\t"));
+				writer.println();
 			});
 			
-			sensors.entrySet().forEach(e -> {
-				writer.print(e.getKey()+"\t");
-			});
-			writer.println();
 		} catch (IOException e) {
 			e.printStackTrace();
-			cancel();
 		}
 	}
-
+	
+	public Step step(String demonstration, String type) {
+		return step(demonstration, Step.Type.valueOf(type));
+	}
+	
 	@Override
-	public Step step(String type) {
-		if(current == null) {
-			throw new RuntimeException("No demonstration is being captured, call start first");
+	public Step step(String demonstration, Step.Type type) {
+		File demonstrationDir = new File(demonstrationsLocation+File.separator+demonstration);
+		if(!demonstrationDir.exists()) {
+			// this will create the necessary directories...
+			load(demonstration);
 		}
 		
 		// record robot state + camera images
 		Step step = new Step();
-		step.type = Type.valueOf(type);
+		step.type = type;
 		
 		// in case of pick/place, also do the gripper action!
 		if(step.type == Type.PICK) {
@@ -164,87 +223,32 @@ public class DemonstratorImpl implements Demonstrator {
 			arm.openGripper();
 		}
 		
-		writer.print(type+"\t");
-		
 		arm.getState().stream().forEach(js -> {
-				step.properties.put(js.joint, ""+js.position);
-				writer.print(js.position+"\t");
-			});
+			step.properties.put(js.joint, ""+js.position);
+		});
 
 		// get frames for all cameras
 		sensors.entrySet().forEach(e -> {
-			String fileName = demonstrationsLocation+File.separator+current.name
-								+File.separator+"images"+File.separator+e.getKey()+"-"+current.steps.size()+".jpg";
+			String fileName = demonstration
+								+File.separator+"images"+File.separator+e.getKey()+"-"+System.currentTimeMillis()+".jpg";
 			try {
-				toFile(fileName, (Frame)e.getValue().getValue());
-				writer.print(fileName+"\t");
+				toFile(demonstrationsLocation+File.separator+fileName, (Frame)e.getValue().getValue());
+				step.properties.put(e.getKey(), fileName);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		});
 		
-		writer.println();
-		writer.flush();
-
-		current.steps.add(step);
-		
 		return step;
 	}
 
-	@Override
-	public Demonstration finish() {
-		if(current == null) {
-			throw new RuntimeException("No demonstration is being captured, call start first");
-		}
-
-		writer.flush();
-		writer.close();
-		writer = null;
-		
-		Demonstration d = current;
-		current = null;
-		
-		return d;
+	public Promise<Void> execute(String demonstration) {
+		Demonstration d = load(demonstration);
+		return execute(d, false);
 	}
 
-	@Override
-	public void cancel() {
-		if(current != null) {
-			File demoLocation = new File(demonstrationsLocation+File.separator+current.name);
-			demoLocation.delete();
-			current = null;
-		}
-	}	
-	
-	@Override
 	public Promise<Void> execute(String demonstration, boolean reversed) {
-		Demonstration d = new Demonstration();
-		d.name = demonstration;
-		
-		// read step csv file
-		File csv = new File(demonstrationsLocation+File.separator+demonstration+File.separator+"steps.csv");
-		try (BufferedReader reader = new BufferedReader(new FileReader(csv))){
-			String header = reader.readLine();
-			String[] keys = header.split("\t");
-			
-			String line = reader.readLine();
-			while(line != null) {
-				String[] values = line.split("\t");
-				Step step = new Step();
-				for(int i=0;i<keys.length;i++) {
-					if(keys[i].equals("type")) {
-						step.type = Type.valueOf(values[i]);
-					} else {
-						step.properties.put(keys[i], values[i]);
-					}
-				}
-				d.steps.add(step);
-				line = reader.readLine();
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		
+		Demonstration d = load(demonstration);
 		return execute(d, reversed);
 	}
 	

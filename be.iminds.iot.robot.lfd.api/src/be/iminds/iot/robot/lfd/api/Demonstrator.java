@@ -22,23 +22,22 @@
  *******************************************************************************/
 package be.iminds.iot.robot.lfd.api;
 
+import java.util.List;
+
 import org.osgi.util.promise.Promise;
 
 /**
  */
 public interface Demonstrator {
-
-	void start(String name);
 	
-	Step step(String type);
+	List<String> demonstrations();
 	
-	Demonstration finish();
+	Demonstration load(String name);
 	
-	void cancel();
+	Step step(String demonstration, Step.Type type);
 	
-	default Promise<Void> execute(String demonstration){
-		return execute(demonstration, false);
-	}
+	void save(Demonstration d);
+	
 	
 	default Promise<Void> execute(Demonstration d){
 		return execute(d, false);
@@ -47,8 +46,6 @@ public interface Demonstrator {
 	default Promise<Void> execute(Step step){
 		return execute(step, false);
 	}
-	
-	Promise<Void> execute(String demonstration, boolean reversed);
 	
 	Promise<Void> execute(Demonstration d, boolean reversed);
 	

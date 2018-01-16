@@ -48,7 +48,6 @@ public class Step {
 		StringBuilder b = new StringBuilder();
 		b.append("type\t").append(type).append("\t");
 		properties.entrySet().stream().forEach(e -> b.append(e.getKey()).append("\t").append(e.getValue()).append("\t"));
-		b.append("\n");
 		return b.toString();
 	}
 }
