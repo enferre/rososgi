@@ -36,7 +36,8 @@ import be.iminds.iot.robot.api.arm.Arm;
 	"osgi.command.function=position",
 	"osgi.command.function=pose",
 	"osgi.command.function=halt",
-	"osgi.command.function=arm"})
+	"osgi.command.function=speed"
+	})
 public class MoveItCLI {
 
 	private Arm arm;
@@ -68,12 +69,28 @@ public class MoveItCLI {
 		arm.setPosition(joint, val);
 	}
 	
+	public void pose() {
+		System.out.println(arm.getPose());
+	}
+	
 	public void pose(float x, float y, float z){
-		arm.moveTo(x,y,z);
+		arm.moveTo(x, y, z);
+	}
+	
+	public void pose(float x, float y, float z, float ox, float oy, float oz, float ow){
+		arm.moveTo(x, y, z, ox, oy, oz, ow);
 	}
 	
 	public void halt(){
 		arm.stop();
+	}
+	
+	public void speed() {
+		System.out.println(arm.getSpeed());
+	}
+	
+	public void speed(float s) {
+		arm.setSpeed(s);
 	}
 	
 	public void open(float opening){

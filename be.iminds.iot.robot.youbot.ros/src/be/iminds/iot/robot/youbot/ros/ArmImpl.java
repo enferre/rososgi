@@ -57,6 +57,7 @@ import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.JointValue.Type;
+import be.iminds.iot.robot.api.Pose;
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.api.arm.Gripper;
 import ik_solver_service.SolvePreferredPitchIK;
@@ -614,6 +615,45 @@ public class ArmImpl implements Arm {
 			return max;
 		}
 		return value;
+	}
+
+	@Override
+	public Pose getPose() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public float getSpeed() {
+		return 1;
+	}
+
+	@Override
+	public void setSpeed(float speed) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Object getProperty(String property) {
+		return null;
+	}
+
+	@Override
+	public void setProperty(String property, Object value) {
+	}
+
+	@Override
+	public Promise<Arm> recover() {
+		return stop();
+	}
+
+	@Override
+	public Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow) {
+		return moveTo(x, y, z);
+	}
+
+	@Override
+	public Promise<Arm> moveTo(Pose p) {
+		return moveTo(p.position.x, p.position.y, p.position.z);
 	}
 
 }

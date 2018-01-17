@@ -51,11 +51,13 @@ import actionlib_msgs.GoalStatus;
 import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.Orientation;
+import be.iminds.iot.robot.api.Pose;
+import be.iminds.iot.robot.api.Position;
 import be.iminds.iot.robot.api.arm.Arm;
 import control_msgs.GripperCommand;
 import control_msgs.GripperCommandActionGoal;
 import control_msgs.GripperCommandGoal;
-import geometry_msgs.Pose;
 import geometry_msgs.PoseStamped;
 import moveit_msgs.Constraints;
 import moveit_msgs.GetPositionFKRequest;
@@ -102,6 +104,7 @@ public class MoveItArmImpl implements Arm {
 	private ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
 	private ServiceClient<moveit_msgs.GetPositionFKRequest, moveit_msgs.GetPositionFKResponse> fk;
 
+	private float speed = 1.0f;
 	
 	private Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
 	
@@ -407,9 +410,8 @@ public class MoveItArmImpl implements Arm {
 		req.setGoalConstraints(constraints);
 		req.setGroupName(move_group);
 		
-		// TODO control velocity / acceleration
-		req.setMaxAccelerationScalingFactor(1.0);
-		req.setMaxVelocityScalingFactor(1.0);
+		req.setMaxAccelerationScalingFactor(speed);
+		req.setMaxVelocityScalingFactor(speed);
 		
 		goal.setRequest(req);
 		
@@ -448,10 +450,25 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z) {
+		// move to x,y,z while keeping current orientation
+		Pose pose = getPose();
+		pose.position.x = x;
+		pose.position.y = y;
+		pose.position.z = z;
+		return moveTo(pose);
+	}
+	
+	@Override
+	public Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow) {
 		final Deferred<Arm> deferred = new Deferred<>();
-		calculateIK(x, y, z).then(jointValues -> {deferred.resolveWith(setPositions(jointValues.getValue()));return null;},
+		calculateIK(x, y, z, ox, oy, oz, ow).then(jointValues -> {deferred.resolveWith(setPositions(jointValues.getValue()));return null;},
 				p -> deferred.fail(p.getFailure()));
 		return deferred.getPromise();
+	}
+
+	@Override
+	public Promise<Arm> moveTo(Pose p) {
+		return moveTo(p.position.x, p.position.y, p.position.z, p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
 	}
 
 	private JointState getJoint(String name) {
@@ -463,7 +480,7 @@ public class MoveItArmImpl implements Arm {
 		return null;
 	}
 	
-	private Promise<List<JointValue>> calculateIK(float x, float y, float z){
+	private Promise<List<JointValue>> calculateIK(float x, float y, float z, float ox, float oy, float oz, float ow){
 		if(ik == null) {
 			loadIKService();
 			if(ik == null) {
@@ -491,14 +508,14 @@ public class MoveItArmImpl implements Arm {
 		
 		// set target pose
 		PoseStamped spose = req.getPoseStamped();
-		Pose p = spose.getPose();
+		geometry_msgs.Pose p = spose.getPose();
 		p.getPosition().setX(x);
 		p.getPosition().setY(y);
 		p.getPosition().setZ(z);
-		p.getOrientation().setX(1.0);
-		p.getOrientation().setY(0.0);
-		p.getOrientation().setZ(0.0);
-		p.getOrientation().setW(0.0);
+		p.getOrientation().setX(ox);
+		p.getOrientation().setY(oy);
+		p.getOrientation().setZ(oz);
+		p.getOrientation().setW(ow);
 		
 		
 		ik.call(request, new ServiceResponseListener<GetPositionIKResponse>() {
@@ -527,7 +544,7 @@ public class MoveItArmImpl implements Arm {
 		return deferred.getPromise();
 	}
 	
-	private Promise<geometry_msgs.Pose> calculateFK(List<JointState> joints){
+	private Promise<Pose> calculateFK(List<JointState> joints){
 		if(fk == null) {
 			loadFKService();
 			if(fk == null) {
@@ -535,7 +552,7 @@ public class MoveItArmImpl implements Arm {
 			}
 		}
 		
-		final Deferred<geometry_msgs.Pose> deferred = new Deferred<>();
+		final Deferred<Pose> deferred = new Deferred<>();
 		
 		GetPositionFKRequest request = fk.newMessage();
 		request.setFkLinkNames(Collections.singletonList(ef_link));
@@ -551,7 +568,19 @@ public class MoveItArmImpl implements Arm {
 				if(response.getErrorCode().getVal() == 1) {
 					// success
 					PoseStamped p = response.getPoseStamped().get(0);
-					deferred.resolve(p.getPose());
+					
+					Position pos = new Position(); 
+					pos.x = (float) p.getPose().getPosition().getX();
+					pos.y = (float) p.getPose().getPosition().getY();
+					pos.z = (float) p.getPose().getPosition().getZ();
+
+					Orientation o = new Orientation();
+					o.x = (float) p.getPose().getOrientation().getX();
+					o.y = (float) p.getPose().getOrientation().getY();
+					o.z = (float) p.getPose().getOrientation().getZ();
+					o.w = (float) p.getPose().getOrientation().getW();
+
+					deferred.resolve(new Pose(pos, o));
 				} else {
 					// failed?
 					deferred.fail(new Exception("Failed to calculate IK solution"));
@@ -583,4 +612,39 @@ public class MoveItArmImpl implements Arm {
 			// do nothing ... getPose method will just fail when no fk service present
 		}
 	}
+
+	@Override
+	public Pose getPose() {
+		try {
+			Pose p = calculateFK(state).getValue();
+			return p;
+		} catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public float getSpeed() {
+		return speed;
+	}
+
+	@Override
+	public void setSpeed(float speed) {
+		this.speed = speed;
+	}
+
+	@Override
+	public Object getProperty(String property) {
+		return null;
+	}
+
+	@Override
+	public void setProperty(String property, Object value) {
+	}
+
+	@Override
+	public Promise<Arm> recover() {
+		return stop();
+	}
+
 }

@@ -30,6 +30,7 @@ import org.osgi.util.promise.Promise;
 import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.Pose;
 import be.iminds.iot.robot.api.Robot;
 
 public interface Arm extends Robot<Arm> {
@@ -37,6 +38,17 @@ public interface Arm extends Robot<Arm> {
 	List<JointDescription> getJoints();
 	
 	List<JointState> getState();
+
+	Pose getPose();
+	
+	
+	float getSpeed();
+	
+	void setSpeed(float speed);
+	
+	Object getProperty(String property);
+	
+	void setProperty(String property, Object value);
 
 	
 	Promise<Arm> setPosition(int joint, float position);
@@ -66,11 +78,18 @@ public interface Arm extends Robot<Arm> {
 
 	Promise<Arm> setTorques(Collection<JointValue> torques);
 	
-	
+
 	Promise<Arm> reset();
 	
 	Promise<Arm> stop(int joint);
 	
+	Promise<Arm> recover();
+	
 	
 	Promise<Arm> moveTo(float x, float y, float z);
+	
+	Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow);
+	
+	Promise<Arm> moveTo(Pose p);
+
 }
