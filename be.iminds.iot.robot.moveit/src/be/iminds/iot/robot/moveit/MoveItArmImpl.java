@@ -57,6 +57,8 @@ import control_msgs.GripperCommandGoal;
 import geometry_msgs.Pose;
 import geometry_msgs.PoseStamped;
 import moveit_msgs.Constraints;
+import moveit_msgs.GetPositionFKRequest;
+import moveit_msgs.GetPositionFKResponse;
 import moveit_msgs.GetPositionIKRequest;
 import moveit_msgs.GetPositionIKResponse;
 import moveit_msgs.JointConstraint;
@@ -88,6 +90,8 @@ public class MoveItArmImpl implements Arm {
 	private List<JointState> state = new ArrayList<>();
 	
 	private ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
+	private ServiceClient<moveit_msgs.GetPositionFKRequest, moveit_msgs.GetPositionFKResponse> fk;
+
 	
 	private Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
 	
@@ -100,7 +104,10 @@ public class MoveItArmImpl implements Arm {
 		this.factory = node.getTopicMessageFactory();
 	}
 	
-	public void register(String joint_states, String move_group_topic, String move_group, String compute_ik, String gripper_topic, String[] joints){
+	public void register(String gripper_topic, 
+			String joint_states_topic, String[] joints,
+			String move_group_topic, String move_group,
+			String compute_ik, String compute_fk){
 		this.move_group = move_group;
 		
 		// commands for plan / execute
@@ -117,7 +124,7 @@ public class MoveItArmImpl implements Arm {
 		}
 		
 		// add subscribers
-		subscriber = node.newSubscriber(joint_states,
+		subscriber = node.newSubscriber(joint_states_topic,
 				sensor_msgs.JointState._TYPE);
 		subscriber.addMessageListener(new MessageListener<sensor_msgs.JointState>() {
 			@Override
@@ -207,6 +214,12 @@ public class MoveItArmImpl implements Arm {
 		     ik = node.newServiceClient(compute_ik, moveit_msgs.GetPositionIK._TYPE);
 		} catch(Exception e){
 			// do nothing ... moveTo method will just fail when no ik service present
+		}
+
+		try {
+		     fk = node.newServiceClient(compute_fk, moveit_msgs.GetPositionFK._TYPE);
+		} catch(Exception e){
+			// do nothing ... getPose method will just fail when no fk service present
 		}
 		
 		Dictionary<String, Object> properties = new Hashtable<>();
@@ -484,6 +497,39 @@ public class MoveItArmImpl implements Arm {
 				deferred.fail(ex);
 			}
 		});
+		return deferred.getPromise();
+	}
+	
+	private Promise<geometry_msgs.Pose> calculateFK(List<JointState> joints){
+		final Deferred<geometry_msgs.Pose> deferred = new Deferred<>();
+		
+		GetPositionFKRequest request = fk.newMessage();
+		//request.setFkLinkNames(joints.stream().map(j -> j.joint).collect(Collectors.toList()));
+		RobotState state = request.getRobotState();
+		sensor_msgs.JointState jointState = state.getJointState();
+		jointState.setName(joints.stream().map(js -> js.joint).collect(Collectors.toList()));
+		jointState.setPosition(joints.stream().mapToDouble(js -> (double) js.position).toArray());
+		
+		fk.call(request, new ServiceResponseListener<GetPositionFKResponse>() {
+			
+			@Override
+			public void onSuccess(GetPositionFKResponse response) {
+				if(response.getErrorCode().getVal() == 1) {
+					// success
+					PoseStamped p = response.getPoseStamped().get(0);
+					deferred.resolve(p.getPose());
+				} else {
+					// failed?
+					deferred.fail(new Exception("Failed to calculate IK solution"));
+				}
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+		});
+		
 		return deferred.getPromise();
 	}
 }
