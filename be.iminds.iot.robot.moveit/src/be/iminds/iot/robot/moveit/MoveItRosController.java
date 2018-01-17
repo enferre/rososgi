@@ -40,6 +40,15 @@ import org.ros.node.NodeMain;
 public class MoveItRosController extends AbstractNodeMain {
 
 	private String name;
+	private String gripper_topic;
+	private String joint_states_topic; 
+	private String[] joints;
+	private String move_group_topic; 
+	private String move_group;
+	private String compute_ik; 
+	private String compute_fk; 
+	private String fk_link;
+	
 	private MoveItArmImpl arm;
 	
 	private BundleContext context;
@@ -51,7 +60,39 @@ public class MoveItRosController extends AbstractNodeMain {
 		if(config.containsKey("name")) {
 			name = config.get("name").toString();
 		} else {
-			name = "MoveItArm";
+			name = "arm";
+		}
+		
+		if(config.containsKey("gripper_topic")) {
+			gripper_topic = config.get("gripper_topic").toString();
+		}
+		
+		if(config.containsKey("joint_states_topic")) {
+			joint_states_topic = config.get("joint_states_topic").toString();
+		}
+		
+		if(config.containsKey("joints")) {
+			joints = config.get("joints").toString().split(",");
+		}
+		
+		if(config.containsKey("move_group_topic")) {
+			move_group_topic = config.get("move_group_topic").toString();
+		}
+		
+		if(config.containsKey("move_group")) {
+			move_group = config.get("move_group").toString();
+		}
+		
+		if(config.containsKey("compute_ik")) {
+			compute_ik = config.get("compute_ik").toString();
+		}
+		
+		if(config.containsKey("compute_fk")) {
+			compute_fk = config.get("compute_fk").toString();
+		}
+		
+		if(config.containsKey("fk_link")) {
+			fk_link = config.get("fk_link").toString();
 		}
 	}
 	
@@ -75,19 +116,6 @@ public class MoveItRosController extends AbstractNodeMain {
 
 		// this brings online arm and base services
 		arm = new MoveItArmImpl(name, context, connectedNode);
-		
-		String[] joints = new String[] {
-				"panda_joint1",
-				"panda_joint2",
-				"panda_joint3",
-				"panda_joint4",
-				"panda_joint5",
-				"panda_joint6",
-				"panda_joint7"};
-		
-		arm.register("/panda/franka_gripper_node/gripper_action",
-				"/panda/joint_states", joints,
-				"/panda/move_group","panda_arm_hand",
-				"/panda/compute_ik", "/panda/compute_fk", "panda_hand");
+		arm.register(gripper_topic, joint_states_topic, joints, move_group_topic, move_group, compute_ik, compute_fk, fk_link);
 	}
 }
