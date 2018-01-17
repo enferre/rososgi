@@ -88,8 +88,7 @@ public class NativeRosNode {
 			} else if(key.equals("name")) {
 				name = entry.getValue().toString();
 			} else if(!key.contains(".")){ // ignore parameters with "." , most likely OSGi service props
-				// add as private parameters for ROS node
-				rosParameters.add("_"+key+":="+entry.getValue());
+				rosParameters.add(key+":="+entry.getValue());
 			}
 		}
 		
@@ -114,21 +113,7 @@ public class NativeRosNode {
 			}
 			
 			// add params to command
-			if(roslaunch) {
-				// remove underscores in case of roslaunch
-				// TODO are underscores required sometimes anyway?!
-				List<String> launchParams = new ArrayList<>();
-				for(String param : rosParameters) {
-					if(param.startsWith("_"))
-						launchParams.add(param.substring(1));
-					else
-						launchParams.add(param);
-
-				}
-				cmd.addAll(launchParams);
-			} else {
-				cmd.addAll(rosParameters);
-			}
+			cmd.addAll(rosParameters);
 			System.out.println(cmd);
 			ProcessBuilder builder = new ProcessBuilder(cmd);
 			builder.inheritIO();

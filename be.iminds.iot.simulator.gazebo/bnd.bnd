@@ -1,4 +1,4 @@
-Bundle-Version: 0.3.0
+Bundle-Version: 0.4.0
 -buildpath: \
 	org.ros.rosjava,\
 	org.ros.rosjava.message_generation,\
