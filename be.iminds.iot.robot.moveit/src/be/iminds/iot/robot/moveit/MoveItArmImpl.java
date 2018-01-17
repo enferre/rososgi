@@ -79,8 +79,8 @@ public class MoveItArmImpl implements Arm {
 	private final ConnectedNode node;
 	private final MessageFactory factory;
 	private String compute_fk;
-	private String fk_link;
 	private String compute_ik;
+	private String ef_link;
 	
 	private String move_group;
 	private Publisher<moveit_msgs.MoveGroupActionGoal> moveIt;
@@ -111,11 +111,11 @@ public class MoveItArmImpl implements Arm {
 	public void register(String gripper_topic, 
 			String joint_states_topic, String[] joints,
 			String move_group_topic, String move_group,
-			String compute_ik, String compute_fk, String fk_link){
+			String compute_ik, String compute_fk, String ef_link){
 		this.move_group = move_group;
 		this.compute_ik = compute_ik;
 		this.compute_fk = compute_fk;
-		this.fk_link = fk_link;
+		this.ef_link = ef_link;
 		
 		initMoveIt(move_group_topic);
 
@@ -473,6 +473,9 @@ public class MoveItArmImpl implements Arm {
 		// move group
 		req.setGroupName(move_group);
 		
+		// link name
+		req.setIkLinkName(ef_link);
+		
 		// set start state
 		List<JointState> s = getState();
 		RobotState startState = req.getRobotState();
@@ -529,7 +532,7 @@ public class MoveItArmImpl implements Arm {
 		final Deferred<geometry_msgs.Pose> deferred = new Deferred<>();
 		
 		GetPositionFKRequest request = fk.newMessage();
-		request.setFkLinkNames(Collections.singletonList(fk_link));
+		request.setFkLinkNames(Collections.singletonList(ef_link));
 		RobotState state = request.getRobotState();
 		sensor_msgs.JointState jointState = state.getJointState();
 		jointState.setName(joints.stream().map(js -> js.joint).collect(Collectors.toList()));

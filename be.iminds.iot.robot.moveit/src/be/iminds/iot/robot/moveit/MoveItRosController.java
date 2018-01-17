@@ -47,7 +47,7 @@ public class MoveItRosController extends AbstractNodeMain {
 	private String move_group;
 	private String compute_ik; 
 	private String compute_fk; 
-	private String fk_link;
+	private String ef_link;
 	
 	private MoveItArmImpl arm;
 	
@@ -91,8 +91,8 @@ public class MoveItRosController extends AbstractNodeMain {
 			compute_fk = config.get("compute_fk").toString();
 		}
 		
-		if(config.containsKey("fk_link")) {
-			fk_link = config.get("fk_link").toString();
+		if(config.containsKey("ef_link")) {
+			ef_link = config.get("ef_link").toString();
 		}
 	}
 	
@@ -116,6 +116,6 @@ public class MoveItRosController extends AbstractNodeMain {
 
 		// this brings online arm and base services
 		arm = new MoveItArmImpl(name, context, connectedNode);
-		arm.register(gripper_topic, joint_states_topic, joints, move_group_topic, move_group, compute_ik, compute_fk, fk_link);
+		arm.register(gripper_topic, joint_states_topic, joints, move_group_topic, move_group, compute_ik, compute_fk, ef_link);
 	}
 }
