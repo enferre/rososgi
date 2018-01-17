@@ -47,6 +47,7 @@ import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 
 import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.Pose;
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.lfd.api.Demonstration;
 import be.iminds.iot.robot.lfd.api.Demonstrator;
@@ -64,6 +65,7 @@ import be.iminds.iot.sensor.api.Frame;
 		  "osgi.command.function=save",
 		  "osgi.command.function=execute",
 		  "osgi.command.function=stop",
+		  "osgi.command.function=mode",
 		  "osgi.command.function=guide"},
 	immediate=true)
 public class DemonstratorImpl implements Demonstrator {
@@ -77,6 +79,9 @@ public class DemonstratorImpl implements Demonstrator {
 	private Map<String, Camera> sensors = new ConcurrentHashMap<>();
 
 	private ControllerManager ctrl;
+	
+	private enum Mode {JOINT, CARTESIAN};
+	private Mode mode = Mode.CARTESIAN;
 	
 	@Activate
 	void activate(BundleContext context) {
@@ -226,7 +231,21 @@ public class DemonstratorImpl implements Demonstrator {
 		arm.getState().stream().forEach(js -> {
 			step.properties.put(js.joint, ""+js.position);
 		});
-
+		
+		try {
+			Pose p = arm.getPose();
+			step.properties.put("x", ""+p.position.x);
+			step.properties.put("y", ""+p.position.y);
+			step.properties.put("z", ""+p.position.z);
+			
+			step.properties.put("o_x", ""+p.orientation.x);
+			step.properties.put("o_y", ""+p.orientation.y);
+			step.properties.put("o_z", ""+p.orientation.z);
+			step.properties.put("o_w", ""+p.orientation.w);
+		} catch(Exception e) {
+			// in this case cartesian mode is not supported
+		}
+		
 		// get frames for all cameras
 		sensors.entrySet().forEach(e -> {
 			String fileName = demonstration
@@ -277,19 +296,46 @@ public class DemonstratorImpl implements Demonstrator {
 
 	@Override
 	public Promise<Void> execute(Step step, boolean reversed) {
-		List<JointValue> target = arm.getState().stream()
-				.map(js -> js.joint)
-				.map(joint -> new JointValue(joint, JointValue.Type.POSITION, Float.parseFloat(step.properties.get(joint))))
-				.collect(Collectors.toList());
-
 		if(step.type == Type.PICK) {
-			return arm.setPositions(target)
+			return move(step)
 					.then(p -> reversed ? arm.openGripper() : arm.closeGripper()).then(p -> null);			
 		} else if(step.type == Type.PLACE) {
-			return arm.setPositions(target)
+			return move(step)
 					.then(p -> reversed ? arm.closeGripper() : arm.openGripper()).then(p -> null);
 		} else {
-			return arm.setPositions(target).then(p -> null);
+			return move(step).then(p -> null);
+		}
+	}
+	
+	private Promise<Arm> move(Step step){
+		if(mode == Mode.JOINT) {
+			// move in joint space
+			List<JointValue> target = arm.getState().stream()
+					.map(js -> js.joint)
+					.map(joint -> new JointValue(joint, JointValue.Type.POSITION, Float.parseFloat(step.properties.get(joint))))
+					.collect(Collectors.toList());
+			
+			return arm.setPositions(target);
+		} else {
+			// move in cartesian space
+			try {
+				float x = Float.parseFloat(step.properties.get("x"));
+				float y = Float.parseFloat(step.properties.get("y"));
+				float z = Float.parseFloat(step.properties.get("z"));
+	
+				if(step.properties.containsKey("o_x")) {
+					float ox = Float.parseFloat(step.properties.get("o_x"));
+					float oy = Float.parseFloat(step.properties.get("o_y"));
+					float oz = Float.parseFloat(step.properties.get("o_z"));
+					float ow = Float.parseFloat(step.properties.get("o_w"));
+					
+					return arm.moveTo(x, y, z, ox, oy, oz, ow);
+				} else {
+					return arm.moveTo(x, y, z);
+				}
+			} catch(Exception e) {
+				throw new RuntimeException("This demonstration has no cartesian space information");
+			}
 		}
 	}
 
@@ -329,6 +375,11 @@ public class DemonstratorImpl implements Demonstrator {
 
 	public void guide() {
 		guide(true);
+	}
+	
+	public void mode(String m) {
+		Mode mode = Mode.valueOf(m);
+		this.mode = mode;
 	}
 	
 	@Override

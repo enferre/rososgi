@@ -3,10 +3,7 @@
  */
 var currentMode = "teach";
 
-var currentDemonstration = {
-		name: "untitled",
-		steps: []
-};
+var currentDemonstration;
 
 /**
  * Set UI modus
@@ -61,24 +58,16 @@ function checkKeyPressed(e) {
     	}
     } else if(e.keyCode == "32"){
     	// space pressed
-    	if(currentMode === "teach"){
-    		step('MOVE');
-    	}
+    	step('MOVE');
     } else if(e.keyCode == "79"){
     	// o(pen) pressed
-    	if(currentMode === "teach"){
-    		step('PLACE');
-    	}
+    	step('PLACE');
     } else if(e.keyCode == "67"){
     	// c(lose) pressed
-    	if(currentMode === "teach"){
-    		step('PICK');
-    	}
+    	step('PICK');
     } else if(e.keyCode == "83"){
     	// s(tart) pressed
-    	if(currentMode === "teach"){
-    		step('START');
-    	}
+    	step('START');
     }
 }
 
@@ -99,14 +88,16 @@ $( document ).ready(function() {
  * record current state as step for current teaching
  */
 function step(type){
-	$.post("/lfd", {"method" : "step", "type" : type, "name" : currentDemonstration.name}, 
-			function( data ) {
-				var step = data;
-				step.n = currentDemonstration.steps.length;
-				currentDemonstration.steps.push(step);
-				var s = renderTemplate("step", step, $('#steps'));
-			}
-			, "json");
+	if(currentMode === "teaching"){
+		$.post("/lfd", {"method" : "step", "type" : type, "name" : currentDemonstration.name}, 
+				function( data ) {
+					var step = data;
+					step.n = currentDemonstration.steps.length + 1;
+					currentDemonstration.steps.push(step);
+					var s = renderTemplate("step", step, $('#steps'));
+				}
+				, "json");
+	}
 }
 
 /**
@@ -151,6 +142,11 @@ function load(name){
 				var step = currentDemonstration.steps[i];
 				step.n = i+1;
 				var s = renderTemplate("step", step, $('#steps'));
+			}
+			
+			if(currentMode === "teach"){
+				currentMode = "teaching";
+				$.post("/lfd", {"method":"guide"}); 	
 			}
 			
 			$('#dialog-load').remove();
@@ -201,6 +197,8 @@ function showLoadDialog(){
 
 
 function showNewDialog(){
+	currentMode = "teach";
+
 	var dialog = renderTemplate("dialog", {
 		id : "load",
 		title : "Create a new demonstration ",
