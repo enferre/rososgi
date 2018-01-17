@@ -1,6 +1,4 @@
--runfw: org.eclipse.concierge
-
--include ../be.iminds.iot.robot.moveit/moveit.bndrun
+-include ../be.iminds.iot.ros.core/core.bndrun
 
 -runbundles.xlfd: \
 	com.google.gson;version='[2.2.4,3.0)',\
@@ -12,11 +10,20 @@
 -runproperties.xlfd: \
 	org.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
 
+-runbundles.moveit: \
+	be.iminds.iot.ros.configurator;version=latest,\
+    org.ros.rosjava_messages.actionlib_msgs;version=latest,\
+	org.ros.rosjava_messages.moveit_msgs;version=latest,\
+	org.ros.rosjava_messages.object_recognition_msgs;version=latest,\
+	org.ros.rosjava_messages.octomap_msgs;version=latest,\
+	org.ros.rosjava_messages.shape_msgs;version=latest,\
+	org.ros.rosjava_messages.trajectory_msgs;version=latest,\
+	org.ros.rosjava_messages.control_msgs;version=latest,\
+	be.iminds.iot.robot.moveit;version=latest
 	
 -runbundles.panda: \
-	be.iminds.iot.ros.configurator;version=latest,\
 	be.iminds.iot.ros.panda,\
-	be.iminds.iot.robot.moveit;version=latest
+	be.iminds.iot.robot.panda.ros;version=latest
 
 -runproperties.panda: \
 	ros.core.native=true

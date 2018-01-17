@@ -20,7 +20,7 @@
  *  Contributors:
  *      Tim Verbelen, Steven Bohez
  *******************************************************************************/
-package be.iminds.iot.robot.moveit;
+package be.iminds.iot.robot.panda.ros;
 
 import java.util.Map;
 
@@ -34,24 +34,14 @@ import org.ros.node.AbstractNodeMain;
 import org.ros.node.ConnectedNode;
 import org.ros.node.NodeMain;
 
-import be.iminds.iot.robot.moveit.api.MoveItArmImpl;
-
 @Component(service = {NodeMain.class},
-	name="be.iminds.iot.robot.moveit.Arm",
+	name="be.iminds.iot.robot.panda.ros.Panda",
 	configurationPolicy=ConfigurationPolicy.REQUIRE)
-public class MoveItRosController extends AbstractNodeMain {
+public class PandaRosController extends AbstractNodeMain {
 
 	private String name;
-	private String gripper_topic;
-	private String joint_states_topic; 
-	private String[] joints;
-	private String move_group_topic; 
-	private String move_group;
-	private String compute_ik; 
-	private String compute_fk; 
-	private String ef_link;
 	
-	private MoveItArmImpl arm;
+	private PandaArmImpl arm;
 	
 	private BundleContext context;
 	
@@ -62,39 +52,7 @@ public class MoveItRosController extends AbstractNodeMain {
 		if(config.containsKey("name")) {
 			name = config.get("name").toString();
 		} else {
-			name = "arm";
-		}
-		
-		if(config.containsKey("gripper_topic")) {
-			gripper_topic = config.get("gripper_topic").toString();
-		}
-		
-		if(config.containsKey("joint_states_topic")) {
-			joint_states_topic = config.get("joint_states_topic").toString();
-		}
-		
-		if(config.containsKey("joints")) {
-			joints = config.get("joints").toString().split(",");
-		}
-		
-		if(config.containsKey("move_group_topic")) {
-			move_group_topic = config.get("move_group_topic").toString();
-		}
-		
-		if(config.containsKey("move_group")) {
-			move_group = config.get("move_group").toString();
-		}
-		
-		if(config.containsKey("compute_ik")) {
-			compute_ik = config.get("compute_ik").toString();
-		}
-		
-		if(config.containsKey("compute_fk")) {
-			compute_fk = config.get("compute_fk").toString();
-		}
-		
-		if(config.containsKey("ef_link")) {
-			ef_link = config.get("ef_link").toString();
+			name = "panda";
 		}
 	}
 	
@@ -115,9 +73,7 @@ public class MoveItRosController extends AbstractNodeMain {
 	@Override
 	public void onStart(ConnectedNode connectedNode){
 		connectedNode.getTopicMessageFactory();
-
-		// this brings online arm services
-		arm = new MoveItArmImpl(name, context, connectedNode);
-		arm.register(gripper_topic, joint_states_topic, joints, move_group_topic, move_group, compute_ik, compute_fk, ef_link);
+		arm = new PandaArmImpl(name, context, connectedNode);
+		arm.register();
 	}
 }

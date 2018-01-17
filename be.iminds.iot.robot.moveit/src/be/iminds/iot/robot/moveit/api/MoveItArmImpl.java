@@ -20,7 +20,7 @@
  *  Contributors:
  *      Tim Verbelen, Steven Bohez
  *******************************************************************************/
-package be.iminds.iot.robot.moveit;
+package be.iminds.iot.robot.moveit.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,6 +69,12 @@ import moveit_msgs.MoveGroupGoal;
 import moveit_msgs.PositionIKRequest;
 import moveit_msgs.RobotState;
 
+/**
+ * Base Arm implementation using MoveIt. 
+ * 
+ * Is exported as it can be used in other bundles to extend 
+ * further to implement vendor-specific functionality.
+ */
 public class MoveItArmImpl implements Arm {
 
 	private final String name;

@@ -103,6 +103,10 @@ public class ROSConfigurator {
 							break;
 						case "panda":
 							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.panda.Panda", null);
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.panda.ros.Panda", null);
+							break;
+						case "moveit":
+							// in case of generic move it arm - make sure to launch your own node config in combination?
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.moveit.Arm", null);
 							break;
 						default: 
