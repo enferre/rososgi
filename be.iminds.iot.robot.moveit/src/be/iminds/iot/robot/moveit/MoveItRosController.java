@@ -88,6 +88,6 @@ public class MoveItRosController extends AbstractNodeMain {
 		arm.register("/panda/franka_gripper_node/gripper_action",
 				"/panda/joint_states", joints,
 				"/panda/move_group","panda_arm_hand",
-				"/panda/compute_ik", "/panda/compute_fk");
+				"/panda/compute_ik", "/panda/compute_fk", "panda_hand");
 	}
 }

@@ -24,6 +24,7 @@ package be.iminds.iot.robot.moveit;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
@@ -77,6 +78,9 @@ public class MoveItArmImpl implements Arm {
 	
 	private final ConnectedNode node;
 	private final MessageFactory factory;
+	private String compute_fk;
+	private String fk_link;
+	private String compute_ik;
 	
 	private String move_group;
 	private Publisher<moveit_msgs.MoveGroupActionGoal> moveIt;
@@ -107,16 +111,102 @@ public class MoveItArmImpl implements Arm {
 	public void register(String gripper_topic, 
 			String joint_states_topic, String[] joints,
 			String move_group_topic, String move_group,
-			String compute_ik, String compute_fk){
+			String compute_ik, String compute_fk, String fk_link){
 		this.move_group = move_group;
+		this.compute_ik = compute_ik;
+		this.compute_fk = compute_fk;
+		this.fk_link = fk_link;
 		
+		initMoveIt(move_group_topic);
+
+		initGripper(gripper_topic);
+
+		initStateListener(joint_states_topic, joints);
+		
+		loadIKService();
+		loadFKService();
+		
+		Dictionary<String, Object> properties = new Hashtable<>();
+		properties.put("name", name);
+
+		ServiceRegistration<Arm> rArm = context.registerService(Arm.class, this, properties);
+		registrations.add(rArm);
+	}
+	
+	
+	protected void initMoveIt(String move_group_topic) {
 		// commands for plan / execute
 		moveIt = node.newPublisher(move_group_topic+"/goal", moveit_msgs.MoveGroupActionGoal._TYPE);
 		moveItCancel = node.newPublisher(move_group_topic+"/cancel", actionlib_msgs.GoalID._TYPE);
+		
+		moveItResult = node.newSubscriber(move_group_topic+"/result",
+				moveit_msgs.MoveGroupActionResult._TYPE);
+		moveItResult.addMessageListener(new MessageListener<moveit_msgs.MoveGroupActionResult>() {
+			@Override
+			public void onNewMessage(moveit_msgs.MoveGroupActionResult result) {
+				GoalStatus status = result.getStatus();
+				UUID id;
+				try {
+					id = UUID.fromString(result.getStatus().getGoalId().getId());
+				} catch(IllegalArgumentException e) {
+					// ignore if goal id is not a uuid 
+					return;
+				}
+				
+				
+				Deferred<Arm> deferred = inprogress.remove(id);
+				if(deferred == null) {
+					System.out.println("WTF? No deferred for "+id);
+					return;
+				}
+				
+				if(status.getStatus() == 3) {
+					// success
+					deferred.resolve(MoveItArmImpl.this);
+				} else {
+					// fail promise?
+					deferred.fail(new Exception(status.getText()));
+				}
+			}
+		});
+	}
 
+	protected void initGripper(String gripper_topic) {
 		// commands for gripper
 		gripper = node.newPublisher(gripper_topic+"/goal", control_msgs.GripperCommandActionGoal._TYPE);
 		
+		gripperResult = node.newSubscriber(gripper_topic+"/result",
+				control_msgs.GripperCommandActionResult._TYPE);
+		gripperResult.addMessageListener(new MessageListener<control_msgs.GripperCommandActionResult>() {
+			@Override
+			public void onNewMessage(control_msgs.GripperCommandActionResult result) {
+				GoalStatus status = result.getStatus();
+				UUID id;
+				try {
+					id = UUID.fromString(result.getStatus().getGoalId().getId());
+				} catch(IllegalArgumentException e) {
+					// ignore if goal id is not a uuid 
+					return;
+				}
+				
+				Deferred<Arm> deferred = inprogress.remove(id);
+				if(deferred == null) {
+					System.out.println("WTF? No deferred for "+id);
+					return;
+				}
+				
+				if(status.getStatus() == 3) {
+					// success
+					deferred.resolve(MoveItArmImpl.this);
+				} else {
+					// fail promise?
+					deferred.fail(new Exception(status.getText()));
+				}
+			}
+		});
+	}
+	
+	protected void initStateListener(String joint_states_topic, String[] joints) {
 		// init joint states
 		for(String j : joints) {
 			JointState jointState = new JointState(j, 0, 0, 0);
@@ -148,85 +238,6 @@ public class MoveItArmImpl implements Arm {
 				
 			}
 		});
-
-		moveItResult = node.newSubscriber(move_group_topic+"/result",
-				moveit_msgs.MoveGroupActionResult._TYPE);
-		moveItResult.addMessageListener(new MessageListener<moveit_msgs.MoveGroupActionResult>() {
-			@Override
-			public void onNewMessage(moveit_msgs.MoveGroupActionResult result) {
-				GoalStatus status = result.getStatus();
-				UUID id;
-				try {
-					id = UUID.fromString(result.getStatus().getGoalId().getId());
-				} catch(IllegalArgumentException e) {
-					// ignore if goal id is not a uuid 
-					return;
-				}
-				
-				
-				Deferred<Arm> deferred = inprogress.remove(id);
-				if(deferred == null) {
-					System.out.println("WTF? No deferred for "+id);
-					return;
-				}
-				
-				if(status.getStatus() == 3) {
-					// success
-					deferred.resolve(MoveItArmImpl.this);
-				} else {
-					// fail promise?
-					deferred.fail(new Exception(status.getText()));
-				}
-			}
-		});
-
-		gripperResult = node.newSubscriber(gripper_topic+"/result",
-				control_msgs.GripperCommandActionResult._TYPE);
-		gripperResult.addMessageListener(new MessageListener<control_msgs.GripperCommandActionResult>() {
-			@Override
-			public void onNewMessage(control_msgs.GripperCommandActionResult result) {
-				GoalStatus status = result.getStatus();
-				UUID id;
-				try {
-					id = UUID.fromString(result.getStatus().getGoalId().getId());
-				} catch(IllegalArgumentException e) {
-					// ignore if goal id is not a uuid 
-					return;
-				}
-				
-				Deferred<Arm> deferred = inprogress.remove(id);
-				if(deferred == null) {
-					System.out.println("WTF? No deferred for "+id);
-					return;
-				}
-				
-				if(status.getStatus() == 3) {
-					// success
-					deferred.resolve(MoveItArmImpl.this);
-				} else {
-					// fail promise?
-					deferred.fail(new Exception(status.getText()));
-				}
-			}
-		});
-		
-		try {
-		     ik = node.newServiceClient(compute_ik, moveit_msgs.GetPositionIK._TYPE);
-		} catch(Exception e){
-			// do nothing ... moveTo method will just fail when no ik service present
-		}
-
-		try {
-		     fk = node.newServiceClient(compute_fk, moveit_msgs.GetPositionFK._TYPE);
-		} catch(Exception e){
-			// do nothing ... getPose method will just fail when no fk service present
-		}
-		
-		Dictionary<String, Object> properties = new Hashtable<>();
-		properties.put("name", name);
-
-		ServiceRegistration<Arm> rArm = context.registerService(Arm.class, this, properties);
-		registrations.add(rArm);
 	}
 	
 	public void unregister(){
@@ -447,6 +458,13 @@ public class MoveItArmImpl implements Arm {
 	}
 	
 	private Promise<List<JointValue>> calculateIK(float x, float y, float z){
+		if(ik == null) {
+			loadIKService();
+			if(ik == null) {
+				throw new RuntimeException("IK service "+compute_ik+" not available");
+			}
+		}
+		
 		final Deferred<List<JointValue>> deferred = new Deferred<>();
 		
 		GetPositionIKRequest request = ik.newMessage();
@@ -501,10 +519,17 @@ public class MoveItArmImpl implements Arm {
 	}
 	
 	private Promise<geometry_msgs.Pose> calculateFK(List<JointState> joints){
+		if(fk == null) {
+			loadFKService();
+			if(fk == null) {
+				throw new RuntimeException("FK service "+compute_fk+" not available");
+			}
+		}
+		
 		final Deferred<geometry_msgs.Pose> deferred = new Deferred<>();
 		
 		GetPositionFKRequest request = fk.newMessage();
-		//request.setFkLinkNames(joints.stream().map(j -> j.joint).collect(Collectors.toList()));
+		request.setFkLinkNames(Collections.singletonList(fk_link));
 		RobotState state = request.getRobotState();
 		sensor_msgs.JointState jointState = state.getJointState();
 		jointState.setName(joints.stream().map(js -> js.joint).collect(Collectors.toList()));
@@ -531,5 +556,22 @@ public class MoveItArmImpl implements Arm {
 		});
 		
 		return deferred.getPromise();
+	}
+	
+	private void loadIKService() {
+		try {
+		     ik = node.newServiceClient(compute_ik, moveit_msgs.GetPositionIK._TYPE);
+		} catch(Exception e){
+			// do nothing ... moveTo method will just fail when no ik service present
+		}
+	}
+	
+	
+	private void loadFKService() {
+		try {
+		     fk = node.newServiceClient(compute_fk, moveit_msgs.GetPositionFK._TYPE);
+		} catch(Exception e){
+			// do nothing ... getPose method will just fail when no fk service present
+		}
 	}
 }
