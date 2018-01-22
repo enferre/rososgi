@@ -23,13 +23,19 @@
 package be.iminds.iot.robot.panda.ros;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.util.promise.Deferred;
+import org.osgi.util.promise.Promise;
 import org.ros.node.ConnectedNode;
+import org.ros.node.topic.Publisher;
 
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.moveit.api.MoveItArmImpl;
+import franka_control.ErrorRecoveryActionGoal;
 
 public class PandaArmImpl extends MoveItArmImpl implements Arm {
 
+	private Publisher<franka_control.ErrorRecoveryActionGoal> recovery;
+	
 	public PandaArmImpl(String name, 
 			BundleContext context, 
 			ConnectedNode node) {
@@ -50,5 +56,19 @@ public class PandaArmImpl extends MoveItArmImpl implements Arm {
 				"/panda/joint_states", joints,
 				"/panda/move_group","panda_arm_hand",
 				"/panda/compute_ik", "/panda/compute_fk", "panda_hand");
+		
+		recovery = node.newPublisher("/panda/error_recovery/goal", franka_control.ErrorRecoveryActionGoal._TYPE);
+		
+	}
+	
+	@Override
+	public Promise<Arm> recover() {
+		Deferred<Arm> deferred = new Deferred<>();
+		
+		ErrorRecoveryActionGoal msg = recovery.newMessage();
+		recovery.publish(msg);
+		
+		deferred.resolve(this);
+		return deferred.getPromise();
 	}
 }
