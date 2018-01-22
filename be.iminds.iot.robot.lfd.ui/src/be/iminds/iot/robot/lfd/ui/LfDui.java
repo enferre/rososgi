@@ -24,6 +24,7 @@ package be.iminds.iot.robot.lfd.ui;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -107,7 +108,6 @@ public class LfDui extends HttpServlet {
 				Demonstration d = demonstrationFromJson(json);
 				demonstrator.save(d);
 			} else if(method.equals("execute")) {
-				try {
 				boolean reversed = false;
 				if(request.getParameter("reversed") != null) {
 					reversed = Boolean.parseBoolean(request.getParameter("reversed"));
@@ -117,8 +117,8 @@ public class LfDui extends HttpServlet {
 				if(name != null) {
 					Demonstration d = demonstrator.load(name);
 					demonstrator.execute(d, reversed)
-								.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});
-					return;
+								.then(p -> {executionSuccess(response.getWriter()); return null;}, 
+								      p -> executionError(response.getWriter(), p.getFailure())).getValue();
 				}
 				
 				String demonstrationJson = request.getParameter("demonstration");
@@ -126,8 +126,8 @@ public class LfDui extends HttpServlet {
 					JsonObject json = (JsonObject)parser.parse(demonstrationJson);
 					Demonstration d = demonstrationFromJson(json);
 					demonstrator.execute(d, reversed)
-								.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
-					return;
+								.then(p -> {executionSuccess(response.getWriter()); return null;}, 
+									p -> executionError(response.getWriter(), p.getFailure())).getValue();					
 				}
 				
 				String stepJson = request.getParameter("step");
@@ -135,11 +135,8 @@ public class LfDui extends HttpServlet {
 					JsonObject json = (JsonObject)parser.parse(stepJson);
 					Step s = stepFromJson(json);
 					demonstrator.execute(s, reversed)
-								.then(p -> {demonstrator.guide(true); return null;}, p -> {demonstrator.guide(true);});;
-					return;
-				}
-				} catch(Throwable t) {
-					t.printStackTrace();
+								.then(p -> {executionSuccess(response.getWriter()); return null;}, 
+									  p -> executionError(response.getWriter(), p.getFailure())).getValue();				
 				}
 			} else if(method.equals("stop")) {
 				demonstrator.stop();
@@ -168,6 +165,29 @@ public class LfDui extends HttpServlet {
 			s.add(key, new JsonPrimitive(value));
 		});
 		return s;
+	}
+	
+	private void executionError(PrintWriter writer, Throwable e) {
+		// TODO recover?
+		
+		// set back to guide mode after execution?
+		demonstrator.guide(true);
+		
+		JsonObject result = new JsonObject();
+		result.add("success", new JsonPrimitive(false));
+		result.add("message", new JsonPrimitive(e.getMessage()));
+		writer.println(result.toString());
+		writer.flush();
+	}
+	
+	private void executionSuccess(PrintWriter writer) {
+		// set back to guide mode after execution
+		demonstrator.guide(true);
+		
+		JsonObject result = new JsonObject();
+		result.add("success", new JsonPrimitive(true));
+		writer.println(result.toString());
+		writer.flush();
 	}
 	
 	private JsonObject toJson(Demonstration demonstration) {

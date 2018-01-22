@@ -104,17 +104,37 @@ function step(type){
  * play current demonstration / step
  */
 function reverse(){
-	$.post("/lfd", {"method" : "execute", "demonstration" : JSON.stringify(currentDemonstration), "reversed" : true});
+	$.post("/lfd", {"method" : "execute", 
+				    "demonstration" : JSON.stringify(currentDemonstration), 
+				    "reversed" : true},
+		function( result ) {
+			if(!result.ok){
+				error(result.message);
+			}
+		}
+		, "json");
 }
 
 function play(i){
 	if(i === undefined){
 		// play complete sequence
-		$.post("/lfd", {"method" : "execute", "demonstration" : JSON.stringify(currentDemonstration)});
+		$.post("/lfd", {"method" : "execute", "demonstration" : JSON.stringify(currentDemonstration)},
+				function( result ) {
+					if(!result.ok){
+						error(result.message);
+					}
+				}
+				, "json");
 	} else {
 		// play step
 		var step = currentDemonstration.steps[i-1];
-		$.post("/lfd", {"method" : "execute", "step" : JSON.stringify(step)});
+		$.post("/lfd", {"method" : "execute", "step" : JSON.stringify(step)}
+				function( result ) {
+					if(!result.ok){
+						error(result.message);
+					}
+				}
+				, "json");
 	}
 }
 
@@ -251,5 +271,14 @@ function renderTemplate(template, options, target){
 	Mustache.parse(template);
 	var rendered = Mustache.render(template, options);
 	return $(rendered).appendTo(target);
+}
+
+/**
+ * render an error
+ */
+function error(message){
+	renderTemplate("error", {
+		'message' : message
+	}, $("#alerts"));
 }
 

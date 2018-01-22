@@ -75,6 +75,8 @@
 
 		<div class="container-fluid">
 			<div id="canvas" class="row">
+				<div id="alerts">
+				</div>
 				<div id="name" class="col-xs-12 col-md-12 col-lg-12"></div>
 				<div id="steps">
 				</div>		
@@ -168,6 +170,13 @@
 			<select class="form-control options">
 			</select>
 		</div>
+	</div>
+	</script>
+	
+	<script type="x-tmpl-mustache" id="error">
+	<div id="alert" class="alert alert-danger fade in">
+		<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+  		<strong>Error: </strong>{{message}}
 	</div>
 	</script>
 	
