@@ -23,7 +23,9 @@
 	
 -runbundles.panda: \
 	be.iminds.iot.ros.panda,\
-	be.iminds.iot.robot.panda.ros;version=latest
+	be.iminds.iot.robot.panda.ros;version=latest,\
+	org.ros.rosjava_messages.franka;version=latest
+	
 
 -runproperties.panda: \
 	ros.core.native=true
