@@ -147,6 +147,13 @@ function stop(){
 }
 
 /**
+ * recover form arm error
+ */
+function recover(){
+	$.post("/lfd", {"method" : "recover"});
+}
+
+/**
  * load demonstration
  */
 function load(name){

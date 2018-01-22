@@ -53,6 +53,8 @@ public interface Demonstrator {
 	
 	// introduce cancelable promises?!
 	void stop();
+	
+	void recover();
 
 	// set robot to guide mode
 	void guide(boolean guide);

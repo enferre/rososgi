@@ -94,6 +94,8 @@ public class DemonstratorImpl implements Demonstrator {
 		if(!f.exists() || !f.isDirectory()) {
 			f.mkdirs();
 		}
+		
+		guide(true);
 	}
 	
 	@Reference
@@ -344,6 +346,10 @@ public class DemonstratorImpl implements Demonstrator {
 		arm.stop();
 	}
 
+	@Override
+	public void recover() {
+		arm.recover();
+	}
 	
 	private void toFile(String fileName, Frame f) throws Exception {
 		// TODO faster writing to file required?

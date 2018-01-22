@@ -140,6 +140,8 @@ public class LfDui extends HttpServlet {
 				}
 			} else if(method.equals("stop")) {
 				demonstrator.stop();
+			} else if(method.equals("recover")) {
+				demonstrator.recover();
 			} else if(method.equals("guide")) {
 				boolean guide = true;
 				if(request.getParameter("guide") != null) {
