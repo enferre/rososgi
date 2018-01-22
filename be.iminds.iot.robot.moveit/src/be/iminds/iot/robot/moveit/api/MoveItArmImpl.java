@@ -79,34 +79,34 @@ import moveit_msgs.RobotState;
  */
 public class MoveItArmImpl implements Arm {
 
-	private final String name;
+	protected final String name;
 	
-	private final BundleContext context;
-	private final List<ServiceRegistration<?>> registrations = new ArrayList<>();
+	protected final BundleContext context;
+	protected final List<ServiceRegistration<?>> registrations = new ArrayList<>();
 	
-	private final ConnectedNode node;
-	private final MessageFactory factory;
-	private String compute_fk;
-	private String compute_ik;
-	private String ef_link;
+	protected final ConnectedNode node;
+	protected final MessageFactory factory;
+	protected String compute_fk;
+	protected String compute_ik;
+	protected String ef_link;
 	
-	private String move_group;
-	private Publisher<moveit_msgs.MoveGroupActionGoal> moveIt;
-	private Publisher<actionlib_msgs.GoalID> moveItCancel;
-	private Subscriber<moveit_msgs.MoveGroupActionResult> moveItResult; 
+	protected String move_group;
+	protected Publisher<moveit_msgs.MoveGroupActionGoal> moveIt;
+	protected Publisher<actionlib_msgs.GoalID> moveItCancel;
+	protected Subscriber<moveit_msgs.MoveGroupActionResult> moveItResult; 
 
-	private Publisher<control_msgs.GripperCommandActionGoal> gripper;
-	private Subscriber<control_msgs.GripperCommandActionResult> gripperResult;
+	protected Publisher<control_msgs.GripperCommandActionGoal> gripper;
+	protected Subscriber<control_msgs.GripperCommandActionResult> gripperResult;
 
-	private Subscriber<sensor_msgs.JointState> subscriber; 
-	private List<JointState> state = new ArrayList<>();
+	protected Subscriber<sensor_msgs.JointState> subscriber; 
+	protected List<JointState> state = new ArrayList<>();
 	
-	private ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
-	private ServiceClient<moveit_msgs.GetPositionFKRequest, moveit_msgs.GetPositionFKResponse> fk;
+	protected ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
+	protected ServiceClient<moveit_msgs.GetPositionFKRequest, moveit_msgs.GetPositionFKResponse> fk;
 
-	private float speed = 1.0f;
+	protected float speed = 1.0f;
 	
-	private Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
+	protected Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
 	
 	public MoveItArmImpl(String name, BundleContext context,
 			ConnectedNode node){
@@ -471,7 +471,7 @@ public class MoveItArmImpl implements Arm {
 		return moveTo(p.position.x, p.position.y, p.position.z, p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
 	}
 
-	private JointState getJoint(String name) {
+	protected JointState getJoint(String name) {
 		for(JointState s : state) {
 			if(s.joint.equals(name)) {
 				return s;
@@ -480,7 +480,7 @@ public class MoveItArmImpl implements Arm {
 		return null;
 	}
 	
-	private Promise<List<JointValue>> calculateIK(float x, float y, float z, float ox, float oy, float oz, float ow){
+	protected Promise<List<JointValue>> calculateIK(float x, float y, float z, float ox, float oy, float oz, float ow){
 		if(ik == null) {
 			loadIKService();
 			if(ik == null) {
@@ -544,7 +544,7 @@ public class MoveItArmImpl implements Arm {
 		return deferred.getPromise();
 	}
 	
-	private Promise<Pose> calculateFK(List<JointState> joints){
+	protected Promise<Pose> calculateFK(List<JointState> joints){
 		if(fk == null) {
 			loadFKService();
 			if(fk == null) {
