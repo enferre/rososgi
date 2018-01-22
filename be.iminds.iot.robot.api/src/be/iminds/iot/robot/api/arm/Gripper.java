@@ -26,8 +26,10 @@ public interface Gripper {
 
 	void open(float opening);
 	
+	void open(float opening, float effort);
+	
 	void close();
 	
-	// TODO methods to IK steer the gripper?
+	void close(float effort);
 	
 }

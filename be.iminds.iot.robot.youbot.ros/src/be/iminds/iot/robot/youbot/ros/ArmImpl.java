@@ -168,6 +168,16 @@ public class ArmImpl implements Arm {
 			public void close() {
 				closeGripper();
 			}
+
+			@Override
+			public void open(float opening, float effort) {
+				openGripper(opening);
+			}
+
+			@Override
+			public void close(float effort) {
+				closeGripper();
+			}
 		};
 	}
 	
@@ -438,6 +448,16 @@ public class ArmImpl implements Arm {
 		// TODO this is a hack to make it work in simulation 
 		// where the end positions are not reached during grabbing
 		return waitFor(2000);
+	}
+	
+	@Override
+	public Promise<Arm> openGripper(float opening, float effort) {
+		return openGripper(opening);
+	}
+
+	@Override
+	public Promise<Arm> closeGripper(float effort) {
+		return closeGripper();
 	}
 	
 	@Override
