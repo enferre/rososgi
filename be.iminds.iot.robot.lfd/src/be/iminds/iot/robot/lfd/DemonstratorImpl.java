@@ -94,8 +94,6 @@ public class DemonstratorImpl implements Demonstrator {
 		if(!f.exists() || !f.isDirectory()) {
 			f.mkdirs();
 		}
-		
-		guide(true);
 	}
 	
 	@Reference
@@ -195,7 +193,7 @@ public class DemonstratorImpl implements Demonstrator {
 			
 			// write steps
 			d.steps.forEach(step -> {
-				writer.write(s.type+"\t");
+				writer.write(step.type+"\t");
 				header.stream()
 					.map(h -> step.properties.get(h))
 					.forEach(value -> writer.print(value+"\t"));
