@@ -108,7 +108,7 @@ function reverse(){
 				    "demonstration" : JSON.stringify(currentDemonstration), 
 				    "reversed" : true},
 		function( result ) {
-			if(!result.ok){
+			if(!result.success){
 				error(result.message);
 			}
 		}
@@ -120,7 +120,7 @@ function play(i){
 		// play complete sequence
 		$.post("/lfd", {"method" : "execute", "demonstration" : JSON.stringify(currentDemonstration)},
 				function( result ) {
-					if(!result.ok){
+					if(!result.success){
 						error(result.message);
 					}
 				}
@@ -128,9 +128,9 @@ function play(i){
 	} else {
 		// play step
 		var step = currentDemonstration.steps[i-1];
-		$.post("/lfd", {"method" : "execute", "step" : JSON.stringify(step)}
+		$.post("/lfd", {"method" : "execute", "step" : JSON.stringify(step)},
 				function( result ) {
-					if(!result.ok){
+					if(!result.success){
 						error(result.message);
 					}
 				}
