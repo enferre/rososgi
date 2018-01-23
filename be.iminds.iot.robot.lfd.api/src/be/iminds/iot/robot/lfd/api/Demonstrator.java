@@ -23,6 +23,7 @@
 package be.iminds.iot.robot.lfd.api;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.osgi.util.promise.Promise;
 
@@ -30,37 +31,111 @@ import org.osgi.util.promise.Promise;
  */
 public interface Demonstrator {
 	
+	/**
+	 * List all available demonstrations.
+	 * @return list of demonstration names
+	 */
 	List<String> demonstrations();
 	
+	/**
+	 * Load a demonstration.
+	 * @param name demonstration name
+	 * @return demonstration
+	 */
 	Demonstration load(String name);
 	
+	/**
+	 * Record a step for a certain demonstration. This will record any sensor value
+	 * together with the manipulator joint and cartesian poses if available.
+	 * @param demonstration demonstration to add the step to
+	 * @param type type of the step
+	 * @return recorded step
+	 */
 	Step step(String demonstration, Step.Type type);
 	
+	/**
+	 * Save changes to the demonstration. This will write steps to a .csv file on disk.
+	 * @param d demonstration to save
+	 */
 	void save(Demonstration d);
 	
 	
+	/**
+	 * Execute a demonstration.
+	 * @param d demonstration to execute
+	 * @return a promise that is resolved when the execution is finished.
+	 */
 	default Promise<Void> execute(Demonstration d){
 		return execute(d, false);
 	}
 	
+	/**
+	 * Execute a single step.
+	 * @param step step to execute
+	 * @return a promise that is resolved when the execution is finished.
+	 */
 	default Promise<Void> execute(Step step){
 		return execute(step, false);
 	}
 	
+	/**
+	 * Execute a demonstration.
+	 * @param d demonstration to execute
+	 * @param reversed if true the demonstration is executed reversed, meaning the steps are iterated in reversed
+	 * order and also opening and closing the gripper is reversed
+	 * @return a promise that is resolved when the execution is finished.
+	 */
 	Promise<Void> execute(Demonstration d, boolean reversed);
 	
+	/**
+	 * Execute a step.
+	 * @param step step to execute
+	 * @param reversed if true the demonstration is executed reversed, meaning the steps are iterated in reversed
+	 * order and also opening and closing the gripper is reversed
+	 * @return a promise that is resolved when the execution is finished.
+	 */
 	Promise<Void> execute(Step step, boolean reversed);
 
-	
+
+	/**
+	 * Execute a demonstration for a number of times.
+	 * @param d demonstration to execute
+	 * @param times number of times to repeat the demonstration, a negative integer means loop forever until interrupted.
+	 * @param reverse if true the demonstration is first executed reversed before repeating again
+	 * @return a promise that is resolved when the execution is finished.
+	 */
 	Promise<Void> repeat(Demonstration d, int times, boolean reverse);
 	
 	// introduce cancelable promises?!
-	void stop();
+	/**
+	 * Interrupt any running execution.
+	 */
+	void interrupt();
 	
+	/**
+	 * Recover from errors in case an execution failed with an error.
+	 */
 	void recover();
 
-	// set robot to guide mode
+	/**
+	 * Set the robot to guide mode to allow the operator to demonstrate.
+	 * @param guide
+	 */
 	void guide(boolean guide);
 	
-	// TODO add methods to "record" trajectories?!
+
+	/**
+	 * Start recording a session at a given desired rate. The recording is written to file.
+	 * @param rate rate (in Hz) that we should record all sensors / states (best effort)
+	 * @return UUID under which this recording will be available
+	 */
+	UUID record(int rate);
+	
+	/**
+	 * Stop a recording session
+	 * @param id of the recording that was returned by the record method
+	 * @return recording
+	 */
+	Recording stop(UUID id);
+	
 }

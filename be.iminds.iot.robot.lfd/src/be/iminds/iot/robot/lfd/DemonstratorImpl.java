@@ -23,8 +23,11 @@
 package be.iminds.iot.robot.lfd;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,7 +37,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
@@ -48,6 +55,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 
+import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.Orientation;
 import be.iminds.iot.robot.api.Pose;
@@ -55,6 +63,7 @@ import be.iminds.iot.robot.api.Position;
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.lfd.api.Demonstration;
 import be.iminds.iot.robot.lfd.api.Demonstrator;
+import be.iminds.iot.robot.lfd.api.Recording;
 import be.iminds.iot.robot.lfd.api.Step;
 import be.iminds.iot.robot.lfd.api.Step.Type;
 import be.iminds.iot.sensor.api.Camera;
@@ -69,6 +78,8 @@ import be.iminds.iot.sensor.api.Frame;
 		  "osgi.command.function=save",
 		  "osgi.command.function=execute",
 		  "osgi.command.function=repeat",
+		  "osgi.command.function=interrupt",
+		  "osgi.command.function=record",
 		  "osgi.command.function=stop",
 		  "osgi.command.function=mode",
 		  "osgi.command.function=guide"},
@@ -76,6 +87,7 @@ import be.iminds.iot.sensor.api.Frame;
 public class DemonstratorImpl implements Demonstrator {
 
 	private String demonstrationsLocation = "demonstrations";
+	private String recordingsLocation = "recordings";
 	
 	// For now limited to one Arm
 	private Arm arm;
@@ -94,8 +106,18 @@ public class DemonstratorImpl implements Demonstrator {
 		if(l != null) {
 			demonstrationsLocation = l;
 		}
-		
+
 		File f = new File(demonstrationsLocation);
+		if(!f.exists() || !f.isDirectory()) {
+			f.mkdirs();
+		}
+		
+		String r = context.getProperty("be.iminds.iot.robot.lfd.recordings.location");
+		if(r != null) {
+			recordingsLocation = r;
+		}
+		
+		f = new File(recordingsLocation);
 		if(!f.exists() || !f.isDirectory()) {
 			f.mkdirs();
 		}
@@ -385,7 +407,7 @@ public class DemonstratorImpl implements Demonstrator {
 	}
 
 	@Override
-	public void stop() {
+	public void interrupt() {
 		arm.stop();
 	}
 
@@ -474,6 +496,154 @@ public class DemonstratorImpl implements Demonstrator {
 			}
 		}
 	}
+	
 
+	private Map<UUID, Recorder> recorders = new ConcurrentHashMap<>();
+	
+	@Override
+	public UUID record(int rate) {
+		Recorder r = new Recorder(rate);
+		recorders.put(r.id, r);
+		return r.start();
+	}
+
+	@Override
+	public Recording stop(UUID id) {
+		Recorder r = recorders.remove(id);
+		if(r == null) {
+			throw new RuntimeException("Invalid recording id: "+id);
+		}
+		return r.stop();
+	}
+	
+	public void stop() {
+		// stop all recordings
+		recorders.values().forEach(r -> r.stop());
+		recorders.clear();
+	}
+	
+	private class Recorder {
+		
+		private long period;
+		private UUID id;
+		private long start;
+		private long end;
+
+		private ScheduledExecutorService recordService = Executors.newSingleThreadScheduledExecutor();
+		private PrintWriter writer;
+		
+		private List<String> header;
+		private Map<String, Object> values;
+		
+		public Recorder(int rate) {
+			this.period = (long)(1000000000.0f/rate);
+			this.id = UUID.randomUUID();
+		}
+		
+		public UUID start() {
+			start = System.currentTimeMillis();
+			
+			// create the required directories / files
+			File recordingLocation = new File(recordingsLocation+File.separator+id);
+			if(recordingLocation.exists()) {
+				throw new RuntimeException("This recording already exists?! "+recordingLocation.getAbsolutePath());
+			}
+			
+			// create new demonstration and images directory
+			File imageDir = new File(recordingsLocation+File.separator+id+File.separator+"images");
+			imageDir.mkdirs();
+			
+			// load steps from csv data
+			File csv = new File(recordingsLocation+File.separator+id+File.separator+"recording.csv");
+			try {
+				writer = new PrintWriter(new BufferedOutputStream(new FileOutputStream(csv)));
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException("Failed to start recording.", e);
+			}
+			
+			// create header
+			values = new HashMap<String, Object>();
+			List<JointState> joints = arm.getState();
+			joints.forEach(j -> {
+				values.put("pos_"+j.joint, null);
+				values.put("vel_"+j.joint, null);
+				values.put("tor_"+j.joint, null);
+			});
+			try {
+				Pose p = arm.getPose();
+				values.put("x", null);
+				values.put("y", null);
+				values.put("z", null);
+				values.put("o_x", null);
+				values.put("o_y", null);
+				values.put("o_z", null);
+				values.put("o_w", null);
+			} catch(Exception e) {
+				// no cartesian pose available
+			}
+			sensors.entrySet().forEach(e -> {
+				values.put(e.getKey(), null);
+			});
+			
+			// TODO other information to record? F_ext, gripper positions, gripper has something, error/collision, ...
+			
+			header = values.keySet().stream().sorted().collect(Collectors.toList());
+			header.forEach(h -> writer.print(h+"\t"));
+			writer.println();
+			
+			// start recording thread
+			recordService.scheduleAtFixedRate(()->record(), 0, period, TimeUnit.NANOSECONDS);
+			return id;
+		}
+		
+		public Recording stop() {
+			// stop recording thread
+			recordService.shutdownNow();
+			end = System.currentTimeMillis();
+			
+			writer.flush();
+			writer.close();
+			
+			return new Recording(id, start, end);
+		}
+		
+		public void record() {
+			// update values
+			List<JointState> joints = arm.getState();
+			joints.stream().forEach(j -> {
+				values.put("pos_"+j.joint, j.position);
+				values.put("vel_"+j.joint, j.velocity);
+				values.put("tor_"+j.joint, j.torque);
+			});
+
+			if(header.contains("x")) {
+				Pose p = arm.getPose();
+				values.put("x", p.position.x);
+				values.put("y", p.position.y);
+				values.put("z", p.position.z);
+				values.put("o_x", p.orientation.x);
+				values.put("o_y", p.orientation.y);
+				values.put("o_z", p.orientation.z);
+				values.put("o_w", p.orientation.w);
+			}
+			
+			// get frames for all cameras
+			sensors.entrySet().forEach(e -> {
+				String fileName = id+File.separator+"images"+File.separator+e.getKey()+"-"+System.currentTimeMillis()+".jpg";
+				try {
+					toFile(demonstrationsLocation+File.separator+fileName, (Frame)e.getValue().getValue());
+					values.put(e.getKey(), fileName);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			});
+			
+			// write values
+			header.stream()
+				.map(h -> values.get(h))
+				.forEach(value -> writer.print(value+"\t"));
+			writer.println();
+		}
+	}
 }
 

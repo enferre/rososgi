@@ -189,10 +189,10 @@ function play(i){
 
 
 /**
- * stop playing
+ * interrupt playing
  */
-function stop(){
-	$.post("/lfd", {"method" : "stop"});
+function interrupt(){
+	$.post("/lfd", {"method" : "interrupt"});
 }
 
 /**

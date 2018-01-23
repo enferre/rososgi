@@ -138,8 +138,8 @@ public class LfDui extends HttpServlet {
 								.then(p -> {executionSuccess(response.getWriter()); return null;}, 
 									  p -> executionError(response.getWriter(), p.getFailure())).getValue();				
 				}
-			} else if(method.equals("stop")) {
-				demonstrator.stop();
+			} else if(method.equals("interrupt")) {
+				demonstrator.interrupt();
 			} else if(method.equals("recover")) {
 				demonstrator.recover();
 			} else if(method.equals("guide")) {
