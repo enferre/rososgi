@@ -97,7 +97,7 @@
 	<div class="item col-xs-12 col-md-12 col-lg-6">
 		<div class="border col-md-12">
 			<div class="col-md-3">
-				<div class="number">{{n}}</div>
+				<div class="number" onclick="showEditDialog('{{n}}')">{{n}}</div>
 				{{type}}
 				<ul class="properties" style="list-style:none;">
 					<li>x : {{x}}</li>
@@ -110,15 +110,21 @@
 				 </ul>
 			</div>
 			<div class="images">
+				{{#camera0}}
 				<div class="col-md-3 image">
 					<img class="camera" src="{{camera0}}">				  		
 				</div>
+				{{/camera0}}
+				{{#camera1}}
 				<div class="col-md-3 image">
 					<img class="camera" src="{{camera1}}">				  		
 				</div>
+				{{/camera1}}
+				{{#camera2}}
 				<div class="col-md-3 image">
 					<img class="camera" src="{{camera2}}">				  		
 				</div>
+				{{/camera2}}
 			</div>
 			<button class="submit btn btn-secondary pull-right" onclick="play('{{n}}')">Play</button>
 		</div>
@@ -127,7 +133,7 @@
 
 	<script type="x-tmpl-mustache" id="dialog">
 	<div class="modal fade module-modal {{type}}" id="dialog-{{id}}" tabindex="-1" role="dialog">
-		<div class="modal-dialog module-dialog">
+		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal">
@@ -139,7 +145,6 @@
 					<div class="content"></div>
 					<br/>
 					<form role="form" class="form-horizontal" onsubmit="{return false;}">
-						<input class="module-id" type="hidden" name="id" value="{{id}}"/>
 						<div class="form-items"></div>
 						<!-- hidden submit button enabling on enter when applicable -->
 						<button type=submit class="submit" hidden> 

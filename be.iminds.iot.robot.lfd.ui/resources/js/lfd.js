@@ -101,6 +101,55 @@ function step(type){
 }
 
 /**
+ * edit a step
+ */
+function showEditDialog(i){
+	var dialog = renderTemplate("dialog", {
+		id : "edit",
+		title : "Manually edit this step parameters ",
+		submit: "Edit",
+		cancel: "Cancel"
+	}, $(document.body));
+	
+	var step = currentDemonstration.steps[i-1];
+	
+	// TODO allow to choose to edit joint state or cartesian state?
+	var keys = ["x","y","z","o_x","o_y","o_z","o_w"];
+
+	// TODO what with the camera images?
+	$.each(keys, function(index, key){
+		// Render toolbox item
+		renderTemplate('form-item',
+			{
+				name: key,
+				id: key,
+				type: "text",
+				value: step[key]
+			}, dialog.find('.form-items'));
+	});
+	
+	// submit button callback
+	dialog.find(".submit").click(function(e){
+		var data = $(this).closest('.modal').find('form').serializeArray();
+		var new_step = {};
+		new_step['type'] = step['type'];
+		new_step['n'] = step['n'];
+		$.each(data, function(index, entry){
+			new_step[entry.name] = entry.value;
+		});
+		currentDemonstration.steps[i-1] = new_step;
+		
+		// TODO only update step?
+		renderDemonstration(currentDemonstration);
+		
+		$('#dialog-edit').remove();
+	});
+	
+	// show dialog
+	dialog.modal('show');
+}
+
+/**
  * play current demonstration / step
  */
 function reverse(){
@@ -161,15 +210,7 @@ function load(name){
 		function( data ) {
 			currentDemonstration = data;
 			
-			$('#name').text(currentDemonstration.name);
-			$('#steps').empty();
-			var len = currentDemonstration.steps.length;
-			var i;
-			for(i=0; i<len; i++){
-				var step = currentDemonstration.steps[i];
-				step.n = i+1;
-				var s = renderTemplate("step", step, $('#steps'));
-			}
+			renderDemonstration(currentDemonstration);
 			
 			if(currentMode === "teach"){
 				currentMode = "teaching";
@@ -179,6 +220,19 @@ function load(name){
 			$('#dialog-load').remove();
 		}
 		, "json");
+}
+
+
+function renderDemonstration(d){
+	$('#name').text(d.name);
+	$('#steps').empty();
+	var len = d.steps.length;
+	var i;
+	for(i=0; i<len; i++){
+		var step = d.steps[i];
+		step.n = i+1;
+		var s = renderTemplate("step", step, $('#steps'));
+	}
 }
 
 
@@ -215,9 +269,6 @@ function showLoadDialog(){
 	
 	// remove cancel button
 	dialog.find('.cancel').remove();
-	// remove module-modal specific stuff
-	dialog.removeClass("module-modal");
-	dialog.find('.module-dialog').removeClass("module-dialog");
 	// show dialog
 	dialog.modal('show');
 }
@@ -250,9 +301,6 @@ function showNewDialog(){
 	
 	// remove cancel button
 	dialog.find('.cancel').remove();
-	// remove module-modal specific stuff
-	dialog.removeClass("module-modal");
-	dialog.find('.module-dialog').removeClass("module-dialog");
 	// show dialog
 	dialog.modal('show');	
 }
