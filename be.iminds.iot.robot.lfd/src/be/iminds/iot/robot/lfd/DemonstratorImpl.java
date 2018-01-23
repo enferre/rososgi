@@ -30,8 +30,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -312,22 +314,22 @@ public class DemonstratorImpl implements Demonstrator {
 			// move in joint space
 			List<JointValue> target = arm.getState().stream()
 					.map(js -> js.joint)
-					.map(joint -> new JointValue(joint, JointValue.Type.POSITION, Float.parseFloat(step.properties.get(joint))))
+					.map(joint -> new JointValue(joint, JointValue.Type.POSITION, parseFloat(step.properties.get(joint))))
 					.collect(Collectors.toList());
 			
 			return arm.setPositions(target);
 		} else {
 			// move in cartesian space
 			try {
-				float x = Float.parseFloat(step.properties.get("x"));
-				float y = Float.parseFloat(step.properties.get("y"));
-				float z = Float.parseFloat(step.properties.get("z"));
+				float x = parseFloat(step.properties.get("x"));
+				float y = parseFloat(step.properties.get("y"));
+				float z = parseFloat(step.properties.get("z"));
 	
 				if(step.properties.containsKey("o_x")) {
-					float ox = Float.parseFloat(step.properties.get("o_x"));
-					float oy = Float.parseFloat(step.properties.get("o_y"));
-					float oz = Float.parseFloat(step.properties.get("o_z"));
-					float ow = Float.parseFloat(step.properties.get("o_w"));
+					float ox = parseFloat(step.properties.get("o_x"));
+					float oy = parseFloat(step.properties.get("o_y"));
+					float oz = parseFloat(step.properties.get("o_z"));
+					float ow = parseFloat(step.properties.get("o_w"));
 					
 					return arm.moveTo(x, y, z, ox, oy, oz, ow);
 				} else {
@@ -393,6 +395,40 @@ public class DemonstratorImpl implements Demonstrator {
 			ctrl.stop("effort_joint_trajectory_controller");
 		} else {
 			ctrl.start("effort_joint_trajectory_controller");
+		}
+	}
+	
+	// TODO use a new hashmap per demonstration?
+	private Map<String, Float> assignments = new HashMap<>();
+	// TODO use seed for repeatable experiments?
+	private Random random = new Random(System.currentTimeMillis());
+	
+	private float parseFloat(String s) {
+		if(s.contains("=")) {
+			// assign a key to a value for future reuse in the demonstration
+			String[] split = s.split("=");
+			// TODO check if only 
+			String key = split[0].trim();
+			float value = parseFloat(split[1]);
+			assignments.put(key, value);
+		} else if(s.startsWith("[")) {
+			// generate uniform random number in range
+			String[] split = s.substring(1, s.length()-1).split(",");
+			float min = Float.parseFloat(split[0]);
+			float max = Float.parseFloat(split[1]);
+			return min+random.nextFloat()*(max-min);
+		}
+		
+		// no assignment or range, try to convert to float
+		try {
+			return Float.parseFloat(s);
+		} catch(NumberFormatException e) {
+			// this  is not a number, try if it is an assigned key
+			if(assignments.containsKey(s)) {
+				return assignments.get(s);
+			} else {
+				throw new RuntimeException("Invalid value: "+s);
+			}
 		}
 	}
 
