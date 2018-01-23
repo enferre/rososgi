@@ -137,7 +137,7 @@ html, body {
 .teach-nav {
  	padding: 0;
  	float: left;
- 	margin-left: 20%;
+ 	margin-left: 10%;
 }
 .teach-nav > li {
   display: inline-block;
@@ -196,6 +196,11 @@ html, body {
     color: #888;
     font-weight: bold;
 } 
+
+.record {
+	color: red !important;
+	font-weight: bold;
+}
 
 /*
  * Footer

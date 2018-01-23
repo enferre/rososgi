@@ -3,7 +3,8 @@
  */
 var currentMode = "teach";
 
-var currentDemonstration;
+var currentDemonstration = undefined;
+var currentRecording = undefined;
 
 /**
  * Set UI modus
@@ -313,6 +314,29 @@ function save(){
 	$.post("/lfd", {"method" : "save", "demonstration" : JSON.stringify(currentDemonstration)});
 }
 
+
+/**
+ * toggle recording
+ * @returns
+ */
+function record(){
+	if(currentRecording === undefined){
+		// start recording
+		$.post("/lfd", {"method" : "record"}, 
+		function( data ) {
+			console.log(data);
+			currentRecording = data;
+			$('#menu-record').addClass("record");
+		}, "json");
+	} else {
+		// stop recording
+		$.post("/lfd", {"method" : "stop", "id" : currentRecording}, 
+		function( data ) {
+			$('#menu-record').removeClass("record")
+			currentRecording = undefined;
+		}, "json");
+	}
+}
 
 /*
  * Helper functions

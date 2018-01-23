@@ -138,4 +138,8 @@ public interface Demonstrator {
 	 */
 	Recording stop(UUID id);
 	
+	/**
+	 * Stop all recordings
+	 */
+	List<Recording> stop();
 }

@@ -25,6 +25,7 @@ package be.iminds.iot.robot.lfd.ui;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -148,6 +149,20 @@ public class LfDui extends HttpServlet {
 					guide = Boolean.parseBoolean(request.getParameter("guide"));
 				}
 				demonstrator.guide(guide);
+			} else if(method.equals("record")) {
+				// TODO parameterize the rate
+				UUID id = demonstrator.record(10);
+				response.getWriter().println("\""+id+"\"");
+				response.getWriter().flush();
+			} else if(method.equals("stop")) {
+				if(request.getParameter("id") != null) {
+					UUID id = UUID.fromString(request.getParameter("id"));
+					demonstrator.stop(id);
+					response.getWriter().println("\""+id+"\"");
+					response.getWriter().flush();
+				} else {
+					demonstrator.stop();
+				}
 			}
 		} catch(Throwable t) {
 			t.printStackTrace();

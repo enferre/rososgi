@@ -516,10 +516,12 @@ public class DemonstratorImpl implements Demonstrator {
 		return r.stop();
 	}
 	
-	public void stop() {
+	@Override
+	public List<Recording> stop() {
 		// stop all recordings
-		recorders.values().forEach(r -> r.stop());
+		List<Recording> result = recorders.values().stream().map(r -> r.stop()).collect(Collectors.toList());
 		recorders.clear();
+		return result;
 	}
 	
 	private class Recorder {
@@ -631,10 +633,10 @@ public class DemonstratorImpl implements Demonstrator {
 			sensors.entrySet().forEach(e -> {
 				String fileName = id+File.separator+"images"+File.separator+e.getKey()+"-"+System.currentTimeMillis()+".jpg";
 				try {
-					toFile(demonstrationsLocation+File.separator+fileName, (Frame)e.getValue().getValue());
+					toFile(recordingsLocation+File.separator+fileName, (Frame)e.getValue().getValue());
 					values.put(e.getKey(), fileName);
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					// ex.printStackTrace();
 				}
 			});
 			
