@@ -49,7 +49,9 @@ import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 
 import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.Orientation;
 import be.iminds.iot.robot.api.Pose;
+import be.iminds.iot.robot.api.Position;
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.lfd.api.Demonstration;
 import be.iminds.iot.robot.lfd.api.Demonstrator;
@@ -342,26 +344,42 @@ public class DemonstratorImpl implements Demonstrator {
 					.map(joint -> new JointValue(joint, JointValue.Type.POSITION, parseFloat(step.properties.get(joint))))
 					.collect(Collectors.toList());
 			
-			return arm.setPositions(target);
+			try {
+				return arm.setPositions(target);
+			} catch(Throwable t) {
+				throw new RuntimeException("Failed executing joint motion", t);
+			}
 		} else {
 			// move in cartesian space
+			Position p = null;
+			Orientation o = null;
 			try {
 				float x = parseFloat(step.properties.get("x"));
 				float y = parseFloat(step.properties.get("y"));
 				float z = parseFloat(step.properties.get("z"));
-	
+				
+				p = new Position(x,y,z);
+				
 				if(step.properties.containsKey("o_x")) {
 					float ox = parseFloat(step.properties.get("o_x"));
 					float oy = parseFloat(step.properties.get("o_y"));
 					float oz = parseFloat(step.properties.get("o_z"));
 					float ow = parseFloat(step.properties.get("o_w"));
 					
-					return arm.moveTo(x, y, z, ox, oy, oz, ow);
-				} else {
-					return arm.moveTo(x, y, z);
+					o = new Orientation(ox, oy, oz, ow);
 				}
 			} catch(Exception e) {
-				throw new RuntimeException("This demonstration has no cartesian space information");
+				throw new RuntimeException("This demonstration has no cartesian space information", e);
+			}
+			
+			try {
+				if(o == null) {
+					return arm.moveTo(p.x, p.y, p.z);
+				} else {
+					return arm.moveTo(p.x, p.y, p.z, o.x, o.y, o.z, o.w);	
+				}
+			} catch(Throwable t) {
+				throw new RuntimeException("Failed executing cartesian motion", t);
 			}
 		}
 	}
