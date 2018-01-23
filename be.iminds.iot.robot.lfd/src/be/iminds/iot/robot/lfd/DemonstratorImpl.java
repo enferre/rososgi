@@ -66,6 +66,7 @@ import be.iminds.iot.sensor.api.Frame;
 		  "osgi.command.function=step",
 		  "osgi.command.function=save",
 		  "osgi.command.function=execute",
+		  "osgi.command.function=repeat",
 		  "osgi.command.function=stop",
 		  "osgi.command.function=mode",
 		  "osgi.command.function=guide"},
@@ -307,6 +308,30 @@ public class DemonstratorImpl implements Demonstrator {
 		} else {
 			return move(step).then(p -> null);
 		}
+	}
+	
+	public Promise<Void> repeat(String demonstration, int times, boolean reversed) {
+		Demonstration d = load(demonstration);
+		return repeat(d, times, reversed);
+	}
+	
+	@Override
+	public Promise<Void> repeat(Demonstration d, int times, boolean reverse){
+		return execute(d).then(p -> { 
+			if(reverse) {
+				return execute(d, true);
+			} else {
+				return p;
+			}}).then(p -> {
+				if(times > 1) {
+					return repeat(d, times-1, reverse);
+				} else if(times < 0) {
+					// loop infite if times negative
+					return repeat(d, times, reverse);
+				} else {
+					return null;
+				}
+			});
 	}
 	
 	private Promise<Arm> move(Step step){

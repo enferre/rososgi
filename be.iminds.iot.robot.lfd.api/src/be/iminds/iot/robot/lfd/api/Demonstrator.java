@@ -50,6 +50,9 @@ public interface Demonstrator {
 	Promise<Void> execute(Demonstration d, boolean reversed);
 	
 	Promise<Void> execute(Step step, boolean reversed);
+
+	
+	Promise<Void> repeat(Demonstration d, int times, boolean reverse);
 	
 	// introduce cancelable promises?!
 	void stop();
