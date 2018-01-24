@@ -238,10 +238,12 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	@Override
 	public Step step(String demonstration, Step.Type type) {
-		File demonstrationDir = new File(demonstrationsLocation+File.separator+demonstration);
-		if(!demonstrationDir.exists()) {
-			// this will create the necessary directories...
-			load(demonstration);
+		if(demonstration != null) {
+			File demonstrationDir = new File(demonstrationsLocation+File.separator+demonstration);
+			if(!demonstrationDir.exists()) {
+				// this will create the necessary directories...
+				load(demonstration);
+			}
 		}
 		
 		// record robot state + camera images
@@ -274,16 +276,19 @@ public class DemonstratorImpl implements Demonstrator {
 		}
 		
 		// get frames for all cameras
-		sensors.entrySet().forEach(e -> {
-			String fileName = demonstration
-								+File.separator+"images"+File.separator+e.getKey()+"-"+System.currentTimeMillis()+".jpg";
-			try {
-				toFile(demonstrationsLocation+File.separator+fileName, (Frame)e.getValue().getValue());
-				step.properties.put(e.getKey(), fileName);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		});
+		if(demonstration != null) {
+			sensors.entrySet().forEach(e -> {
+				String fileName = demonstration
+									+File.separator+"images"+File.separator+e.getKey()+"-"+System.currentTimeMillis()+".jpg";
+				try {
+					
+					toFile(demonstrationsLocation+File.separator+fileName, (Frame)e.getValue().getValue());
+					step.properties.put(e.getKey(), fileName);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			});
+		}
 		
 		return step;
 	}
@@ -341,17 +346,27 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	@Override
 	public Promise<Void> repeat(Demonstration d, int times, boolean reverse){
+		final Demonstration toRepeat = new Demonstration();
+		for(int i=0;i<d.steps.size();i++) {
+			Step step = d.steps.get(i);
+			toRepeat.steps.add(step);
+			if(step.type == Step.Type.START) {
+				// clear everything before step when repeating!
+				toRepeat.steps.clear();
+			}
+		}
+		
 		return execute(d).then(p -> { 
 			if(reverse) {
-				return execute(d, true);
+				return execute(toRepeat, true);
 			} else {
 				return p;
 			}}).then(p -> {
 				if(times > 1) {
-					return repeat(d, times-1, reverse);
+					return repeat(toRepeat, times-1, reverse);
 				} else if(times < 0) {
-					// loop infite if times negative
-					return repeat(d, times, reverse);
+					// loop infinite if times negative
+					return repeat(toRepeat, times, reverse);
 				} else {
 					return null;
 				}
@@ -476,6 +491,7 @@ public class DemonstratorImpl implements Demonstrator {
 			String key = split[0].trim();
 			float value = parseFloat(split[1]);
 			assignments.put(key, value);
+			return value;
 		} else if(s.startsWith("[")) {
 			// generate uniform random number in range
 			String[] split = s.substring(1, s.length()-1).split(",");
