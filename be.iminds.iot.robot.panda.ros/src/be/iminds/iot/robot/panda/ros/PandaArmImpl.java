@@ -25,9 +25,14 @@ package be.iminds.iot.robot.panda.ros;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
+import org.ros.message.MessageListener;
 import org.ros.node.ConnectedNode;
 import org.ros.node.topic.Publisher;
+import org.ros.node.topic.Subscriber;
 
+import be.iminds.iot.robot.api.Orientation;
+import be.iminds.iot.robot.api.Pose;
+import be.iminds.iot.robot.api.Position;
 import be.iminds.iot.robot.api.arm.Arm;
 import be.iminds.iot.robot.moveit.api.MoveItArmImpl;
 import franka_control.ErrorRecoveryActionGoal;
@@ -35,6 +40,8 @@ import franka_control.ErrorRecoveryActionGoal;
 public class PandaArmImpl extends MoveItArmImpl implements Arm {
 
 	private Publisher<franka_control.ErrorRecoveryActionGoal> recovery;
+	private Subscriber<franka_msgs.FrankaState> frankaState; 
+
 	
 	public PandaArmImpl(String name, 
 			BundleContext context, 
@@ -58,7 +65,25 @@ public class PandaArmImpl extends MoveItArmImpl implements Arm {
 				"/panda/compute_ik", "/panda/compute_fk", "panda_hand");
 		
 		recovery = node.newPublisher("/panda/error_recovery/goal", franka_control.ErrorRecoveryActionGoal._TYPE);
-		
+
+		frankaState = node.newSubscriber("/panda/franka_state_controller/franka_states", franka_msgs.FrankaState._TYPE);
+		frankaState.addMessageListener(new MessageListener<franka_msgs.FrankaState>() {
+			@Override
+			public void onNewMessage(franka_msgs.FrankaState state) {
+				double[] otee = state.getOTEE();
+				
+				float[] m = new float[9];
+				for(int i=0;i<3;i++) {
+					for(int j=0;j<3;j++) {
+						m[i*3+j] = (float)otee[j*4 + i];
+					}
+				}
+				
+				Position p = new Position((float)otee[12], (float)otee[13], (float)otee[14]);
+				Orientation o = new Orientation(m);
+				Pose pose = new Pose(p, o);
+			}
+		});
 	}
 	
 	@Override
