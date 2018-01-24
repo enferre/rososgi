@@ -111,6 +111,8 @@ function step(type){
  * edit a step
  */
 function showEditDialog(i){
+	currentMode = "edit";
+	
 	var dialog = renderTemplate("dialog", {
 		id : "edit",
 		title : "Manually edit this step parameters ",
@@ -149,8 +151,15 @@ function showEditDialog(i){
 		// TODO only update step?
 		renderDemonstration(currentDemonstration);
 		
+		currentMode = "teaching";
 		$('#dialog-edit').remove();
 	});
+	
+	dialog.find(".cancel").click(function(e){
+		currentMode = "teaching";
+		$('#dialog-edit').remove();
+	});
+
 	
 	// show dialog
 	dialog.modal('show');
