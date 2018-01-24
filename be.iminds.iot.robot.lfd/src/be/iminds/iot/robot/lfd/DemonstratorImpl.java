@@ -100,6 +100,8 @@ public class DemonstratorImpl implements Demonstrator {
 	private enum Mode {JOINT, CARTESIAN};
 	private Mode mode = Mode.CARTESIAN;
 	
+	private FloatParser parser = new FloatParser();
+	
 	@Activate
 	void activate(BundleContext context) {
 		String l = context.getProperty("be.iminds.iot.robot.lfd.demonstrations.location");
@@ -378,7 +380,7 @@ public class DemonstratorImpl implements Demonstrator {
 			// move in joint space
 			List<JointValue> target = arm.getState().stream()
 					.map(js -> js.joint)
-					.map(joint -> new JointValue(joint, JointValue.Type.POSITION, parseFloat(step.properties.get(joint))))
+					.map(joint -> new JointValue(joint, JointValue.Type.POSITION, parser.parseFloat(step.properties.get(joint))))
 					.collect(Collectors.toList());
 			
 			try {
@@ -391,19 +393,23 @@ public class DemonstratorImpl implements Demonstrator {
 			Position p = null;
 			Orientation o = null;
 			try {
-				float x = parseFloat(step.properties.get("x"));
-				float y = parseFloat(step.properties.get("y"));
-				float z = parseFloat(step.properties.get("z"));
+				float x = parser.parseFloat(step.properties.get("x"));
+				float y = parser.parseFloat(step.properties.get("y"));
+				float z = parser.parseFloat(step.properties.get("z"));
 				
 				p = new Position(x,y,z);
 				
 				if(step.properties.containsKey("o_x")) {
-					float ox = parseFloat(step.properties.get("o_x"));
-					float oy = parseFloat(step.properties.get("o_y"));
-					float oz = parseFloat(step.properties.get("o_z"));
-					float ow = parseFloat(step.properties.get("o_w"));
-					
+					float ox = parser.parseFloat(step.properties.get("o_x"));
+					float oy = parser.parseFloat(step.properties.get("o_y"));
+					float oz = parser.parseFloat(step.properties.get("o_z"));
+					float ow = parser.parseFloat(step.properties.get("o_w"));
 					o = new Orientation(ox, oy, oz, ow);
+				} else if(step.properties.containsKey("pitch")) {
+					float yaw = parser.parseFloat(step.properties.get("yaw"));
+					float pitch = parser.parseFloat(step.properties.get("pitch"));
+					float roll = parser.parseFloat(step.properties.get("roll"));
+					o = new Orientation(yaw, pitch, roll);
 				}
 			} catch(Exception e) {
 				throw new RuntimeException("This demonstration has no cartesian space information", e);
@@ -478,42 +484,6 @@ public class DemonstratorImpl implements Demonstrator {
 		}
 	}
 	
-	// TODO use a new hashmap per demonstration?
-	private Map<String, Float> assignments = new HashMap<>();
-	// TODO use seed for repeatable experiments?
-	private Random random = new Random(System.currentTimeMillis());
-	
-	private float parseFloat(String s) {
-		if(s.contains("=")) {
-			// assign a key to a value for future reuse in the demonstration
-			String[] split = s.split("=");
-			// TODO check if only 
-			String key = split[0].trim();
-			float value = parseFloat(split[1]);
-			assignments.put(key, value);
-			return value;
-		} else if(s.startsWith("[")) {
-			// generate uniform random number in range
-			String[] split = s.substring(1, s.length()-1).split(",");
-			float min = Float.parseFloat(split[0]);
-			float max = Float.parseFloat(split[1]);
-			return min+random.nextFloat()*(max-min);
-		}
-		
-		// no assignment or range, try to convert to float
-		try {
-			return Float.parseFloat(s);
-		} catch(NumberFormatException e) {
-			// this  is not a number, try if it is an assigned key
-			if(assignments.containsKey(s)) {
-				return assignments.get(s);
-			} else {
-				throw new RuntimeException("Invalid value: "+s);
-			}
-		}
-	}
-	
-
 	private Map<UUID, Recorder> recorders = new ConcurrentHashMap<>();
 	
 	@Override
