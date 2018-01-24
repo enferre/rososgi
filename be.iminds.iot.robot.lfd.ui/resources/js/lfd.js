@@ -89,15 +89,21 @@ $( document ).ready(function() {
  * record current state as step for current teaching
  */
 function step(type){
-	if(currentMode === "teaching"){
-		$.post("/lfd", {"method" : "step", "type" : type, "name" : currentDemonstration.name}, 
-				function( data ) {
-					var step = data;
-					step.n = currentDemonstration.steps.length + 1;
-					currentDemonstration.steps.push(step);
-					var s = renderTemplate("step", step, $('#steps'));
-				}
-				, "json");
+	if(currentMode === "teaching" || currentRecording !== undefined){
+		if(currentDemonstration === undefined){
+			// just do the step to open/close gripper when needed
+			// in case we are recording guided trajectories
+			$.post("/lfd", {"method" : "step", "type" : type}); 
+		} else {
+			$.post("/lfd", {"method" : "step", "type" : type, "name" : currentDemonstration.name}, 
+					function( data ) {
+						var step = data;
+						step.n = currentDemonstration.steps.length + 1;
+						currentDemonstration.steps.push(step);
+						var s = renderTemplate("step", step, $('#steps'));
+					}
+					, "json");
+		}
 	}
 }
 
