@@ -36,6 +36,7 @@ import be.iminds.iot.robot.api.arm.Arm;
 	"osgi.command.function=position",
 	"osgi.command.function=pose",
 	"osgi.command.function=halt",
+	"osgi.command.function=recover",
 	"osgi.command.function=speed"
 	})
 public class MoveItCLI {
@@ -103,6 +104,10 @@ public class MoveItCLI {
 	
 	public void close(){
 		arm.closeGripper();
+	}
+	
+	public void recover(){
+		arm.recover();
 	}
 	
 	@Reference
