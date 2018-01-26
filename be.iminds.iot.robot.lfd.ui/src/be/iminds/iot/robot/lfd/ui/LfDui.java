@@ -175,11 +175,13 @@ public class LfDui extends HttpServlet {
 		step.properties.entrySet().forEach(e -> {
 			String key = e.getKey();
 			String value = e.getValue();
-			if(value.endsWith(".jpg")) {
-				// remap image urls
-				value = imagePrefix+value;
+			if(value != null && !value.isEmpty()) {
+				if(value.endsWith(".jpg")) {
+					// remap image urls
+					value = imagePrefix+value;
+				}
+				s.add(key, new JsonPrimitive(value));
 			}
-			s.add(key, new JsonPrimitive(value));
 		});
 		return s;
 	}
