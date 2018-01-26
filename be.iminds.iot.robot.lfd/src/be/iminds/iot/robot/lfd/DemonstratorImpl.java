@@ -314,6 +314,15 @@ public class DemonstratorImpl implements Demonstrator {
 		}
 	}
 	
+	@Override
+	public Promise<Recording> executeAndRecord(Demonstration d, boolean reversed) {
+		final Deferred<Recording> deferred = new Deferred<>();
+		final Recorder recorder = new Recorder();
+		recorder.start();
+		execute(d, reversed).onResolve(() -> deferred.resolve(recorder.stop()));
+		return deferred.getPromise();
+	}
+
 	private Promise<Void> execute(Demonstration d, int step, boolean reversed){
 		Deferred<Void> deferred = new Deferred<>();
 		if(reversed && step < 0) {
@@ -348,6 +357,18 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	@Override
 	public Promise<Void> repeat(Demonstration d, int times, boolean reverse){
+		return repeat(d, times, reverse, null);
+	}
+	
+	@Override
+	public Promise<List<Recording>> repeatAndRecord(Demonstration d, int times, boolean reverse) {
+		final Deferred<List<Recording>> deferred = new Deferred<>();
+		final List<Recording> recordings = new ArrayList<>();
+		repeat(d, times, reverse, recordings).onResolve(() -> deferred.resolve(recordings));
+		return deferred.getPromise();
+	}
+	
+	private Promise<Void> repeat(Demonstration d, int times, boolean reverse, List<Recording> recordings){
 		final Demonstration toRepeat = new Demonstration();
 		for(int i=0;i<d.steps.size();i++) {
 			Step step = d.steps.get(i);
@@ -358,22 +379,32 @@ public class DemonstratorImpl implements Demonstrator {
 			}
 		}
 		
+		final Recorder recorder = new Recorder();
+		if(recordings != null) {
+			recorder.start();
+		}
+		
 		return execute(d).then(p -> { 
+			if(recordings != null) {
+				recordings.add(recorder.stop());
+			}
+			
 			if(reverse) {
 				return execute(toRepeat, true);
 			} else {
 				return p;
 			}}).then(p -> {
 				if(times > 1) {
-					return repeat(toRepeat, times-1, reverse);
+					return repeat(toRepeat, times-1, reverse, recordings);
 				} else if(times < 0) {
-					// loop infinite if times negative
-					return repeat(toRepeat, times, reverse);
+					// loop infite if times negative
+					return repeat(d, times, reverse, recordings);
 				} else {
 					return null;
 				}
 			});
 	}
+	
 	
 	private Promise<Arm> move(Step step){
 		if(mode == Mode.JOINT) {
@@ -486,13 +517,23 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	private Map<UUID, Recorder> recorders = new ConcurrentHashMap<>();
 	
+	public Promise<Recording> record(String demonstration, boolean reversed){
+		Demonstration d = load(demonstration);
+		return executeAndRecord(d, reversed);
+	}
+	
+	public Promise<List<Recording>> record(String demonstration, int times, boolean reversed) {
+		Demonstration d = load(demonstration);
+		return repeatAndRecord(d, times, reversed);
+	}
+	
 	@Override
 	public UUID record(int rate) {
 		Recorder r = new Recorder(rate);
 		recorders.put(r.id, r);
 		return r.start();
 	}
-
+	
 	@Override
 	public Recording stop(UUID id) {
 		Recorder r = recorders.remove(id);
@@ -522,6 +563,10 @@ public class DemonstratorImpl implements Demonstrator {
 		
 		private List<String> header;
 		private Map<String, Object> values;
+		
+		public Recorder() {
+			this(10);
+		}
 		
 		public Recorder(int rate) {
 			this.period = (long)(1000000000.0f/rate);

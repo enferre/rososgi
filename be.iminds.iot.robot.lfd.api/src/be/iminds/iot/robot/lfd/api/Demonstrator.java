@@ -61,21 +61,32 @@ public interface Demonstrator {
 	
 	
 	/**
-	 * Execute a demonstration.
-	 * @param d demonstration to execute
-	 * @return a promise that is resolved when the execution is finished.
-	 */
-	default Promise<Void> execute(Demonstration d){
-		return execute(d, false);
-	}
-	
-	/**
 	 * Execute a single step.
 	 * @param step step to execute
 	 * @return a promise that is resolved when the execution is finished.
 	 */
 	default Promise<Void> execute(Step step){
 		return execute(step, false);
+	}
+	
+	
+	/**
+	 * Execute a single step.
+	 * @param step step to execute
+	 * @param reversed if true the demonstration is executed reversed, meaning the steps are iterated in reversed
+	 * order and also opening and closing the gripper is reversed
+	 * @return a promise that is resolved when the execution is finished.
+	 */
+	Promise<Void> execute(Step step, boolean reversed);
+
+	
+	/**
+	 * Execute a demonstration.
+	 * @param d demonstration to execute
+	 * @return a promise that is resolved when the execution is finished.
+	 */
+	default Promise<Void> execute(Demonstration d){
+		return execute(d, false);
 	}
 	
 	/**
@@ -87,24 +98,35 @@ public interface Demonstrator {
 	 */
 	Promise<Void> execute(Demonstration d, boolean reversed);
 	
-	/**
-	 * Execute a step.
-	 * @param step step to execute
-	 * @param reversed if true the demonstration is executed reversed, meaning the steps are iterated in reversed
-	 * order and also opening and closing the gripper is reversed
-	 * @return a promise that is resolved when the execution is finished.
-	 */
-	Promise<Void> execute(Step step, boolean reversed);
-
 
 	/**
-	 * Execute a demonstration for a number of times.
+	 * Execute a demonstration for a number of times. Steps before a START step will only be executed in the first iteration.
 	 * @param d demonstration to execute
 	 * @param times number of times to repeat the demonstration, a negative integer means loop forever until interrupted.
 	 * @param reverse if true the demonstration is first executed reversed before repeating again
 	 * @return a promise that is resolved when the execution is finished.
 	 */
 	Promise<Void> repeat(Demonstration d, int times, boolean reverse);
+	
+	
+	/**
+	 * Execute a demonstration and record it.
+	 * @param d demonstration to execute
+	 * @param reversed if true the demonstration is executed reversed, meaning the steps are iterated in reversed
+	 * @return a promise resolved with the resulting recording
+	 */
+	Promise<Recording> executeAndRecord(Demonstration d, boolean reversed);
+	
+	
+	/**
+	 * Repeat a demonstration and record each execution. Steps before a START step will only be executed in the first iteration and are not recorded.
+	 * @param d demonstration to repeat
+	 * @param times number of times to repeat
+	 * @param reverse also do the reverse operation before executing again
+	 * @return a promise resolved with the resulting recordings
+	 */
+	Promise<List<Recording>> repeatAndRecord(Demonstration d, int times, boolean reverse);
+	
 	
 	// introduce cancelable promises?!
 	/**
