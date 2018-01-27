@@ -1,0 +1,3 @@
+[submodule "be.iminds.iot.robot.panda.jni/jni/libfranka"]
+	path = be.iminds.iot.robot.panda.jni/jni/libfranka
+	url = https://github.com/ibcn-cloudlet/libfranka.git
