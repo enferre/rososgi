@@ -1,0 +1,6 @@
+/bin/
+/generated/
+/native/
+/jni/*.a
+/jni/*.o
+/jni/*.so
