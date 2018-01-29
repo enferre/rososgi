@@ -164,24 +164,21 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> openGripper(float opening) {
-		return openGripper(opening, 100);
+		Deferred<Arm> d = new Deferred();
+		open(d, opening);
+		return d.getPromise();
 	}
 
 	@Override
-	public Promise<Arm> openGripper(float opening, float effort) {
+	public Promise<Arm> closeGripper(float opening, float effort) {
 		Deferred<Arm> d = new Deferred();
-		open(d, opening, effort);
+		close(d, opening, effort);
 		return d.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> closeGripper() {
-		return openGripper(0, 100);
-	}
-
-	@Override
-	public Promise<Arm> closeGripper(float effort) {
-		return openGripper(0, effort);
+		return closeGripper(0, 100);
 	}
 
 	@Override
@@ -254,6 +251,8 @@ public class PandaArmImpl implements Arm {
 
 	private native void recover(Deferred<Arm> d);
 	
-	private native void open(Deferred<Arm> d, float opening, float effort);
+	private native void open(Deferred<Arm> d, float opening);
+	
+	private native void close(Deferred<Arm> d, float opening, float effort);
 	
 }

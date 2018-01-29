@@ -3,6 +3,11 @@
 
 #include <iostream>
 
+#include <franka/exception.h>
+#include <franka/robot.h>
+#include <franka/gripper.h>
+
+
 JavaVM* jvm;
 jclass EXCEPTION_CLASS;
 jmethodID EXCEPTION_INIT;
@@ -69,6 +74,8 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_init
 	        {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}}, {{20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0}},
 	        {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}},
 	        {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}}, {{20.0, 20.0, 20.0, 25.0, 25.0, 25.0}});
+
+	gripper->homing();
 }
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_deinit
@@ -120,6 +127,16 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_recover
 }
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_open
+  (JNIEnv * env, jobject o, jobject d, jfloat op){
+	try {
+		gripper->move(op, 0.1);
+	    resolve(d, o);
+	} catch (franka::Exception const& e) {
+		fail(d, e.what());
+	}
+}
+
+JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_close
   (JNIEnv * env, jobject o, jobject d, jfloat op, jfloat ef){
 	try {
 		gripper->grasp(op, 0.1, ef);

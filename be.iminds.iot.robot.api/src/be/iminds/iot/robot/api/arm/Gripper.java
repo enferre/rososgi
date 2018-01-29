@@ -24,12 +24,12 @@ package be.iminds.iot.robot.api.arm;
 
 public interface Gripper {
 
-	void open(float opening);
+	void open();
 	
-	void open(float opening, float effort);
+	void open(float opening);
 	
 	void close();
 	
-	void close(float effort);
+	void close(float opening, float effort);
 	
 }

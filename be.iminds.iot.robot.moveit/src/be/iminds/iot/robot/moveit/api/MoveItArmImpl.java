@@ -344,24 +344,33 @@ public class MoveItArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> openGripper() {
-		// TODO configure max opening?
 		return openGripper(0.08f);
-	}
-	
-	@Override
-	public Promise<Arm> openGripper(float opening) {
-		return openGripper(opening, 100);
 	}
 
 	@Override
-	public Promise<Arm> openGripper(float opening, float effort) {
+	public Promise<Arm> openGripper(float opening) {
+		return gripperCommand(opening, 0);
+	}
+
+	@Override
+	public Promise<Arm> closeGripper(float opening, float effort) {
+		return gripperCommand(opening, effort);
+	}
+	
+	@Override
+	public Promise<Arm> closeGripper() {
+		return closeGripper(0, 100);
+	}
+	
+	private Promise<Arm> gripperCommand(float opening, float effort) {
 		Deferred<Arm> deferred = new Deferred<>();
 		
 		GripperCommandActionGoal cmdMsg = gripper.newMessage();
 		GripperCommandGoal goal = cmdMsg.getGoal();
 		GripperCommand cmd = goal.getCommand();
 		cmd.setPosition(opening);
-		cmd.setMaxEffort(effort);
+		if(effort > 0)
+			cmd.setMaxEffort(effort);
 		
 		GoalID goalId = factory.newFromType(actionlib_msgs.GoalID._TYPE);
 		UUID gid = UUID.randomUUID();
@@ -372,16 +381,6 @@ public class MoveItArmImpl implements Arm {
 		gripper.publish(cmdMsg);
 		
 		return deferred.getPromise();
-	}
-
-	@Override
-	public Promise<Arm> closeGripper(float effort) {
-		return openGripper(0, effort);
-	}
-	
-	@Override
-	public Promise<Arm> closeGripper() {
-		return openGripper(0);
 	}
 
 	@Override
