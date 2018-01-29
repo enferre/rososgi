@@ -20,7 +20,7 @@
  *  Contributors:
  *      Tim Verbelen, Steven Bohez
  *******************************************************************************/
-package be.iminds.iot.robot.moveit;
+package be.iminds.iot.robot.cli;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -28,47 +28,61 @@ import org.osgi.service.component.annotations.Reference;
 import be.iminds.iot.robot.api.arm.Arm;
 
 @Component(service={Object.class},
-	property = {"osgi.command.scope=moveit",
+	property = {"osgi.command.scope=arm", 
 	"osgi.command.function=state",
-	"osgi.command.function=reset",
 	"osgi.command.function=open",
 	"osgi.command.function=close",
 	"osgi.command.function=position",
-	"osgi.command.function=pose",
+	"osgi.command.function=velocity",
+	"osgi.command.function=torque",
 	"osgi.command.function=move",
+	"osgi.command.function=pose",
 	"osgi.command.function=halt",
+	"osgi.command.function=stop",
 	"osgi.command.function=recover",
-	"osgi.command.function=speed"
-	})
-public class MoveItCLI {
+	"osgi.command.function=guide"})
+public class ArmCLI {
 
 	private Arm arm;
-	
-	public void reset(){
-		arm.reset();
-	}
 	
 	public void state(){
 		arm.getState().forEach(s -> System.out.println(s.joint+" "+s.position+" "+s.velocity+" "+s.torque));
 	}
-	
-	// positions as index,position pairs
-	public void position(String positions){
-		String[] pairs = positions.split(" ");
-		for(String pair : pairs){
-			String[] kv = pair.split(",");
-			int joint = Integer.parseInt(kv[0]);
-			float val = Float.parseFloat(kv[1]);
-			arm.setPosition(joint, val);
-		}
-	}
-	
+
 	public void position(float... positions){
 		arm.setPositions(positions);
 	}
 	
 	public void position(int joint, float val){
 		arm.setPosition(joint, val).then(p -> {System.out.println("DONE"); return null;}, p->p.getFailure().printStackTrace());
+	}
+	
+	public void velocity(int joint, float val){
+		arm.setVelocity(joint, val);
+	}
+	
+	public void velocity(float... velocities) {
+		arm.setVelocities(velocities);
+	}
+	
+	public void torque(int joint, float val){
+		arm.setTorque(joint, val);
+	}
+	
+	public void torque(float... torques) {
+		arm.setTorques(torques);
+	}
+	
+	public void open(float opening){
+		arm.openGripper(opening);
+	}
+	
+	public void open(){
+		arm.openGripper();
+	}
+	
+	public void close(){
+		arm.closeGripper();
 	}
 	
 	public void pose() {
@@ -92,7 +106,7 @@ public class MoveItCLI {
 		arm.move(vx, vy, vz, ox, oy, oz).then(p -> {System.out.println("DONE");return null;}, p->{p.getFailure().printStackTrace();});
 	}
 	
-	public void halt(){
+	public void stop(){
 		arm.stop();
 	}
 	
@@ -104,20 +118,12 @@ public class MoveItCLI {
 		arm.setSpeed(s);
 	}
 	
-	public void open(float opening){
-		arm.openGripper(opening);
-	}
-	
-	public void open(){
-		arm.openGripper();
-	}
-	
-	public void close(){
-		arm.closeGripper();
-	}
-	
 	public void recover(){
 		arm.recover();
+	}
+	
+	public void guide(){
+		arm.guide();
 	}
 	
 	@Reference

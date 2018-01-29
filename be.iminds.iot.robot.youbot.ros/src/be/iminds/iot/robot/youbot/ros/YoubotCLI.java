@@ -37,15 +37,7 @@ import be.iminds.iot.robot.api.omni.OmniDirectional;
 	"osgi.command.function=grippose",
 	"osgi.command.function=grip",
 	"osgi.command.function=invgrip",
-	"osgi.command.function=open",
-	"osgi.command.function=close",
-	"osgi.command.function=position",
-	"osgi.command.function=velocity",
-	"osgi.command.function=torque",
-	"osgi.command.function=move",
-	"osgi.command.function=pose",
-	"osgi.command.function=halt",
-	"osgi.command.function=arm"})
+	"osgi.command.function=halt"})
 public class YoubotCLI {
 
 	private Arm arm;
@@ -113,60 +105,9 @@ public class YoubotCLI {
 			.then(p -> arm.reset());
 	}
 	
-	public void arm(){
-		arm.getState().stream().forEach(joint -> System.out.println(joint.joint+" - pos: "+joint.position+" vel: "+joint.velocity+" torque: "+joint.torque));
-	}
-
-	// positions as index,position pairs
-	public void position(String positions){
-		String[] pairs = positions.split(" ");
-		for(String pair : pairs){
-			String[] kv = pair.split(",");
-			int joint = Integer.parseInt(kv[0]);
-			float val = Float.parseFloat(kv[1]);
-			arm.setPosition(joint, val);
-		}
-	}
-	
-	public void position(float... positions){
-		arm.setPositions(positions);
-	}
-	
-	public void position(int joint, float val){
-		arm.setPosition(joint, val);
-	}
-	
-	public void velocity(int joint, float val){
-		arm.setVelocity(joint, val);
-	}
-	
-	public void torque(int joint, float val){
-		arm.setTorque(joint, val);
-	}
-	
-	public void move(float vx, float vy, float va){
-		base.move(vx, vy, va);
-	}
-	
-	public void pose(float x, float y, float z){
-		arm.moveTo(x,y,z);
-	}
-	
 	public void halt(){
 		base.stop();
 		arm.stop();
-	}
-	
-	public void open(float opening){
-		arm.openGripper(opening);
-	}
-	
-	public void open(){
-		arm.openGripper();
-	}
-	
-	public void close(){
-		arm.closeGripper();
 	}
 	
 	@Reference
