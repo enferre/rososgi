@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -95,8 +94,6 @@ public class DemonstratorImpl implements Demonstrator {
 	// For now only listen for cameras
 	private Map<String, Camera> sensors = new ConcurrentHashMap<>();
 
-	private ControllerManager ctrl;
-	
 	private enum Mode {JOINT, CARTESIAN};
 	private Mode mode = Mode.CARTESIAN;
 	
@@ -123,11 +120,6 @@ public class DemonstratorImpl implements Demonstrator {
 		if(!f.exists() || !f.isDirectory()) {
 			f.mkdirs();
 		}
-	}
-	
-	@Reference
-	void setControllerManager(ControllerManager c) {
-		this.ctrl = c;
 	}
 	
 	@Reference
@@ -496,23 +488,14 @@ public class DemonstratorImpl implements Demonstrator {
 		ImageIO.write(img, formatName, new File(fileName));
 	}
 
-	public void guide() {
-		guide(true);
-	}
-	
 	public void mode(String m) {
 		Mode mode = Mode.valueOf(m);
 		this.mode = mode;
 	}
 	
 	@Override
-	public void guide(boolean guide) {
-		// TODO configure controller?!
-		if(guide) {
-			ctrl.stop("effort_joint_trajectory_controller");
-		} else {
-			ctrl.start("effort_joint_trajectory_controller");
-		}
+	public void guide() {
+		arm.guide();
 	}
 	
 	private Map<UUID, Recorder> recorders = new ConcurrentHashMap<>();

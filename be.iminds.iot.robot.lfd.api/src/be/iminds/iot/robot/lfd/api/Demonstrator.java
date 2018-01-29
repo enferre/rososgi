@@ -141,9 +141,8 @@ public interface Demonstrator {
 
 	/**
 	 * Set the robot to guide mode to allow the operator to demonstrate.
-	 * @param guide
 	 */
-	void guide(boolean guide);
+	void guide();
 	
 
 	/**

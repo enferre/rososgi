@@ -681,4 +681,9 @@ public class ArmImpl implements Arm {
 		throw new UnsupportedOperationException("Cartesian velocity control not supported");
 	}
 
+	@Override
+	public void guide() {
+		throw new UnsupportedOperationException("Youbot does not support guide mode");
+	}
+
 }

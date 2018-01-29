@@ -58,6 +58,12 @@ import be.iminds.iot.robot.api.arm.Arm;
 import control_msgs.GripperCommand;
 import control_msgs.GripperCommandActionGoal;
 import control_msgs.GripperCommandGoal;
+import controller_manager_msgs.LoadControllerRequest;
+import controller_manager_msgs.LoadControllerResponse;
+import controller_manager_msgs.SwitchControllerRequest;
+import controller_manager_msgs.SwitchControllerResponse;
+import controller_manager_msgs.UnloadControllerRequest;
+import controller_manager_msgs.UnloadControllerResponse;
 import geometry_msgs.PoseStamped;
 import moveit_msgs.Constraints;
 import moveit_msgs.GetPositionFKRequest;
@@ -104,6 +110,11 @@ public class MoveItArmImpl implements Arm {
 	protected ServiceClient<moveit_msgs.GetPositionIKRequest, moveit_msgs.GetPositionIKResponse> ik;
 	protected ServiceClient<moveit_msgs.GetPositionFKRequest, moveit_msgs.GetPositionFKResponse> fk;
 
+	protected ServiceClient<controller_manager_msgs.LoadControllerRequest, controller_manager_msgs.LoadControllerResponse> load;
+	protected ServiceClient<controller_manager_msgs.UnloadControllerRequest, controller_manager_msgs.UnloadControllerResponse> unload;
+	protected ServiceClient<controller_manager_msgs.SwitchControllerRequest, controller_manager_msgs.SwitchControllerResponse> swtch;
+	
+	
 	protected float speed = 1.0f;
 	
 	protected Map<UUID, Deferred<Arm>> inprogress = new ConcurrentHashMap<>();
@@ -131,6 +142,8 @@ public class MoveItArmImpl implements Arm {
 		initGripper(gripper_topic);
 
 		initStateListener(joint_states_topic, joints);
+		
+		loadControllerServices();
 		
 		loadIKService();
 		loadFKService();
@@ -623,6 +636,7 @@ public class MoveItArmImpl implements Arm {
 		}
 	}
 
+	
 	@Override
 	public Pose getPose() {
 		try {
@@ -667,4 +681,156 @@ public class MoveItArmImpl implements Arm {
 		throw new UnsupportedOperationException("Cartesian velocity control not supported");
 	}
 
+	public void guide() {
+		stopController("effort_joint_trajectory_controller");
+	}
+	
+	private void loadControllerServices() {
+		// TODO make service uris configurable?!
+		try {
+			load = node.newServiceClient("/panda/controller_manager/load_controller", controller_manager_msgs.LoadController._TYPE);
+			unload = node.newServiceClient("/panda/controller_manager/unload_controller", controller_manager_msgs.UnloadController._TYPE);
+			swtch = node.newServiceClient("/panda/controller_manager/switch_controller", controller_manager_msgs.SwitchController._TYPE);
+		} catch(Exception e) {
+			// do nothing ... controller metohds will just fail when no services present
+		}
+	}
+	
+	private  void loadController(String controller) {
+		if(load == null) {
+			loadControllerServices();
+			if(load == null) 
+				throw new RuntimeException("ROS controller load service unavailable");
+		}
+		
+		Deferred<Void> deferred = new Deferred<>();
+		LoadControllerRequest rq = load.newMessage();
+		rq.setName(controller);
+		load.call(rq, new ServiceResponseListener<LoadControllerResponse>() {
+			
+			@Override
+			public void onSuccess(LoadControllerResponse resp) {
+				if(resp.getOk()) {
+					deferred.resolve(null);
+				} else {
+					deferred.fail(new Exception("Failed to load controller "+controller));
+				}
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+		});
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void unloadController(String controller) {
+		if(unload == null) {
+			loadControllerServices();
+			if(unload == null) 
+				throw new RuntimeException("ROS controller unload service unavailable");
+		}
+		
+		Deferred<Void> deferred = new Deferred<>();
+		UnloadControllerRequest rq = unload.newMessage();
+		rq.setName(controller);
+		unload.call(rq, new ServiceResponseListener<UnloadControllerResponse>() {
+			
+			@Override
+			public void onSuccess(UnloadControllerResponse resp) {
+				if(resp.getOk()) {
+					deferred.resolve(null);
+				} else {
+					deferred.fail(new Exception("Failed to load controller "+controller));
+				}
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+		});
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void startController(String controller) {
+		if(swtch == null) {
+			loadControllerServices();
+			if(swtch == null) 
+				throw new RuntimeException("ROS controller switch service unavailable");
+		}
+
+		Deferred<Void> deferred = new Deferred<>();
+		SwitchControllerRequest rq = swtch.newMessage();
+		List<String> toStart = new ArrayList<>();
+		toStart.add(controller);
+		rq.setStartControllers(toStart);
+		rq.setStrictness(1);
+		swtch.call(rq, new ServiceResponseListener<SwitchControllerResponse>() {
+			
+			@Override
+			public void onSuccess(SwitchControllerResponse resp) {
+				if(resp.getOk()) {
+					deferred.resolve(null);
+				} else {
+					deferred.fail(new Exception("Failed to load controller "+controller));
+				}
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+		});
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private void stopController(String controller) {
+		if(swtch == null) {
+			loadControllerServices();
+			if(swtch == null) 
+				throw new RuntimeException("ROS controller switch service unavailable");
+		}
+			
+		Deferred<Void> deferred = new Deferred<>();
+		SwitchControllerRequest rq = swtch.newMessage();
+		List<String> toStop = new ArrayList<>();
+		toStop.add(controller);
+		rq.setStopControllers(toStop);
+		rq.setStrictness(1);
+		swtch.call(rq, new ServiceResponseListener<SwitchControllerResponse>() {
+			
+			@Override
+			public void onSuccess(SwitchControllerResponse resp) {
+				if(resp.getOk()) {
+					deferred.resolve(null);
+				} else {
+					deferred.fail(new Exception("Failed to load controller "+controller));
+				}
+			}
+			
+			@Override
+			public void onFailure(RemoteException ex) {
+				deferred.fail(ex);
+			}
+		});
+		try {
+			deferred.getPromise().getValue();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

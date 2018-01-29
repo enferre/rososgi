@@ -308,6 +308,10 @@ public class PandaArmImpl implements Arm {
 		return -1;
 	}
 
+	public void guide() {
+		stop();
+	}
+	
 	private native void speed(float s);
 	
 	private native float[] joints();
@@ -331,5 +335,5 @@ public class PandaArmImpl implements Arm {
 	private native void open(Deferred<Arm> d, float opening);
 	
 	private native void close(Deferred<Arm> d, float opening, float effort);
-	
+
 }

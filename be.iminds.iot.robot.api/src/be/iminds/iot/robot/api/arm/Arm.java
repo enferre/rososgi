@@ -50,7 +50,7 @@ public interface Arm extends Robot<Arm> {
 	
 	void setProperty(String property, Object value);
 
-	
+
 	Promise<Arm> setPosition(int joint, float position);
 	
 	Promise<Arm> setVelocity(int joint, float velocity);
@@ -99,4 +99,6 @@ public interface Arm extends Robot<Arm> {
 
 	Promise<Arm> move(float vx, float vy, float vz, float ox, float oy, float oz);
 
+	
+	void guide();
 }

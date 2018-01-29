@@ -144,11 +144,7 @@ public class LfDui extends HttpServlet {
 			} else if(method.equals("recover")) {
 				demonstrator.recover();
 			} else if(method.equals("guide")) {
-				boolean guide = true;
-				if(request.getParameter("guide") != null) {
-					guide = Boolean.parseBoolean(request.getParameter("guide"));
-				}
-				demonstrator.guide(guide);
+				demonstrator.guide();
 			} else if(method.equals("record")) {
 				// TODO parameterize the rate
 				UUID id = demonstrator.record(10);
@@ -190,7 +186,7 @@ public class LfDui extends HttpServlet {
 		// TODO recover?
 		
 		// set back to guide mode after execution?
-		demonstrator.guide(true);
+		demonstrator.guide();
 		
 		JsonObject result = new JsonObject();
 		result.add("success", new JsonPrimitive(false));
@@ -201,7 +197,7 @@ public class LfDui extends HttpServlet {
 	
 	private void executionSuccess(PrintWriter writer) {
 		// set back to guide mode after execution
-		demonstrator.guide(true);
+		demonstrator.guide();
 		
 		JsonObject result = new JsonObject();
 		result.add("success", new JsonPrimitive(true));
