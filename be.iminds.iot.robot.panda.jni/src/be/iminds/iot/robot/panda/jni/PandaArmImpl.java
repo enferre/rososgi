@@ -28,7 +28,9 @@ import java.util.Map;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 
 import be.iminds.iot.robot.api.JointDescription;
@@ -37,7 +39,11 @@ import be.iminds.iot.robot.api.JointValue;
 import be.iminds.iot.robot.api.Pose;
 import be.iminds.iot.robot.api.arm.Arm;
 
-@Component
+@Component(
+	configurationPid="be.iminds.iot.robot.panda.ros.Panda", 
+	// for now reuse the same config as the ROS impl
+	// so we can just swap these bundles
+	configurationPolicy=ConfigurationPolicy.REQUIRE)
 public class PandaArmImpl implements Arm {
 
 	static {
@@ -49,10 +55,17 @@ public class PandaArmImpl implements Arm {
 		}
 	}
 	
+	private List<JointDescription> joints;
+	
+	private float speed = 0.25f;
+	
 	@Activate
 	public void activate(Map<String, String> config) {
+		System.out.println("Activate Panda?!");
 		String robot_ip = config.get("robot_ip");
 		init(robot_ip);
+		
+		speed(speed);
 	}
 	
 	@Deactivate
@@ -66,176 +79,181 @@ public class PandaArmImpl implements Arm {
 	
 	@Override
 	public Promise<Arm> waitFor(long time) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("waitFor not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> stop() {
-		// TODO Auto-generated method stub
-		return null;
+		Deferred d = new Deferred();
+		stop(d);
+		return d.getPromise();
 	}
 
 	@Override
 	public List<JointDescription> getJoints() {
-		// TODO Auto-generated method stub
+		// TODO
 		return null;
 	}
 
 	@Override
 	public List<JointState> getState() {
-		// TODO Auto-generated method stub
+		// TODO
 		return null;
 	}
 
 	@Override
 	public Pose getPose() {
-		// TODO Auto-generated method stub
+		// TODO
 		return null;
 	}
 
 	@Override
 	public float getSpeed() {
-		// TODO Auto-generated method stub
-		return 0;
+		return speed;
 	}
 
 	@Override
 	public void setSpeed(float speed) {
-		// TODO Auto-generated method stub
-		
+		this.speed = speed;
+		speed(speed);
 	}
 
 	@Override
 	public Object getProperty(String property) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void setProperty(String property, Object value) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public Promise<Arm> setPosition(int joint, float position) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setPosition not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setVelocity(int joint, float velocity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setVelocity not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setTorque(int joint, float torque) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setTorque not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setPositions(float... position) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setPositions not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setVelocities(float... velocity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setVelocities not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setTorques(float... torque) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setTorques not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> openGripper() {
-		// TODO Auto-generated method stub
-		return null;
+		return openGripper(0.08f);
 	}
 
 	@Override
 	public Promise<Arm> openGripper(float opening) {
-		// TODO Auto-generated method stub
-		return null;
+		return openGripper(opening, 100);
 	}
 
 	@Override
 	public Promise<Arm> openGripper(float opening, float effort) {
-		// TODO Auto-generated method stub
-		return null;
+		Deferred<Arm> d = new Deferred();
+		open(d, opening, effort);
+		return d.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> closeGripper() {
-		// TODO Auto-generated method stub
-		return null;
+		return openGripper(0, 100);
 	}
 
 	@Override
 	public Promise<Arm> closeGripper(float effort) {
-		// TODO Auto-generated method stub
-		return null;
+		return openGripper(0, effort);
 	}
 
 	@Override
 	public Promise<Arm> setPositions(Collection<JointValue> positions) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setPositions not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setVelocities(Collection<JointValue> velocities) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setVelocities not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> setTorques(Collection<JointValue> torques) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("setTorques not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> reset() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("reset not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> stop(int joint) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("stop per joint not implemented...");
 	}
 
 	@Override
 	public Promise<Arm> recover() {
-		// TODO Auto-generated method stub
-		return null;
+		Deferred<Arm> d = new Deferred<>();
+		recover(d);
+		return d.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z) {
-		// TODO Auto-generated method stub
-		return null;
+		Pose current = getPose();
+		return moveTo(x, y, z, current.orientation.x, current.orientation.y, current.orientation.z, current.orientation.w);
 	}
 
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow) {
-		// TODO Auto-generated method stub
-		return null;
+		System.out.println("MOVE!");
+		Deferred<Arm> d = new Deferred<>();
+		moveTo(d, x, y, z, ox, oy, oz, ow);
+		return d.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> moveTo(Pose p) {
-		// TODO Auto-generated method stub
-		return null;
+		return moveTo(p.position.x, p.position.y, p.position.z, p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
 	}
 
+
+	private native void speed(float s);
+	
+	private native float[] joints();
+	
+	private native float[] pose();
+
+	private native void positions(Deferred<Arm> d, float p1, float p2, float p3, float p4, float p5, float p6, float p7);
+	
+	private native void velocities(Deferred<Arm> d, float v1, float v2, float v3, float v4, float v5, float v6, float v7);
+	
+	private native void torques(Deferred<Arm> d, float t1, float t2, float t3, float t4, float t5, float t6, float t7);
+
+	private native void moveTo(Deferred<Arm> d, float x, float y, float z, float ox, float oy, float oz, float ow);
+
+	private native void stop(Deferred<Arm> d);
+
+	private native void recover(Deferred<Arm> d);
+	
+	private native void open(Deferred<Arm> d, float opening, float effort);
+	
 }
