@@ -9,10 +9,11 @@ JAVA_PLATFORMINCLUDE := $(JAVA_INCLUDE)/$(JDKPLATFORMINCLUDESUBDIR)
 
 HEADERS := $(wildcard *.h)
 SRC := $(wildcard *.cpp)
-INCLUDES := -Ilibfranka/include -I$(JAVA_INCLUDE) -I$(JAVA_PLATFORMINCLUDE) -I$(JAVAH) 
+INCLUDES := -Ilibfranka/common/include -Ilibfranka/include -I$(JAVA_INCLUDE) -I$(JAVA_PLATFORMINCLUDE) -I$(JAVAH) 
 OBJECTS := $(SRC:.cpp=.o)
+FLAGS := -std=c++11
 CCFLAGS := -O3 -w -fPIC
-LINKS := -L. -lfranka
+LINKS := -L. -lfranka -lPocoNet -lPocoFoundation
 LIB := libpanda.so
 DEPLOY_DIR := ../native/$(OS)/$(ARCH)
 
@@ -26,10 +27,10 @@ libfranka.a:
 	make franka; \
 	cp libfranka.a ../..
 
-compile: $(SRC)
+compile: $(SRC) libfranka.a
 	$(CXX) $(FLAGS) $(CCFLAGS) $(INCLUDES) -c $(SRC)
 
-link: compile libfranka
+link: compile
 	$(CXX) -shared $(FLAGS) $(CCFLAGS) $(OBJECTS) $(LINKS) -o $(LIB)
 
 install: link
