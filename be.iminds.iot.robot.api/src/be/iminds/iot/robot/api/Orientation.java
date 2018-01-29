@@ -18,7 +18,7 @@ public class Orientation {
 	
 	public Orientation(float[] mat) {
 		// 3x3 Rotation matrix
-		if(mat.length != 9)
+		if(mat.length < 9)
 			throw new RuntimeException("Rotation matrix should be 3x3");
 		
 		w = (float)(Math.sqrt(1.0 + mat[0] + mat[4] + mat[8]) / 2.0f);

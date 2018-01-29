@@ -22,6 +22,7 @@
  *******************************************************************************/
 package be.iminds.iot.robot.panda.jni;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,9 @@ import org.osgi.util.promise.Promise;
 import be.iminds.iot.robot.api.JointDescription;
 import be.iminds.iot.robot.api.JointState;
 import be.iminds.iot.robot.api.JointValue;
+import be.iminds.iot.robot.api.Orientation;
 import be.iminds.iot.robot.api.Pose;
+import be.iminds.iot.robot.api.Position;
 import be.iminds.iot.robot.api.arm.Arm;
 
 @Component(
@@ -55,7 +58,7 @@ public class PandaArmImpl implements Arm {
 		}
 	}
 	
-	private List<JointDescription> joints;
+	private final List<JointDescription> joints = new ArrayList<>();
 	
 	private float speed = 0.25f;
 	
@@ -63,6 +66,15 @@ public class PandaArmImpl implements Arm {
 	public void activate(Map<String, String> config) {
 		System.out.println("Activate Panda?!");
 		String robot_ip = config.get("robot_ip");
+		
+		joints.add(new JointDescription("panda_joint1", -2.9671f, 2.9671f, -2.5f, 2.5f, -87f, 87f));
+		joints.add(new JointDescription("panda_joint2", -1.8326f, 1.8326f, -2.5f, 2.5f, -87f, 87f));
+		joints.add(new JointDescription("panda_joint3", -2.9671f, 2.9671f, -2.5f, 2.5f, -87f, 87f));
+		joints.add(new JointDescription("panda_joint4", -3.1416f, 0.0873f, -2.5f, 2.5f, -87f, 87f));
+		joints.add(new JointDescription("panda_joint5", -2.9671f, 2.9671f, -3f, 3f, -12f, 12f));
+		joints.add(new JointDescription("panda_joint6", -0.0873f, 3.8223f, -3f, 3f, -12f, 12f));
+		joints.add(new JointDescription("panda_joint7", -2.9671f, 2.9671f, -3f, 3f, -12f, 12f));
+		
 		init(robot_ip);
 		
 		speed(speed);
@@ -91,20 +103,25 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public List<JointDescription> getJoints() {
-		// TODO
-		return null;
+		return joints;
 	}
 
 	@Override
 	public List<JointState> getState() {
-		// TODO
-		return null;
+		float[] state = joints();
+		List<JointState> result = new ArrayList<>();
+		for(int i=0; i<7;i++) {
+			result.add(new JointState(joints.get(i).name, state[i], state[i+7], state[i+14]));
+		}
+		return result;
 	}
 
 	@Override
 	public Pose getPose() {
-		// TODO
-		return null;
+		float[] p = pose();
+		Orientation o = new Orientation(p);
+		Position pos = new Position(p[9], p[10], p[11]);
+		return new Pose(pos, o);
 	}
 
 	@Override

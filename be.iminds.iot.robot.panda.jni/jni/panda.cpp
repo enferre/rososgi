@@ -17,7 +17,10 @@ jmethodID DEFERRED_FAIL;
 
 franka::Robot* robot;
 franka::Gripper* gripper;
+
+bool moving = false;
 float speed = 0.25;
+franka::RobotState robot_state;
 
 
 void throwException(const char * msg){
@@ -97,13 +100,44 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_speed
 
 JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_joints
   (JNIEnv * env, jobject o){
+	if(!moving){
+		robot_state = robot->readOnce();
+	}
 
+	jfloatArray result = env->NewFloatArray(21);
+	int i=0;
+	jfloat data[21];
+	for(i = 0; i<7 ; i++){
+		data[i] = robot_state.q[i];
+		data[i+7] = robot_state.dq[i];
+		data[i+14] = robot_state.tau_J[i];
+	}
+	env->SetFloatArrayRegion(result, 0, 21, data);
+	return result;
 }
 
 
 JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_pose
   (JNIEnv * env, jobject o){
+	if(!moving){
+		robot_state = robot->readOnce();
+	}
 
+	jfloatArray result = env->NewFloatArray(12);
+	int i=0;
+	jfloat data[12];
+	// rotation  matrix
+	for(int i=0;i<3;i++) {
+		for(int j=0;j<3;j++) {
+			data[i*3+j] = (float)robot_state.O_T_EE[j*4 + i];
+		}
+	}
+	// position x y z
+	data[9] = robot_state.O_T_EE[12];
+	data[10] = robot_state.O_T_EE[13];
+	data[11] = robot_state.O_T_EE[14];
+	env->SetFloatArrayRegion(result, 0, 12, data);
+	return result;
 }
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_stop
