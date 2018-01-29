@@ -21,11 +21,14 @@
 	org.ros.rosjava_messages.control_msgs;version=latest,\
 	be.iminds.iot.robot.moveit;version=latest
 	
--runbundles.panda: \
-	be.iminds.iot.ros.panda,\
-	be.iminds.iot.robot.panda.ros;version=latest,\
-	org.ros.rosjava_messages.franka;version=latest
+#-runbundles.panda: \
+#	be.iminds.iot.ros.panda,\
+#	be.iminds.iot.robot.panda.ros;version=latest,\
+#	org.ros.rosjava_messages.franka;version=latest
 	
+-runbundles.panda: \
+	be.iminds.iot.robot.panda.jni;version=latest
+
 
 -runproperties.panda: \
 	ros.core.native=true
