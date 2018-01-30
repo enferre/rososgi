@@ -35,6 +35,7 @@ import be.iminds.iot.robot.api.arm.Arm;
 	"osgi.command.function=close",
 	"osgi.command.function=position",
 	"osgi.command.function=pose",
+	"osgi.command.function=move",
 	"osgi.command.function=halt",
 	"osgi.command.function=recover",
 	"osgi.command.function=speed"
@@ -67,7 +68,7 @@ public class MoveItCLI {
 	}
 	
 	public void position(int joint, float val){
-		arm.setPosition(joint, val);
+		arm.setPosition(joint, val).then(p -> {System.out.println("DONE"); return null;}, p->p.getFailure().printStackTrace());
 	}
 	
 	public void pose() {
@@ -75,11 +76,20 @@ public class MoveItCLI {
 	}
 	
 	public void pose(float x, float y, float z){
-		arm.moveTo(x, y, z);
+		arm.moveTo(x, y, z).then(p -> {System.out.println("DONE");return null;}, p->{p.getFailure().printStackTrace();});
+		
 	}
 	
 	public void pose(float x, float y, float z, float ox, float oy, float oz, float ow){
-		arm.moveTo(x, y, z, ox, oy, oz, ow);
+		arm.moveTo(x, y, z, ox, oy, oz, ow).then(p -> {System.out.println("DONE");return null;}, p->{p.getFailure().printStackTrace();});
+	}
+	
+	public void move(float vx, float vy, float vz) {
+		arm.move(vx, vy, vz).then(p -> {System.out.println("DONE");return null;}, p->{p.getFailure().printStackTrace();});
+	}
+	
+	public void move(float vx, float vy, float vz, float ox, float oy, float oz) {
+		arm.move(vx, vy, vz, ox, oy, oz).then(p -> {System.out.println("DONE");return null;}, p->{p.getFailure().printStackTrace();});
 	}
 	
 	public void halt(){

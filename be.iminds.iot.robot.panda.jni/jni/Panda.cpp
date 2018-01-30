@@ -24,6 +24,11 @@ float speed = 0.25;
 franka::RobotState robot_state;
 
 
+using Vector6d = Eigen::Matrix<double, 6, 1, Eigen::ColMajor>;
+Vector6d velocity_goal;
+Vector6d velocity_current;
+
+
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_init
   (JNIEnv * env, jobject o, jstring s){
 	java = new Java(env);
@@ -150,6 +155,50 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_positions
 	} catch (const franka::Exception& e) {
 		java->fail(d, e.what());
 	}
+}
+
+JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_velocities
+  (JNIEnv * env, jobject o, jobject d, jfloat v1, jfloat v2, jfloat v3, jfloat v4, jfloat v5, jfloat v6, jfloat v7){
+
+}
+
+JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_move
+  (JNIEnv * env, jobject o, jobject d, jfloat vx, jfloat vy, jfloat vz, jfloat ox, jfloat oy, jfloat oz){
+
+	try {
+		velocity_goal << vx,vy,vz,ox,oy,oz;
+		if(!moving) {
+			moving = true;
+			velocity_current << 0,0,0,0,0,0;
+			robot->control([=, &velocity_goal, &velocity_current](const franka::RobotState&,
+							franka::Duration time_step) -> franka::CartesianVelocities {
+						double step = 0.0025;
+
+						for(int i=0;i<6;i++) {
+							if(velocity_current(i) < velocity_goal(i) - step) {
+								velocity_current(i) = velocity_current(i) + step;
+							} else if(velocity_current(i) > velocity_goal(i) + step) {
+								velocity_current(i) = velocity_current(i) - step;
+							} else {
+								velocity_current(i) = velocity_goal(i);
+							}
+						}
+
+						std::array<double, 6> v;
+						Eigen::VectorXd::Map(&v[0], 6) = velocity_current;
+
+						franka::CartesianVelocities output(v);
+						return output;
+					});
+			java->resolve(d, o);
+		} else {
+			java->resolve(d, o);
+		}
+	} catch (const franka::ControlException& e) {
+		moving = false;
+		java->fail(d, e.what());
+	}
+
 }
 
 

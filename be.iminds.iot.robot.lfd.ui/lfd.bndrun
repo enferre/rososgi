@@ -27,7 +27,9 @@
 #	org.ros.rosjava_messages.franka;version=latest
 	
 -runbundles.panda: \
-	be.iminds.iot.robot.panda.jni;version=latest
+	be.iminds.iot.robot.panda.jni;version=latest,\
+	be.iminds.iot.ros.joystick;version=latest,\
+	be.iminds.iot.robot.input.joystick;version=latest
 
 
 -runproperties.panda: \

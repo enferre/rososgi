@@ -60,7 +60,7 @@ public class PandaArmImpl implements Arm {
 		}
 	}
 	
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private ExecutorService executor = Executors.newFixedThreadPool(2);
 	
 	private final List<JointDescription> joints = new ArrayList<>();
 	
@@ -288,6 +288,18 @@ public class PandaArmImpl implements Arm {
 		return moveTo(p.position.x, p.position.y, p.position.z, p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
 	}
 
+	@Override
+	public Promise<Arm> move(float vx, float vy, float vz) {
+		return move(vx, vy, vz, 0, 0, 0);
+	}
+
+	@Override
+	public Promise<Arm> move(float vx, float vy, float vz, float ox, float oy, float oz) {
+		final Deferred<Arm> d = new Deferred<>();
+		executor.execute(()-> move(d, vx, vy, vz, ox, oy, oz));
+		return d.getPromise();
+	}
+	
 	private int getJointIndex(String joint) {
 		for(int i=0;i<joints.size();i++) {
 			if(joints.get(i).name.equals(joint))
@@ -310,6 +322,8 @@ public class PandaArmImpl implements Arm {
 
 	private native void moveTo(Deferred<Arm> d, float x, float y, float z, float ox, float oy, float oz, float ow);
 
+	private native void move(Deferred<Arm> d, float x, float y, float z, float ox, float oy, float oz);
+	
 	private native void stop(Deferred<Arm> d);
 
 	private native void recover(Deferred<Arm> d);

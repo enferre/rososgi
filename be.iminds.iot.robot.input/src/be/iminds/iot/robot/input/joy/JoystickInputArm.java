@@ -28,13 +28,11 @@ import org.osgi.service.component.annotations.Reference;
 import be.iminds.iot.input.joystick.api.JoystickEvent;
 import be.iminds.iot.input.joystick.api.JoystickListener;
 import be.iminds.iot.robot.api.arm.Arm;
-import be.iminds.iot.robot.api.omni.OmniDirectional;
 
 @Component
-public class JoystickInputYoubot implements JoystickListener {
+public class JoystickInputArm implements JoystickListener {
 
 	private Arm arm;
-	private OmniDirectional base;	
 	
 	private float velocity = 0.2f;
 	private float angular = 0.4f;
@@ -43,25 +41,19 @@ public class JoystickInputYoubot implements JoystickListener {
 	public void onEvent(JoystickEvent e) {
 		
 		switch(e.type){
-		case BUTTON_L1_PRESSED:
-			// grip action
-			arm.openGripper()
-				.then(p -> arm.setPositions(2.92f, 0.0f, 0.0f, 0.0f, 2.875f))
-				.then(p -> arm.setPositions(2.92f, 1.76f, -1.37f, 2.55f))
-				.then(p -> arm.closeGripper())
-				.then(p -> arm.setPositions(0.01f, 0.8f))
-				.then(p -> arm.setPositions(0.01f, 0.8f, -1f, 2.9f))
-				.then(p -> arm.openGripper())
-				.then(p -> arm.setPosition(1, -1.3f))
-				.then(p -> arm.reset());
+		case BUTTON_R1_PRESSED:
+			arm.openGripper();
 			break;
+		case BUTTON_R2_PRESSED:
+			arm.closeGripper();
+			break;	
 		case JOYSTICK_CHANGED:
-			// move base
-			float vx = e.axes[0]*velocity;
-			float vy = e.axes[1]*velocity;
+			float vx = e.axes[1]*velocity;
+			float vy = e.axes[0]*velocity;
+			float vz = e.axes[3]*velocity;
 			float va = e.axes[2]*angular;
 			
-			base.move(vx, vy, va);
+			arm.move(vx, vy, vz, 0, 0, va);
 			break;
 		}
 		
@@ -71,10 +63,4 @@ public class JoystickInputYoubot implements JoystickListener {
 	void setArm(Arm arm){
 		this.arm = arm;
 	}
-	
-	@Reference
-	void setBase(OmniDirectional base){
-		this.base = base;
-	}
-
 }

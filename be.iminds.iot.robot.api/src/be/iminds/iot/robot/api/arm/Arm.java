@@ -93,5 +93,10 @@ public interface Arm extends Robot<Arm> {
 	Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow);
 	
 	Promise<Arm> moveTo(Pose p);
+	
+	
+	Promise<Arm> move(float vx, float vy, float vz);
+
+	Promise<Arm> move(float vx, float vy, float vz, float ox, float oy, float oz);
 
 }

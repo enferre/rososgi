@@ -670,5 +670,15 @@ public class ArmImpl implements Arm {
 	public Promise<Arm> moveTo(Pose p) {
 		return moveTo(p.position.x, p.position.y, p.position.z);
 	}
+	
+	@Override
+	public Promise<Arm> move(float vx, float vy, float vz) {
+		throw new UnsupportedOperationException("Cartesian velocity control not supported");
+	}
+
+	@Override
+	public Promise<Arm> move(float vx, float vy, float vz, float ox, float oy, float oz) {
+		throw new UnsupportedOperationException("Cartesian velocity control not supported");
+	}
 
 }
