@@ -12,7 +12,7 @@ public:
 	CartesianMotionGenerator(double speed_factor,
 			float x, float y, float z, float ox, float oy, float oz, float ow);
 
-	franka::CartesianPose operator()(const franka::RobotState& robot_state,
+	franka::CartesianPose next(const franka::RobotState& robot_state,
 			franka::Duration period);
 
 private:

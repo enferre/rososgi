@@ -68,7 +68,6 @@ public class PandaArmImpl implements Arm {
 	
 	@Activate
 	public void activate(Map<String, String> config) {
-		System.out.println("Activate Panda?!");
 		String robot_ip = config.get("robot_ip");
 		
 		joints.add(new JointDescription("panda_joint1", -2.9671f, 2.9671f, -2.5f, 2.5f, -87f, 87f));
@@ -171,7 +170,7 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setPositions(float... position) {
-		final Deferred<Arm> d = new Deferred();
+		final Deferred<Arm> d = new Deferred<>();
 		executor.execute(()->{
 			if(position.length == 7) {
 				positions(d, position[0], position[1], position[2], position[3], 

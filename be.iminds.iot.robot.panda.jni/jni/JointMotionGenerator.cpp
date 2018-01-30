@@ -119,7 +119,7 @@ void JointMotionGenerator::calculateSynchronizedValues() {
 	}
 }
 
-franka::JointPositions JointMotionGenerator::operator()(
+franka::JointPositions JointMotionGenerator::next(
 		const franka::RobotState& robot_state, franka::Duration period) {
 	time_ += period.toSec();
 

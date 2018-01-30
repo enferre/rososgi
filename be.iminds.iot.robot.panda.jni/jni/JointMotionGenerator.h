@@ -15,24 +15,11 @@
  */
 class JointMotionGenerator {
 public:
-	/**
-	 * Creates a new JointMotionGenerator instance for a target q.
-	 *
-	 * @param[in] speed_factor General speed factor in range [0, 1].
-	 * @param[in] q1..7: joint positions
-	 */
+
 	JointMotionGenerator(double speed_factor,
 			float q1, float q2, float q3, float q4, float q5, float q6, float q7);
 
-	/**
-	 * Sends joint position calculations
-	 *
-	 * @param[in] robot_state Current state of the robot.
-	 * @param[in] period Duration of execution.
-	 *
-	 * @return Joint positions for use inside a control loop.
-	 */
-	franka::JointPositions operator()(const franka::RobotState& robot_state,
+	franka::JointPositions next(const franka::RobotState& robot_state,
 			franka::Duration period);
 
 private:

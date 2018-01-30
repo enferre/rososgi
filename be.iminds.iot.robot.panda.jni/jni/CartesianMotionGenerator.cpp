@@ -14,7 +14,7 @@ CartesianMotionGenerator::CartesianMotionGenerator(double speed_factor,
 }
 
 
-franka::CartesianPose CartesianMotionGenerator::operator()(
+franka::CartesianPose CartesianMotionGenerator::next(
 		const franka::RobotState& robot_state, franka::Duration period) {
 	time_ += period.toSec();
 
