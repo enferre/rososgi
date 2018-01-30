@@ -9,7 +9,7 @@ JAVA_PLATFORMINCLUDE := $(JAVA_INCLUDE)/$(JDKPLATFORMINCLUDESUBDIR)
 
 HEADERS := $(wildcard *.h)
 SRC := $(wildcard *.cpp)
-INCLUDES := -Ilibfranka/common/include -Ilibfranka/include -I$(JAVA_INCLUDE) -I$(JAVA_PLATFORMINCLUDE) -I$(JAVAH) 
+INCLUDES := -I/usr/include/eigen3 -Ilibfranka/common/include -Ilibfranka/include  -I$(JAVA_INCLUDE) -I$(JAVA_PLATFORMINCLUDE) -I$(JAVAH) 
 OBJECTS := $(SRC:.cpp=.o)
 FLAGS := -std=c++11
 CCFLAGS := -O3 -w -fPIC

@@ -146,7 +146,13 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setPosition(int joint, float position) {
-		throw new UnsupportedOperationException("setPosition not implemented...");
+		float[] positions = new float[7];
+		float[] state = joints();
+		for(int i=0;i<7;i++) {
+			positions[i] = state[i];
+		}
+		positions[joint] = position;
+		return setPositions(position);
 	}
 
 	@Override
@@ -161,7 +167,22 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setPositions(float... position) {
-		throw new UnsupportedOperationException("setPositions not implemented...");
+		Deferred<Arm> d = new Deferred();
+		if(position.length == 7) {
+			positions(d, position[0], position[1], position[2], position[3], 
+					position[4] ,position[5], position[6]);
+		} else {
+			float[] state = joints();
+			positions(d, 
+					position.length >= 1 ? position[0] : state[0], 
+					position.length >= 2 ? position[1] : state[1],
+					position.length >= 3 ? position[2] : state[2],
+					position.length >= 4 ? position[3] : state[3],
+					position.length >= 5 ? position[4] : state[4],
+					position.length >= 6 ? position[5] : state[5],
+					position.length >= 7 ? position[6] : state[6]);
+		}
+		return d.getPromise();
 	}
 
 	@Override
@@ -199,8 +220,21 @@ public class PandaArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Arm> setPositions(Collection<JointValue> positions) {
-		throw new UnsupportedOperationException("setPositions not implemented...");
+	public Promise<Arm> setPositions(Collection<JointValue> values) {
+		float[] positions = new float[7];
+		float[] state = joints();
+		for(int i=0;i<7;i++) {
+			positions[i] = state[i];
+		}
+		
+		for(JointValue v : values) {
+			int index = getJointIndex(v.joint);
+			if(index >= 0 ) {
+				positions[index] = v.value;
+			}
+		}
+		
+		return setPositions(positions);
 	}
 
 	@Override
@@ -238,7 +272,6 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow) {
-		System.out.println("MOVE!");
 		Deferred<Arm> d = new Deferred<>();
 		moveTo(d, x, y, z, ox, oy, oz, ow);
 		return d.getPromise();
@@ -249,6 +282,13 @@ public class PandaArmImpl implements Arm {
 		return moveTo(p.position.x, p.position.y, p.position.z, p.orientation.x, p.orientation.y, p.orientation.z, p.orientation.w);
 	}
 
+	private int getJointIndex(String joint) {
+		for(int i=0;i<joints.size();i++) {
+			if(joints.get(i).name.equals(joint))
+				return i;
+		}
+		return -1;
+	}
 
 	private native void speed(float s);
 	

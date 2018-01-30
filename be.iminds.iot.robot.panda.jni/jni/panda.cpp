@@ -1,11 +1,16 @@
 
 #include "be_iminds_iot_robot_panda_jni_PandaArmImpl.h"
 
+#include "JointMotionGenerator.h"
+
 #include <iostream>
+#include <cmath>
 
 #include <franka/exception.h>
 #include <franka/robot.h>
 #include <franka/gripper.h>
+
+#include <Eigen/Dense>
 
 
 JavaVM* jvm;
@@ -181,10 +186,117 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_close
 }
 
 
+JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_positions
+(JNIEnv * env, jobject o, jobject d, jfloat p1, jfloat p2, jfloat p3, jfloat p4, jfloat p5, jfloat p6, jfloat p7) {
+	try {
+		std::array<double, 7> q_goal;
+		q_goal[0] = p1;
+		q_goal[1] = p2;
+		q_goal[2] = p3;
+		q_goal[3] = p4;
+		q_goal[4] = p5;
+		q_goal[5] = p6;
+		q_goal[6] = p7;
+
+		JointMotionGenerator motion_generator(speed, q_goal);
+		robot->control(motion_generator);
+		resolve(d, o);
+	} catch (const franka::Exception& e) {
+		fail(d, e.what());
+	}
+}
+
+
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_moveTo
   (JNIEnv * env, jobject o, jobject d, jfloat x, jfloat y, jfloat z, jfloat ox, jfloat oy, jfloat oz, jfloat ow){
-	std::cout << "Move to " << x << " " << y << " " << z << std::endl;
+	try {
+		auto initial_pose = robot->readOnce().O_T_EE_d;
 
-	resolve(d, o);
-	//fail(d, "Something went wrong!");
+		Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_pose.data()));
+		Eigen::Vector3d initial_position(initial_transform.translation());
+		Eigen::Quaterniond initial_orientation(initial_transform.rotation());
+
+		Eigen::Vector3d desired_position(x,y,z);
+		Eigen::Quaterniond desired_orientation(ow, ox, oy, oz);
+
+		double distance = (desired_position - initial_position).norm();
+		double adistance = initial_orientation.angularDistance(desired_orientation);
+
+		// TODO which are the best v/a max values?
+		// TODO also incorporate orientation change here?
+		double v_max = 2;
+		double a_max = 2.5;
+
+		double T_v = 3.0/(2.0*v_max) * distance;
+		double T_a = sqrt(distance*6/a_max);
+		double T = std::max(T_a,T_v) / speed;
+
+		double a2 = 3.0/(T*T);
+		double a3 = -2.0/(T*T*T);
+
+		double time = 0.0;
+		robot->control(
+				[=, &time](const franka::RobotState&, franka::Duration time_step) -> franka::CartesianPose {
+					time += time_step.toSec();
+					double s = a2*time*time + a3*time*time*time;
+
+					Eigen::Vector3d position = initial_position + s * (desired_position - initial_position);
+
+					//Eigen::Quaterniond orientation = initial_orientation.slerp(s, desired_orientation);
+					//orientation.normalize();
+
+					// nlerp implementation?
+					Eigen::Quaterniond orientation;
+					double dot = initial_orientation.dot(desired_orientation);
+					double si = 1-s;
+					if(dot < 0){
+						orientation.x() = si*initial_orientation.x() - s*desired_orientation.x();
+						orientation.y() = si*initial_orientation.y() - s*desired_orientation.y();
+						orientation.z() = si*initial_orientation.z() - s*desired_orientation.z();
+						orientation.w() = si*initial_orientation.w() - s*desired_orientation.w();
+
+					} else {
+						orientation.x() = si*initial_orientation.x() + s*desired_orientation.x();
+						orientation.y() = si*initial_orientation.y() + s*desired_orientation.y();
+						orientation.z() = si*initial_orientation.z() + s*desired_orientation.z();
+						orientation.w() = si*initial_orientation.w() + s*desired_orientation.w();
+					}
+					orientation.normalize();
+
+					// TODO orientation interpolation not working properly?
+					//Eigen::Matrix3d mat = orientation.toRotationMatrix();
+					Eigen::Matrix3d mat = initial_orientation.toRotationMatrix();
+
+					std::array<double, 16> new_pose = initial_pose;
+
+					// TODO is there a better way here?
+					new_pose[0] = mat(0,0);
+					new_pose[1] = mat(1,0);
+					new_pose[2] = mat(2,0);
+
+					new_pose[4] = mat(0,1);
+					new_pose[5] = mat(1,1);
+					new_pose[6] = mat(2,1);
+
+					new_pose[8] = mat(0,2);
+					new_pose[9] = mat(1,2);
+					new_pose[10] = mat(2,2);
+
+					new_pose[12] = position[0];
+					new_pose[13] = position[1];
+					new_pose[14] = position[2];
+
+					//std::cout << new_pose[0] << " " << new_pose[1] << " " << new_pose[2] << std::endl;
+					//std::cout << new_pose[4] << " " << new_pose[5] << " " << new_pose[6] << std::endl;
+					//std::cout << new_pose[8] << " " << new_pose[9] << " " << new_pose[10] << std::endl << std::endl;
+
+					if (time >= T) {
+						resolve(d, o);
+						return franka::MotionFinished(new_pose);
+					}
+					return new_pose;
+				});
+	} catch (const franka::ControlException& e) {
+		fail(d, e.what());
+	}
 }

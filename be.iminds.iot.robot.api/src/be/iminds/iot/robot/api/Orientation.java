@@ -20,12 +20,38 @@ public class Orientation {
 		// 3x3 Rotation matrix
 		if(mat.length < 9)
 			throw new RuntimeException("Rotation matrix should be 3x3");
+
+		float tr = mat[0] + mat[4] + mat[8];
+
+		if (tr > 0) {
+			float S = (float) Math.sqrt(tr + 1.0) * 2; // S=4*qw
+			w = 0.25f * S;
+			x = (mat[7] - mat[5]) / S;
+			y = (mat[2] - mat[6]) / S;
+			z = (mat[3] - mat[1]) / S;
+		} else if ((mat[0] > mat[4]) & (mat[0] > mat[8])) {
+			float S = (float) Math.sqrt(1.0 + mat[0] - mat[4] - mat[8]) * 2; // S=4*qx
+			w = (mat[7] - mat[5]) / S;
+			x = 0.25f * S;
+			y = (mat[1] + mat[3]) / S;
+			z = (mat[2] + mat[6]) / S;
+		} else if (mat[4] > mat[8]) {
+			float S = (float) Math.sqrt(1.0 + mat[4] - mat[0] - mat[8]) * 2; // S=4*qy
+			w = (mat[2] - mat[6]) / S;
+			x = (mat[1] + mat[3]) / S;
+			y = 0.25f * S;
+			z = (mat[5] + mat[7]) / S;
+		} else {
+			float S = (float) Math.sqrt(1.0 + mat[8] - mat[0] - mat[4]) * 2; // S=4*qz
+			w = (mat[3] - mat[1]) / S;
+			x = (mat[2] + mat[6]) / S;
+			y = (mat[5] + mat[7]) / S;
+			z = 0.25f * S;
+		}
 		
-		w = (float)(Math.sqrt(1.0 + mat[0] + mat[4] + mat[8]) / 2.0f);
-		float w4 = (4.0f * w);
-		x = (mat[7] - mat[5]) / w4 ;
-		y = (mat[2] - mat[6]) / w4 ;
-		z = (mat[3] - mat[1]) / w4 ;
+		if(w < 0) {
+			w = -w;
+		}
 	}
 	
 	public Orientation(float yaw, float pitch, float roll) {
