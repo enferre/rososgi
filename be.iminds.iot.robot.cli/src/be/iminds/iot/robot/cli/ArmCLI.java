@@ -110,6 +110,10 @@ public class ArmCLI {
 		arm.stop();
 	}
 	
+	public void halt(){
+		arm.stop();
+	}
+	
 	public void speed() {
 		System.out.println(arm.getSpeed());
 	}

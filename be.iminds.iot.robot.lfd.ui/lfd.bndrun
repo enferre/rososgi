@@ -5,7 +5,8 @@
 	be.iminds.iot.robot.lfd;version=latest,\
 	be.iminds.iot.robot.lfd.ui;version=latest,\
 	be.iminds.iot.ros.camera;version=latest,\
-	be.iminds.iot.sensor.camera.ros;version=latest
+	be.iminds.iot.sensor.camera.ros;version=latest,\
+	be.iminds.iot.robot.cli;version=latest
 
 -runproperties.xlfd: \
 	org.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
