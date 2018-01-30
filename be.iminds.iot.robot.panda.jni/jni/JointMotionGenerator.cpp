@@ -10,8 +10,8 @@
 #include <franka/robot.h>
 
 JointMotionGenerator::JointMotionGenerator(double speed_factor,
-		const std::array<double, 7> q_goal) :
-		q_goal_(q_goal.data()) {
+		float q1, float q2, float q3, float q4, float q5, float q6, float q7){
+	q_goal_ << q1, q2, q3, q4, q5, q6, q7;
 	dq_max_ *= speed_factor;
 	ddq_max_start_ *= speed_factor;
 	ddq_max_goal_ *= speed_factor;

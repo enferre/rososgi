@@ -2,8 +2,6 @@
 // Use of this source code is governed by the Apache-2.0 license, see LICENSE
 #pragma once
 
-#include <array>
-
 #include <Eigen/Core>
 
 #include <franka/control_types.h>
@@ -21,10 +19,10 @@ public:
 	 * Creates a new JointMotionGenerator instance for a target q.
 	 *
 	 * @param[in] speed_factor General speed factor in range [0, 1].
-	 * @param[in] q_goal Target joint positions.
+	 * @param[in] q1..7: joint positions
 	 */
 	JointMotionGenerator(double speed_factor,
-			const std::array<double, 7> q_goal);
+			float q1, float q2, float q3, float q4, float q5, float q6, float q7);
 
 	/**
 	 * Sends joint position calculations
@@ -45,7 +43,7 @@ private:
 	void calculateSynchronizedValues();
 
 	static constexpr double kDeltaQMotionFinished = 1e-6;
-	const Vector7d q_goal_;
+	Vector7d q_goal_;
 
 	Vector7d q_start_;
 	Vector7d delta_q_;

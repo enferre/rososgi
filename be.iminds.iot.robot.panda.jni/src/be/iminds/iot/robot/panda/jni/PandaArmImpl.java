@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -57,6 +59,8 @@ public class PandaArmImpl implements Arm {
 		    throw e;
 		}
 	}
+	
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	
 	private final List<JointDescription> joints = new ArrayList<>();
 	
@@ -167,21 +171,23 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setPositions(float... position) {
-		Deferred<Arm> d = new Deferred();
-		if(position.length == 7) {
-			positions(d, position[0], position[1], position[2], position[3], 
-					position[4] ,position[5], position[6]);
-		} else {
-			float[] state = joints();
-			positions(d, 
-					position.length >= 1 ? position[0] : state[0], 
-					position.length >= 2 ? position[1] : state[1],
-					position.length >= 3 ? position[2] : state[2],
-					position.length >= 4 ? position[3] : state[3],
-					position.length >= 5 ? position[4] : state[4],
-					position.length >= 6 ? position[5] : state[5],
-					position.length >= 7 ? position[6] : state[6]);
-		}
+		final Deferred<Arm> d = new Deferred();
+		executor.execute(()->{
+			if(position.length == 7) {
+				positions(d, position[0], position[1], position[2], position[3], 
+						position[4] ,position[5], position[6]);
+			} else {
+				float[] state = joints();
+				positions(d, 
+						position.length >= 1 ? position[0] : state[0], 
+						position.length >= 2 ? position[1] : state[1],
+						position.length >= 3 ? position[2] : state[2],
+						position.length >= 4 ? position[3] : state[3],
+						position.length >= 5 ? position[4] : state[4],
+						position.length >= 6 ? position[5] : state[5],
+						position.length >= 7 ? position[6] : state[6]);
+			}
+		});
 		return d.getPromise();
 	}
 
@@ -202,15 +208,15 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> openGripper(float opening) {
-		Deferred<Arm> d = new Deferred();
-		open(d, opening);
+		final Deferred<Arm> d = new Deferred<>();
+		executor.execute(()->open(d, opening));
 		return d.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> closeGripper(float opening, float effort) {
-		Deferred<Arm> d = new Deferred();
-		close(d, opening, effort);
+		final Deferred<Arm> d = new Deferred<>();
+		executor.execute(()->close(d, opening, effort));
 		return d.getPromise();
 	}
 
@@ -272,8 +278,8 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow) {
-		Deferred<Arm> d = new Deferred<>();
-		moveTo(d, x, y, z, ox, oy, oz, ow);
+		final Deferred<Arm> d = new Deferred<>();
+		executor.execute(()-> moveTo(d, x, y, z, ox, oy, oz, ow));
 		return d.getPromise();
 	}
 
