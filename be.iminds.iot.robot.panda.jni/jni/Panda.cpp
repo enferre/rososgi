@@ -4,6 +4,7 @@
 #include "Java.h"
 
 #include "JointMotionGenerator.h"
+#include "JointVelocityGenerator.h"
 #include "CartesianMotionGenerator.h"
 #include "CartesianVelocityGenerator.h"
 
@@ -173,6 +174,30 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_positions
 		});
 		java->resolve(d, o);
 	} catch (const franka::Exception& e) {
+		java->fail(d, e.what());
+	}
+}
+
+
+JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl_velocities
+  (JNIEnv * env, jobject o, jobject d, jfloat v1, jfloat v2, jfloat v3, jfloat v4, jfloat v5, jfloat v6, jfloat v7){
+	try {
+		// TODO update in case still moving?!
+		JointVelocityGenerator motion_generator(v1, v2, v3, v4, v5, v6, v7);
+		int i=0;
+		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
+									franka::Duration time_step) -> franka::JointVelocities {
+			if(i++ % rate == 0){
+				if (mutex.try_lock()) {
+					robot_state = state;
+					mutex.unlock();
+				}
+			}
+
+			return motion_generator.next(state, time_step);
+		});
+		java->resolve(d, o);
+	} catch (const franka::ControlException& e) {
 		java->fail(d, e.what());
 	}
 }

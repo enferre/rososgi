@@ -160,8 +160,13 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setVelocity(int joint, float velocity) {
-		throw new UnsupportedOperationException("setVelocity not implemented...");
-	}
+		float[] velocities = new float[7];
+		float[] state = joints();
+		for(int i=0;i<7;i++) {
+			velocities[i] = state[i+7];
+		}
+		velocities[joint] = velocity;
+		return setVelocities(velocities);	}
 
 	@Override
 	public Promise<Arm> setTorque(int joint, float torque) {
@@ -192,7 +197,24 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setVelocities(float... velocity) {
-		throw new UnsupportedOperationException("setVelocities not implemented...");
+		final Deferred<Arm> d = new Deferred<>();
+		executor.execute(()->{
+			if(velocity.length == 7) {
+				velocities(d, velocity[0], velocity[1], velocity[2], velocity[3], 
+						velocity[4] ,velocity[5], velocity[6]);
+			} else {
+				float[] state = joints();
+				velocities(d, 
+						velocity.length >= 1 ? velocity[0] : state[7], 
+						velocity.length >= 2 ? velocity[1] : state[8],
+						velocity.length >= 3 ? velocity[2] : state[9],
+						velocity.length >= 4 ? velocity[3] : state[10],
+						velocity.length >= 5 ? velocity[4] : state[11],
+						velocity.length >= 6 ? velocity[5] : state[12],
+						velocity.length >= 7 ? velocity[6] : state[13]);
+			}
+		});
+		return d.getPromise();
 	}
 
 	@Override
@@ -243,8 +265,21 @@ public class PandaArmImpl implements Arm {
 	}
 
 	@Override
-	public Promise<Arm> setVelocities(Collection<JointValue> velocities) {
-		throw new UnsupportedOperationException("setVelocities not implemented...");
+	public Promise<Arm> setVelocities(Collection<JointValue> values) {
+		float[] velocities = new float[7];
+		float[] state = joints();
+		for(int i=0;i<7;i++) {
+			velocities[i] = state[i+7];
+		}
+		
+		for(JointValue v : values) {
+			int index = getJointIndex(v.joint);
+			if(index >= 0 ) {
+				velocities[index] = v.value;
+			}
+		}
+		
+		return setVelocities(velocities);
 	}
 
 	@Override
