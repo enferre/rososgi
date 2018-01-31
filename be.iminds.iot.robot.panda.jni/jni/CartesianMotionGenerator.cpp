@@ -31,42 +31,51 @@ franka::CartesianPose CartesianMotionGenerator::next(
 		double v_max = 2;
 		double a_max = 2.5;
 
-		double T_v = 3.0/(2.0*v_max) * distance;
-		double T_a = sqrt(distance*6/a_max);
+		double vo_max = 2.6;
+		double ao_max = 5;
 
-		T = std::max(T_a,T_v) / speed;
-		a2 = 3.0/(T*T);
-		a3 = -2.0/(T*T*T);
+		double T_v = 15.0/(8.0*v_max) * distance;
+		double T_a = sqrt(distance*10/(sqrt(3)*a_max));
+
+		double T_ov = 15.0/(8.0*vo_max) * adistance;
+		double T_oa = sqrt(adistance*10/(sqrt(3)*ao_max));
+
+		T = std::max(std::max(T_a,T_v),std::max(T_ov,T_oa)) / speed;
+
+		a3 = 10/(T*T*T);
+		a4 = -15/(T*T*T*T);
+		a5 = 6/(T*T*T*T*T);
 	}
 
-	double s = a2*time_*time_ + a3*time_*time_*time_;
+	double s = a0 + a1*time_ + a2*time_*time_ + a3*time_*time_*time_
+				+ a4*time_*time_*time_*time_ + a5*time_*time_*time_*time_*time_;
 
 	Eigen::Vector3d position = position_start + s * (position_goal - position_start);
 
-	//Eigen::Quaterniond orientation = orientation_start.slerp(s, orientation_goal);
-	//orientation.normalize();
-
-	// nlerp implementation?
-	Eigen::Quaterniond orientation;
-	double dot = orientation_start.dot(orientation_goal);
-	double si = 1-s;
-	if(dot < 0){
-		orientation.x() = si*orientation_start.x() - s*orientation_goal.x();
-		orientation.y() = si*orientation_start.y() - s*orientation_goal.y();
-		orientation.z() = si*orientation_start.z() - s*orientation_goal.z();
-		orientation.w() = si*orientation_start.w() - s*orientation_goal.w();
-
-	} else {
-		orientation.x() = si*orientation_start.x() + s*orientation_goal.x();
-		orientation.y() = si*orientation_start.y() + s*orientation_goal.y();
-		orientation.z() = si*orientation_start.z() + s*orientation_goal.z();
-		orientation.w() = si*orientation_start.w() + s*orientation_goal.w();
-	}
+	Eigen::Quaterniond orientation = orientation_start.slerp(s, orientation_goal);
 	orientation.normalize();
 
+	// nlerp implementation?
+//	Eigen::Quaterniond orientation;
+//	double dot = orientation_start.dot(orientation_goal);
+//	double si = 1-s;
+//	if(dot < 0){
+//		orientation.x() = si*orientation_start.x() - s*orientation_goal.x();
+//		orientation.y() = si*orientation_start.y() - s*orientation_goal.y();
+//		orientation.z() = si*orientation_start.z() - s*orientation_goal.z();
+//		orientation.w() = si*orientation_start.w() - s*orientation_goal.w();
+//
+//	} else {
+//		orientation.x() = si*orientation_start.x() + s*orientation_goal.x();
+//		orientation.y() = si*orientation_start.y() + s*orientation_goal.y();
+//		orientation.z() = si*orientation_start.z() + s*orientation_goal.z();
+//		orientation.w() = si*orientation_start.w() + s*orientation_goal.w();
+//	}
+//	orientation.normalize();
+
 	// TODO orientation interpolation not working properly?
-	//Eigen::Matrix3d mat = orientation.toRotationMatrix();
-	Eigen::Matrix3d mat = orientation_start.toRotationMatrix();
+	Eigen::Matrix3d mat = orientation.toRotationMatrix();
+	//Eigen::Matrix3d mat = orientation_start.toRotationMatrix();
 
 	std::array<double, 16> new_pose;
 	// TODO is there a better way here?

@@ -25,7 +25,12 @@ private:
 	Eigen::Quaterniond orientation_goal;
 
 	double speed;
+
 	double T;
-	double a2;
-	double a3;
+	double a0 = 0;
+	double a1 = 0;
+	double a2 = 0;
+	double a3 = 0;
+	double a4 = 0;
+	double a5 = 0;
 };
