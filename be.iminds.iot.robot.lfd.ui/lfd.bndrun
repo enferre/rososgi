@@ -4,6 +4,7 @@
 	com.google.gson;version='[2.2.4,3.0)',\
 	be.iminds.iot.robot.lfd;version=latest,\
 	be.iminds.iot.robot.lfd.ui;version=latest,\
+	be.iminds.iot.ros.configurator;version=latest,\
 	be.iminds.iot.ros.camera;version=latest,\
 	be.iminds.iot.sensor.camera.ros;version=latest,\
 	be.iminds.iot.robot.cli;version=latest
@@ -11,16 +12,15 @@
 -runproperties.xlfd: \
 	org.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog
 
--runbundles.moveit: \
-	be.iminds.iot.ros.configurator;version=latest,\
-    org.ros.rosjava_messages.actionlib_msgs;version=latest,\
-	org.ros.rosjava_messages.moveit_msgs;version=latest,\
-	org.ros.rosjava_messages.object_recognition_msgs;version=latest,\
-	org.ros.rosjava_messages.octomap_msgs;version=latest,\
-	org.ros.rosjava_messages.shape_msgs;version=latest,\
-	org.ros.rosjava_messages.trajectory_msgs;version=latest,\
-	org.ros.rosjava_messages.control_msgs;version=latest,\
-	be.iminds.iot.robot.moveit;version=latest
+#-runbundles.moveit: \
+#   org.ros.rosjava_messages.actionlib_msgs;version=latest,\
+#	org.ros.rosjava_messages.moveit_msgs;version=latest,\
+#	org.ros.rosjava_messages.object_recognition_msgs;version=latest,\
+#	org.ros.rosjava_messages.octomap_msgs;version=latest,\
+#	org.ros.rosjava_messages.shape_msgs;version=latest,\
+#	org.ros.rosjava_messages.trajectory_msgs;version=latest,\
+#	org.ros.rosjava_messages.control_msgs;version=latest,\
+#	be.iminds.iot.robot.moveit;version=latest
 	
 #-runbundles.panda: \
 #	be.iminds.iot.ros.panda,\
