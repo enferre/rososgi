@@ -63,9 +63,11 @@ public class PandaArmImpl implements Arm {
 	private ExecutorService executor = Executors.newFixedThreadPool(2);
 	
 	private final List<JointDescription> joints = new ArrayList<>();
-	
+
 	private float speed = 0.25f;
 	
+	private Deferred<Arm> resolved;
+
 	@Activate
 	public void activate(Map<String, String> config) {
 		String robot_ip = config.get("robot_ip");
@@ -78,19 +80,19 @@ public class PandaArmImpl implements Arm {
 		joints.add(new JointDescription("panda_joint6", -0.0873f, 3.8223f, -3f, 3f, -12f, 12f));
 		joints.add(new JointDescription("panda_joint7", -2.9671f, 2.9671f, -3f, 3f, -12f, 12f));
 		
-		init(robot_ip);
+		_init(robot_ip);
 		
-		speed(speed);
+		_speed(speed);
+		
+		// reuse one promise for immediate resolutions
+		resolved = new Deferred<Arm>();
+		resolved.resolve(this);
 	}
 	
 	@Deactivate
 	public void deactivate() {
-		deinit();
+		_deinit();
 	}
-	
-	private native void init(String robot_ip);
-	
-	private native void deinit();
 	
 	@Override
 	public Promise<Arm> waitFor(long time) {
@@ -99,9 +101,8 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> stop() {
-		Deferred d = new Deferred();
-		stop(d);
-		return d.getPromise();
+		_stop();
+		return resolved.getPromise();
 	}
 
 	@Override
@@ -111,7 +112,7 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public List<JointState> getState() {
-		float[] state = joints();
+		float[] state = _joints();
 		List<JointState> result = new ArrayList<>();
 		for(int i=0; i<7;i++) {
 			result.add(new JointState(joints.get(i).name, state[i], state[i+7], state[i+14]));
@@ -121,7 +122,7 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Pose getPose() {
-		float[] p = pose();
+		float[] p = _pose();
 		Orientation o = new Orientation(p);
 		Position pos = new Position(p[9], p[10], p[11]);
 		return new Pose(pos, o);
@@ -135,7 +136,7 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public void setSpeed(float speed) {
 		this.speed = speed;
-		speed(speed);
+		_speed(speed);
 	}
 
 	@Override
@@ -150,7 +151,7 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public Promise<Arm> setPosition(int joint, float position) {
 		float[] positions = new float[7];
-		float[] state = joints();
+		float[] state = _joints();
 		for(int i=0;i<7;i++) {
 			positions[i] = state[i];
 		}
@@ -161,7 +162,7 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public Promise<Arm> setVelocity(int joint, float velocity) {
 		float[] velocities = new float[7];
-		float[] state = joints();
+		float[] state = _joints();
 		for(int i=0;i<7;i++) {
 			velocities[i] = state[i+7];
 		}
@@ -178,11 +179,11 @@ public class PandaArmImpl implements Arm {
 		final Deferred<Arm> d = new Deferred<>();
 		executor.execute(()->{
 			if(position.length == 7) {
-				positions(d, position[0], position[1], position[2], position[3], 
+				_positions(d, position[0], position[1], position[2], position[3], 
 						position[4] ,position[5], position[6]);
 			} else {
-				float[] state = joints();
-				positions(d, 
+				float[] state = _joints();
+				_positions(d, 
 						position.length >= 1 ? position[0] : state[0], 
 						position.length >= 2 ? position[1] : state[1],
 						position.length >= 3 ? position[2] : state[2],
@@ -197,14 +198,13 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setVelocities(float... velocity) {
-		final Deferred<Arm> d = new Deferred<>();
 		executor.execute(()->{
 			if(velocity.length == 7) {
-				velocities(d, velocity[0], velocity[1], velocity[2], velocity[3], 
+				_velocities(velocity[0], velocity[1], velocity[2], velocity[3], 
 						velocity[4] ,velocity[5], velocity[6]);
 			} else {
-				float[] state = joints();
-				velocities(d, 
+				float[] state = _joints();
+				_velocities( 
 						velocity.length >= 1 ? velocity[0] : state[7], 
 						velocity.length >= 2 ? velocity[1] : state[8],
 						velocity.length >= 3 ? velocity[2] : state[9],
@@ -214,7 +214,7 @@ public class PandaArmImpl implements Arm {
 						velocity.length >= 7 ? velocity[6] : state[13]);
 			}
 		});
-		return d.getPromise();
+		return resolved.getPromise();
 	}
 
 	@Override
@@ -230,14 +230,14 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public Promise<Arm> openGripper(float opening) {
 		final Deferred<Arm> d = new Deferred<>();
-		executor.execute(()->open(d, opening));
+		executor.execute(()->_open(d, opening));
 		return d.getPromise();
 	}
 
 	@Override
 	public Promise<Arm> closeGripper(float opening, float effort) {
 		final Deferred<Arm> d = new Deferred<>();
-		executor.execute(()->close(d, opening, effort));
+		executor.execute(()->_close(d, opening, effort));
 		return d.getPromise();
 	}
 
@@ -249,7 +249,7 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public Promise<Arm> setPositions(Collection<JointValue> values) {
 		float[] positions = new float[7];
-		float[] state = joints();
+		float[] state = _joints();
 		for(int i=0;i<7;i++) {
 			positions[i] = state[i];
 		}
@@ -267,7 +267,7 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public Promise<Arm> setVelocities(Collection<JointValue> values) {
 		float[] velocities = new float[7];
-		float[] state = joints();
+		float[] state = _joints();
 		for(int i=0;i<7;i++) {
 			velocities[i] = state[i+7];
 		}
@@ -299,9 +299,8 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> recover() {
-		Deferred<Arm> d = new Deferred<>();
-		recover(d);
-		return d.getPromise();
+		_recover();
+		return resolved.getPromise();
 	}
 
 	@Override
@@ -313,7 +312,7 @@ public class PandaArmImpl implements Arm {
 	@Override
 	public Promise<Arm> moveTo(float x, float y, float z, float ox, float oy, float oz, float ow) {
 		final Deferred<Arm> d = new Deferred<>();
-		executor.execute(()-> moveTo(d, x, y, z, ox, oy, oz, ow));
+		executor.execute(()-> _moveTo(d, x, y, z, ox, oy, oz, ow));
 		return d.getPromise();
 	}
 
@@ -329,9 +328,8 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> move(float vx, float vy, float vz, float ox, float oy, float oz) {
-		final Deferred<Arm> d = new Deferred<>();
-		executor.execute(()-> move(d, vx, vy, vz, ox, oy, oz));
-		return d.getPromise();
+		executor.execute(()-> move(vx, vy, vz, ox, oy, oz));
+		return resolved.getPromise();
 	}
 	
 	private int getJointIndex(String joint) {
@@ -346,28 +344,32 @@ public class PandaArmImpl implements Arm {
 		stop();
 	}
 	
-	private native void speed(float s);
+	private native void _init(String robot_ip);
 	
-	private native float[] joints();
+	private native void _deinit();
 	
-	private native float[] pose();
+	private native void _speed(float s);
+	
+	private native float[] _joints();
+	
+	private native float[] _pose();
 
-	private native void positions(Deferred<Arm> d, float p1, float p2, float p3, float p4, float p5, float p6, float p7);
+	private native void _positions(Deferred<Arm> d, float p1, float p2, float p3, float p4, float p5, float p6, float p7);
 	
-	private native void velocities(Deferred<Arm> d, float v1, float v2, float v3, float v4, float v5, float v6, float v7);
+	private native void _velocities(float v1, float v2, float v3, float v4, float v5, float v6, float v7);
 	
-	private native void torques(Deferred<Arm> d, float t1, float t2, float t3, float t4, float t5, float t6, float t7);
+	private native void _torques(float t1, float t2, float t3, float t4, float t5, float t6, float t7);
 
-	private native void moveTo(Deferred<Arm> d, float x, float y, float z, float ox, float oy, float oz, float ow);
+	private native void _moveTo(Deferred<Arm> d, float x, float y, float z, float ox, float oy, float oz, float ow);
 
-	private native void move(Deferred<Arm> d, float x, float y, float z, float ox, float oy, float oz);
+	private native void _move(float x, float y, float z, float ox, float oy, float oz);
 	
-	private native void stop(Deferred<Arm> d);
+	private native void _stop();
 
-	private native void recover(Deferred<Arm> d);
+	private native void _recover();
 	
-	private native void open(Deferred<Arm> d, float opening);
+	private native void _open(Deferred<Arm> d, float opening);
 	
-	private native void close(Deferred<Arm> d, float opening, float effort);
+	private native void _close(Deferred<Arm> d, float opening, float effort);
 
 }
