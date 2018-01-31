@@ -46,6 +46,12 @@ public class JoystickInputArm implements JoystickListener {
 		case BUTTON_R2_PRESSED:
 			arm.closeGripper();
 			break;	
+		case BUTTON_START_PRESSED:
+			arm.recover();
+			break;
+		case BUTTON_SELECT_PRESSED:
+			arm.stop();
+			break;	
 		case JOYSTICK_CHANGED:
 			float vx = -e.axes[1]*velocity;
 			float vy = -e.axes[0]*velocity;
