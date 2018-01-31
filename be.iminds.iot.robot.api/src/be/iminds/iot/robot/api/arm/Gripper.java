@@ -32,4 +32,5 @@ public interface Gripper {
 	
 	void close(float opening, float effort);
 	
+	boolean isGrasped();
 }

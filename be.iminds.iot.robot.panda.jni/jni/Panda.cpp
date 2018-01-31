@@ -279,3 +279,10 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 		java->fail(d, e.what());
 	}
 }
+
+
+JNIEXPORT jboolean JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1is_1grasped
+  (JNIEnv * env, jobject o){
+	gripper_state = gripper->readOnce();
+	return gripper_state.is_grasped && gripper_state.width > 0;
+}

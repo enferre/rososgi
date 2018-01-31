@@ -397,6 +397,11 @@ public class MoveItArmImpl implements Arm {
 	}
 
 	@Override
+	public boolean isGrasped() {
+		throw new UnsupportedOperationException("Grasp check not supported via MoveIt...");
+	}
+	
+	@Override
 	public Promise<Arm> setPositions(Collection<JointValue> positions) {
 		// TODO first cancel any currently running movement?
 
@@ -833,4 +838,5 @@ public class MoveItArmImpl implements Arm {
 			throw new RuntimeException(e);
 		}
 	}
+
 }

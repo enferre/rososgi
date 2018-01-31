@@ -73,6 +73,8 @@ public interface Arm extends Robot<Arm> {
 	
 	Promise<Arm> closeGripper(float opening, float effort);
 
+	boolean isGrasped();
+	
 
 	Promise<Arm> setPositions(Collection<JointValue> positions);
 	

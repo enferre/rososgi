@@ -178,6 +178,11 @@ public class ArmImpl implements Arm {
 			public void close(float opening, float effort) {
 				closeGripper(); // we cannot control opening/effort
 			}
+
+			@Override
+			public boolean isGrasped() {
+				throw new UnsupportedOperationException("Grasp check not supported for Youbot...");
+			}
 		};
 	}
 	
@@ -455,6 +460,11 @@ public class ArmImpl implements Arm {
 		return waitFor(2000);
 	}
 
+	@Override
+	public boolean isGrasped() {
+		return gripper.isGrasped();
+	}
+	
 	@Override
 	public Promise<Arm> setPositions(float... position) {
 		List<JointValue> jointValues = new ArrayList<>();

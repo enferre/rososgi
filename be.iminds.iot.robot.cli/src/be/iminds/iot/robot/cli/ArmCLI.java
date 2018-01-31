@@ -41,7 +41,8 @@ import be.iminds.iot.robot.api.arm.Arm;
 	"osgi.command.function=stop",
 	"osgi.command.function=recover",
 	"osgi.command.function=speed",
-	"osgi.command.function=guide"})
+	"osgi.command.function=guide",
+	"osgi.command.function=grasped"})
 public class ArmCLI {
 
 	private Arm arm;
@@ -129,6 +130,10 @@ public class ArmCLI {
 	
 	public void guide(){
 		arm.guide();
+	}
+	
+	public boolean grasped() {
+		return arm.isGrasped();
 	}
 	
 	@Reference

@@ -252,6 +252,11 @@ public class PandaArmImpl implements Arm {
 	public Promise<Arm> closeGripper() {
 		return closeGripper(0, 100);
 	}
+	
+	@Override
+	public boolean isGrasped() {
+		return _is_grasped();
+	}
 
 	@Override
 	public Promise<Arm> setPositions(Collection<JointValue> values) {
@@ -378,5 +383,7 @@ public class PandaArmImpl implements Arm {
 	private native void _open(Deferred<Arm> d, float opening);
 	
 	private native void _close(Deferred<Arm> d, float opening, float effort);
+	
+	private native boolean _is_grasped();
 
 }
