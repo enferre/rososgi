@@ -82,7 +82,9 @@ public class JoySubscriber extends AbstractNodeMain {
 				
 				JoystickEvent e = new JoystickEvent(type, axes, buttons);
 				for(JoystickListener l : listeners){
-					l.onEvent(e);
+					try {
+						l.onEvent(e);
+					} catch(Throwable t) {}
 				}
 				
 				previousButtons = buttons;

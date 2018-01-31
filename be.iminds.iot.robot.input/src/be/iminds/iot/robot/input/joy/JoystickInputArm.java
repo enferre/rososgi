@@ -34,12 +34,11 @@ public class JoystickInputArm implements JoystickListener {
 
 	private Arm arm;
 	
-	private float velocity = 0.2f;
-	private float angular = 0.4f;
+	private float velocity = 0.1f;
+	private float angular = 0.5f;
 
 	@Override
 	public void onEvent(JoystickEvent e) {
-		
 		switch(e.type){
 		case BUTTON_R1_PRESSED:
 			arm.openGripper();
@@ -56,7 +55,6 @@ public class JoystickInputArm implements JoystickListener {
 			arm.move(vx, vy, vz, 0, 0, va);
 			break;
 		}
-		
 	}
 
 	@Reference

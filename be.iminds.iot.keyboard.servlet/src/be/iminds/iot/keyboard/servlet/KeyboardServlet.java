@@ -100,7 +100,9 @@ public class KeyboardServlet extends HttpServlet {
 		}
 		
 		for(KeyboardListener l : listeners){
-			l.onEvent(new KeyboardEvent(type, key));
+			try {
+				l.onEvent(new KeyboardEvent(type, key));
+			} catch(Throwable t) {}
 		}
 		
 		response.getWriter().close();
