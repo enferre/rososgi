@@ -22,7 +22,7 @@ public class Pose {
 	
 	@Override
 	public String toString() {
-		return position.toString()+","+orientation.toString();
+		return position.toString()+" "+orientation.toString();
 		
 	}
 }
