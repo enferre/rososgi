@@ -25,6 +25,7 @@ franka::Gripper* gripper;
 float speed = 0.25;
 
 volatile bool moving = false;
+volatile bool gripping = false;
 int rate = 30;
 franka::RobotState robot_state;
 franka::GripperState gripper_state;
@@ -136,7 +137,9 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1recover
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1open
   (JNIEnv * env, jobject o, jobject d, jfloat op){
 	try {
+		gripping = true;
 		gripper->move(op, 0.1);
+		gripping = false;
 	    java->resolve(d, o);
 	} catch (franka::Exception const& e) {
 		std::cout << e.what() << std::endl;
@@ -146,13 +149,16 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1open
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1close
   (JNIEnv * env, jobject o, jobject d, jfloat op, jfloat ef){
+	gripping = true;
 	gripper_state = gripper->readOnce();
 	if (gripper_state.is_grasped) {
+		gripping = false;
 	    java->resolve(d, o);
 	    return;
 	}
 	try {
 		gripper->grasp(op, 0.1, ef);
+		gripping = false;
 	    java->resolve(d, o);
 	} catch (franka::Exception const& e) {
 		std::cout << e.what() << std::endl;
@@ -283,6 +289,8 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 
 JNIEXPORT jboolean JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1is_1grasped
   (JNIEnv * env, jobject o){
-	gripper_state = gripper->readOnce();
+	if(!gripping)
+		gripper_state = gripper->readOnce();
+
 	return gripper_state.is_grasped && gripper_state.width > 0;
 }

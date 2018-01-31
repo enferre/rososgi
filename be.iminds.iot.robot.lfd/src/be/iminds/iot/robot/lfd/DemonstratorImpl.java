@@ -500,9 +500,17 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	private Map<UUID, Recorder> recorders = new ConcurrentHashMap<>();
 	
+	public Promise<Recording> record(String demonstration){
+		return record(demonstration, false);
+	}
+	
 	public Promise<Recording> record(String demonstration, boolean reversed){
 		Demonstration d = load(demonstration);
 		return executeAndRecord(d, reversed);
+	}
+	
+	public Promise<List<Recording>> record(String demonstration, int times) {
+		return record(demonstration, times, false);
 	}
 	
 	public Promise<List<Recording>> record(String demonstration, int times, boolean reversed) {
@@ -601,6 +609,12 @@ public class DemonstratorImpl implements Demonstrator {
 				values.put(e.getKey(), null);
 			});
 			
+			try {
+				arm.isGrasped();
+				values.put("grasped", null);
+			} catch(Exception e) {
+				// cannot query grasped
+			}
 			// TODO other information to record? F_ext, gripper positions, gripper has something, error/collision, ...
 			
 			header = values.keySet().stream().sorted().collect(Collectors.toList());
@@ -653,6 +667,10 @@ public class DemonstratorImpl implements Demonstrator {
 					// ex.printStackTrace();
 				}
 			});
+			
+			if(header.contains("grasped")) {
+				values.put("grasped", arm.isGrasped());
+			}
 			
 			// write values
 			header.stream()
