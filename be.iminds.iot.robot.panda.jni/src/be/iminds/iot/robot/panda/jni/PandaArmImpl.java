@@ -26,8 +26,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -60,7 +61,7 @@ public class PandaArmImpl implements Arm {
 		}
 	}
 	
-	private ExecutorService executor = Executors.newFixedThreadPool(2);
+	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
 	
 	private final List<JointDescription> joints = new ArrayList<>();
 
@@ -96,7 +97,9 @@ public class PandaArmImpl implements Arm {
 	
 	@Override
 	public Promise<Arm> waitFor(long time) {
-		throw new UnsupportedOperationException("waitFor not implemented...");
+		final Deferred<Arm> deferred = new Deferred<Arm>();
+		executor.schedule(()->deferred.resolve(PandaArmImpl.this), time, TimeUnit.MILLISECONDS);
+		return deferred.getPromise();	
 	}
 
 	@Override
