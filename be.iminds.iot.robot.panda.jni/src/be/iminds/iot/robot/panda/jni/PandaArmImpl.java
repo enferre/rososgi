@@ -201,20 +201,24 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> setVelocities(float... velocity) {
-		executor.execute(()->{
-			if(velocity.length == 7) {
-				_velocities(velocity[0], velocity[1], velocity[2], velocity[3], 
-						velocity[4] ,velocity[5], velocity[6]);
-			} else {
-				float[] state = _joints();
-				_velocities( 
-						velocity.length >= 1 ? velocity[0] : state[7], 
-						velocity.length >= 2 ? velocity[1] : state[8],
-						velocity.length >= 3 ? velocity[2] : state[9],
-						velocity.length >= 4 ? velocity[3] : state[10],
-						velocity.length >= 5 ? velocity[4] : state[11],
-						velocity.length >= 6 ? velocity[5] : state[12],
-						velocity.length >= 7 ? velocity[6] : state[13]);
+		executor.execute(()-> { 
+			try {
+				if(velocity.length == 7) {
+					_velocities(velocity[0], velocity[1], velocity[2], velocity[3], 
+							velocity[4] ,velocity[5], velocity[6]);
+				} else {
+					float[] state = _joints();
+					_velocities( 
+							velocity.length >= 1 ? velocity[0] : state[7], 
+							velocity.length >= 2 ? velocity[1] : state[8],
+							velocity.length >= 3 ? velocity[2] : state[9],
+							velocity.length >= 4 ? velocity[3] : state[10],
+							velocity.length >= 5 ? velocity[4] : state[11],
+							velocity.length >= 6 ? velocity[5] : state[12],
+							velocity.length >= 7 ? velocity[6] : state[13]);
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
 			}
 		});
 		return resolved.getPromise();
@@ -331,7 +335,7 @@ public class PandaArmImpl implements Arm {
 
 	@Override
 	public Promise<Arm> move(float vx, float vy, float vz, float ox, float oy, float oz) {
-		executor.execute(()-> move(vx, vy, vz, ox, oy, oz));
+		executor.execute(()-> {try { _move(vx, vy, vz, ox, oy, oz);} catch(Exception e) {e.printStackTrace();}});
 		return resolved.getPromise();
 	}
 	

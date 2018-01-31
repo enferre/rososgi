@@ -9,8 +9,9 @@
 
 class CartesianVelocityGenerator {
 public:
-	CartesianVelocityGenerator(
-			float vx, float vy, float vz, float ox, float oy, float oz);
+	CartesianVelocityGenerator();
+
+	void goal(float vx, float vy, float vz, float ox, float oy, float oz);
 
 	void update(float vx, float vy, float vz, float ox, float oy, float oz);
 
@@ -23,5 +24,5 @@ private:
 	Vector6d velocity_goal;
 	Vector6d velocity_current;
 
-	double step = 0.0025;
+	double step = 0.002;
 };

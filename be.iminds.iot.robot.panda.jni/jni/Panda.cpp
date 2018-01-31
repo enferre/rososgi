@@ -24,10 +24,13 @@ franka::Gripper* gripper;
 
 float speed = 0.25;
 
+bool moving = false;
 int rate = 30;
 franka::RobotState robot_state;
 std::mutex mutex;
 
+CartesianVelocityGenerator cartesian_velocity;
+JointVelocityGenerator joint_velocity;
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1init
   (JNIEnv * env, jobject o, jstring s){
@@ -63,11 +66,8 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1speed
 
 JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1joints
   (JNIEnv * env, jobject o){
-	try {
+	if(!moving)
 		robot_state = robot->readOnce();
-	} catch (franka::Exception const& e) {
-		std::cout <<  e.what() << std::endl;
-	}
 
 	jfloatArray result = env->NewFloatArray(21);
 	if (mutex.try_lock()) {
@@ -87,11 +87,8 @@ JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1
 
 JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1pose
   (JNIEnv * env, jobject o){
-	try {
+	if(!moving)
 		robot_state = robot->readOnce();
-	} catch (franka::Exception const& e) {
-		std::cout <<  e.what() << std::endl;
-	}
 
 	jfloatArray result = env->NewFloatArray(12);
 	if (mutex.try_lock()) {
@@ -156,9 +153,14 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1close
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1positions
 (JNIEnv * env, jobject o, jobject d, jfloat p1, jfloat p2, jfloat p3, jfloat p4, jfloat p5, jfloat p6, jfloat p7) {
+	if(moving){
+		java->fail(d, "Robot busy with other movement, wait until complete or call stop first!");
+	}
+
 	try {
 		JointMotionGenerator motion_generator(speed, p1, p2, p3, p4, p5, p6, p7);
 		int i=0;
+		moving = true;
 		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
 									franka::Duration time_step) -> franka::JointPositions {
 			if(i++ % rate == 0){
@@ -170,8 +172,10 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1positio
 
 			return motion_generator.next(state, time_step);
 		});
+		moving = false;
 		java->resolve(d, o);
 	} catch (const franka::Exception& e) {
+		moving = false;
 		java->fail(d, e.what());
 	}
 }
@@ -180,21 +184,27 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1positio
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1velocities
   (JNIEnv * env, jobject o, jfloat v1, jfloat v2, jfloat v3, jfloat v4, jfloat v5, jfloat v6, jfloat v7){
 	try {
-		// TODO update in case still moving?!
-		JointVelocityGenerator motion_generator(v1, v2, v3, v4, v5, v6, v7);
-		int i=0;
-		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
-									franka::Duration time_step) -> franka::JointVelocities {
-			if(i++ % rate == 0){
-				if (mutex.try_lock()) {
-					robot_state = state;
-					mutex.unlock();
+		if(moving){
+			joint_velocity.update(v1, v2, v3, v4, v5, v6, v7);
+		} else {
+			joint_velocity.goal(v1, v2, v3, v4, v5, v6, v7);
+			int i=0;
+			moving = true;
+			robot->control([=, &i, &joint_velocity](const franka::RobotState& state,
+										franka::Duration time_step) -> franka::JointVelocities {
+				if(i++ % rate == 0){
+					if (mutex.try_lock()) {
+						robot_state = state;
+						mutex.unlock();
+					}
 				}
-			}
 
-			return motion_generator.next(state, time_step);
-		});
+				return joint_velocity.next(state, time_step);
+			});
+			moving = false;
+		}
 	} catch (const franka::ControlException& e) {
+		moving = false;
 		java->throwException(e.what());
 	}
 }
@@ -203,21 +213,26 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1velocit
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1move
   (JNIEnv * env, jobject o, jfloat vx, jfloat vy, jfloat vz, jfloat ox, jfloat oy, jfloat oz){
 	try {
-		// TODO update in case still moving?!
-		CartesianVelocityGenerator motion_generator(vx,vy,vz,ox,oy,oz);
-		int i=0;
-		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
-									franka::Duration time_step) -> franka::CartesianVelocities {
-			if(i++ % rate == 0){
-				if (mutex.try_lock()) {
-					robot_state = state;
-				    mutex.unlock();
+		if(moving){
+			cartesian_velocity.update(vx, vy, vz, ox, oy, oz);
+		} else {
+			cartesian_velocity.goal(vx,vy,vz,ox,oy,oz);
+			int i=0;
+			moving = true;
+			robot->control([=, &i, &cartesian_velocity](const franka::RobotState& state,
+										franka::Duration time_step) -> franka::CartesianVelocities {
+				if(i++ % rate == 0){
+					if (mutex.try_lock()) {
+						robot_state = state;
+						mutex.unlock();
+					}
 				}
-			}
-
-			return motion_generator.next(state, time_step);
-		});
+				return cartesian_velocity.next(state, time_step);
+			});
+			moving = false;
+		}
 	} catch (const franka::ControlException& e) {
+		moving = false;
 		java->throwException(e.what());
 	}
 }
@@ -225,9 +240,13 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1move
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
   (JNIEnv * env, jobject o, jobject d, jfloat x, jfloat y, jfloat z, jfloat ox, jfloat oy, jfloat oz, jfloat ow){
+	if(moving){
+		java->fail(d, "Robot busy with other movement, wait until complete or call stop first!");
+	}
 	try {
 		CartesianMotionGenerator motion_generator(speed, x,y,z, ox,oy,oz,ow);
 		int i = 0;
+		moving = true;
 		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
 									franka::Duration time_step) -> franka::CartesianPose {
 			if(i++ % rate == 0){
@@ -239,8 +258,10 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 
 			return motion_generator.next(state, time_step);
 		});
+		moving = false;
 		java->resolve(d, o);
 	} catch (const franka::ControlException& e) {
+		moving = false;
 		java->fail(d, e.what());
 	}
 }

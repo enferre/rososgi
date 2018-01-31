@@ -9,7 +9,9 @@
 
 class JointVelocityGenerator {
 public:
-	JointVelocityGenerator(float v1, float v2, float v3, float v4, float v5, float v6, float v7);
+	JointVelocityGenerator();
+
+	void goal(float v1, float v2, float v3, float v4, float v5, float v6, float v7);
 
 	void update(float v1, float v2, float v3, float v4, float v5, float v6, float v7);
 
@@ -22,5 +24,5 @@ private:
 	Vector7d velocity_goal;
 	Vector7d velocity_current;
 
-	double step = 0.0025;
+	double step = 0.002;
 };
