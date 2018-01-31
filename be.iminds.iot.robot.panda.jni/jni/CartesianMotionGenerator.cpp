@@ -29,7 +29,7 @@ franka::CartesianPose CartesianMotionGenerator::next(
 		// TODO which are the best v/a max values?
 		double v_max = 2;
 		double a_max = 2.5;
-		double vo_max = 2.6;
+		double vo_max = 3;
 		double ao_max = 5;
 
 		double T_v = 15.0/(8.0*v_max) * distance;

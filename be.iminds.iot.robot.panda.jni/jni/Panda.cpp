@@ -24,9 +24,10 @@ franka::Gripper* gripper;
 
 float speed = 0.25;
 
-bool moving = false;
+volatile bool moving = false;
 int rate = 30;
 franka::RobotState robot_state;
+franka::GripperState gripper_state;
 std::mutex mutex;
 
 CartesianVelocityGenerator cartesian_velocity;
@@ -117,6 +118,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1stop
 	try {
 	    robot->stop();
 	} catch (franka::Exception const& e) {
+		std::cout << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -126,6 +128,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1recover
 	try {
 	    robot->automaticErrorRecovery();
 	} catch (franka::Exception const& e) {
+		std::cout << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -136,16 +139,23 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1open
 		gripper->move(op, 0.1);
 	    java->resolve(d, o);
 	} catch (franka::Exception const& e) {
+		std::cout << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1close
   (JNIEnv * env, jobject o, jobject d, jfloat op, jfloat ef){
+	gripper_state = gripper->readOnce();
+	if (gripper_state.is_grasped) {
+	    java->resolve(d, o);
+	    return;
+	}
 	try {
 		gripper->grasp(op, 0.1, ef);
 	    java->resolve(d, o);
 	} catch (franka::Exception const& e) {
+		std::cout << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
@@ -176,6 +186,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1positio
 		java->resolve(d, o);
 	} catch (const franka::Exception& e) {
 		moving = false;
+		std::cout << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
@@ -205,6 +216,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1velocit
 		}
 	} catch (const franka::ControlException& e) {
 		moving = false;
+		std::cout << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -233,6 +245,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1move
 		}
 	} catch (const franka::ControlException& e) {
 		moving = false;
+		std::cout << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -262,6 +275,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 		java->resolve(d, o);
 	} catch (const franka::ControlException& e) {
 		moving = false;
+		std::cout << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
