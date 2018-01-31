@@ -12,6 +12,7 @@
 	be.iminds.iot.robot.moveit;version=latest
 
 -runbundles.panda: \
+	be.iminds.iot.robot.cli,\
 	be.iminds.iot.ros.panda,\
 	be.iminds.iot.robot.moveit;version=latest
 

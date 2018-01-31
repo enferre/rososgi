@@ -61,8 +61,8 @@ public class PandaArmImpl extends MoveItArmImpl implements Arm {
 		
 		super.register("/panda/franka_gripper_node/gripper_action",
 				"/panda/joint_states", joints,
-				"/panda/move_group","panda_arm_hand",
-				"/panda/compute_ik", "/panda/compute_fk", "panda_hand");
+				"/panda/move_group","panda_arm_EE",
+				"/panda/compute_ik", "/panda/compute_fk", "panda_EE");
 		
 		recovery = node.newPublisher("/panda/error_recovery/goal", franka_control.ErrorRecoveryActionGoal._TYPE);
 
