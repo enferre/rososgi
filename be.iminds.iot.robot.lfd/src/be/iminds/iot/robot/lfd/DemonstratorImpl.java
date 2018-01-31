@@ -342,9 +342,9 @@ public class DemonstratorImpl implements Demonstrator {
 		}
 	}
 	
-	public Promise<Void> repeat(String demonstration, int times, boolean reversed) {
+	public void repeat(String demonstration, int times, boolean reversed) {
 		Demonstration d = load(demonstration);
-		return repeat(d, times, reversed);
+		repeat(d, times, reversed);
 	}
 	
 	@Override
@@ -389,8 +389,8 @@ public class DemonstratorImpl implements Demonstrator {
 				if(times > 1) {
 					return repeat(toRepeat, times-1, reverse, recordings);
 				} else if(times < 0) {
-					// loop infite if times negative
-					return repeat(d, times, reverse, recordings);
+					// loop infinite if times negative
+					return repeat(toRepeat, times, reverse, recordings);
 				} else {
 					return null;
 				}
