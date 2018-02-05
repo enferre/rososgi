@@ -344,7 +344,7 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	public void repeat(String demonstration, int times, boolean reversed) {
 		Demonstration d = load(demonstration);
-		repeat(d, times, reversed);
+		repeat(d, times, reversed).then(p -> {return null;}, p->{p.getFailure().printStackTrace();});;
 	}
 	
 	@Override
@@ -356,7 +356,8 @@ public class DemonstratorImpl implements Demonstrator {
 	public Promise<List<Recording>> repeatAndRecord(Demonstration d, int times, boolean reverse) {
 		final Deferred<List<Recording>> deferred = new Deferred<>();
 		final List<Recording> recordings = new ArrayList<>();
-		repeat(d, times, reverse, recordings).onResolve(() -> deferred.resolve(recordings));
+		repeat(d, times, reverse, recordings).then(p -> {deferred.resolve(recordings); return null;},
+				p -> {p.getFailure().printStackTrace(); deferred.resolve(recordings);});
 		return deferred.getPromise();
 	}
 	
@@ -500,22 +501,22 @@ public class DemonstratorImpl implements Demonstrator {
 	
 	private Map<UUID, Recorder> recorders = new ConcurrentHashMap<>();
 	
-	public Promise<Recording> record(String demonstration){
-		return record(demonstration, false);
+	public void record(String demonstration){
+		record(demonstration, false);
 	}
 	
-	public Promise<Recording> record(String demonstration, boolean reversed){
+	public void record(String demonstration, boolean reversed){
 		Demonstration d = load(demonstration);
-		return executeAndRecord(d, reversed);
+		executeAndRecord(d, reversed).then(p -> {System.out.println(p.getValue()); return null;}, p->{p.getFailure().printStackTrace();});
 	}
 	
-	public Promise<List<Recording>> record(String demonstration, int times) {
-		return record(demonstration, times, false);
+	public void record(String demonstration, int times) {
+		record(demonstration, times, false);
 	}
 	
-	public Promise<List<Recording>> record(String demonstration, int times, boolean reversed) {
+	public void record(String demonstration, int times, boolean reversed) {
 		Demonstration d = load(demonstration);
-		return repeatAndRecord(d, times, reversed);
+		repeatAndRecord(d, times, reversed).then(p -> {System.out.println(p.getValue()); return null;}, p->{p.getFailure().printStackTrace();});;
 	}
 	
 	@Override
