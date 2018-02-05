@@ -11,6 +11,7 @@
 #include <iostream>
 #include <cmath>
 #include <mutex>
+#include <atomic>
 
 #include <franka/exception.h>
 #include <franka/robot.h>
@@ -24,8 +25,9 @@ franka::Gripper* gripper;
 
 float speed = 0.25;
 
-volatile bool moving = false;
-volatile bool gripping = false;
+bool moving = false;
+bool gripping = false;
+
 int rate = 30;
 franka::RobotState robot_state;
 franka::GripperState gripper_state;
@@ -33,6 +35,33 @@ std::mutex mutex;
 
 CartesianVelocityGenerator cartesian_velocity;
 JointVelocityGenerator joint_velocity;
+
+void read_state(){
+	if(!moving){
+		if (mutex.try_lock()) {
+			if(!moving){
+				try {
+					robot_state = robot->readOnce();
+				} catch (franka::Exception const& e) {
+					std::cout << "Error reading robot joints: " << e.what() << std::endl;
+				}
+			}
+			mutex.unlock();
+		}
+	}
+}
+
+void start_moving(){
+	mutex.lock();
+	moving = true;
+	mutex.unlock();
+}
+
+void stop_moving(){
+	mutex.lock();
+	moving = false;
+	mutex.unlock();
+}
 
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1init
   (JNIEnv * env, jobject o, jstring s){
@@ -68,8 +97,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1speed
 
 JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1joints
   (JNIEnv * env, jobject o){
-	if(!moving)
-		robot_state = robot->readOnce();
+	read_state();
 
 	jfloatArray result = env->NewFloatArray(21);
 	if (mutex.try_lock()) {
@@ -89,8 +117,7 @@ JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1
 
 JNIEXPORT jfloatArray JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1pose
   (JNIEnv * env, jobject o){
-	if(!moving)
-		robot_state = robot->readOnce();
+	read_state();
 
 	jfloatArray result = env->NewFloatArray(12);
 	if (mutex.try_lock()) {
@@ -119,7 +146,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1stop
 	try {
 	    robot->stop();
 	} catch (franka::Exception const& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << "Error stopping " << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -129,7 +156,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1recover
 	try {
 	    robot->automaticErrorRecovery();
 	} catch (franka::Exception const& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << "Error recovering: " << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -142,7 +169,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1open
 		gripping = false;
 	    java->resolve(d, o);
 	} catch (franka::Exception const& e) {
-		std::cout << e.what() << std::endl;
+		std::cout << "Error open gripper " << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
@@ -150,12 +177,18 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1open
 JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1close
   (JNIEnv * env, jobject o, jobject d, jfloat op, jfloat ef){
 	gripping = true;
-	gripper_state = gripper->readOnce();
+	try {
+		gripper_state = gripper->readOnce();
+	} catch (franka::Exception const& e) {
+		std::cout << "Error reading gripper state: " << e.what() << std::endl;
+	}
+
 	if (gripper_state.is_grasped) {
 		gripping = false;
 	    java->resolve(d, o);
 	    return;
 	}
+
 	try {
 		gripper->grasp(op, 0.1, ef);
 		gripping = false;
@@ -176,7 +209,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1positio
 	try {
 		JointMotionGenerator motion_generator(speed, p1, p2, p3, p4, p5, p6, p7);
 		int i=0;
-		moving = true;
+		start_moving();
 		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
 									franka::Duration time_step) -> franka::JointPositions {
 			if(i++ % rate == 0){
@@ -188,11 +221,11 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1positio
 
 			return motion_generator.next(state, time_step);
 		});
-		moving = false;
+		stop_moving();
 		java->resolve(d, o);
 	} catch (const franka::Exception& e) {
-		moving = false;
-		std::cout << e.what() << std::endl;
+		stop_moving();
+		std::cout << "Error joint position control: " << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
@@ -206,7 +239,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1velocit
 		} else {
 			joint_velocity.goal(v1, v2, v3, v4, v5, v6, v7);
 			int i=0;
-			moving = true;
+			start_moving();
 			robot->control([=, &i, &joint_velocity](const franka::RobotState& state,
 										franka::Duration time_step) -> franka::JointVelocities {
 				if(i++ % rate == 0){
@@ -218,11 +251,11 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1velocit
 
 				return joint_velocity.next(state, time_step);
 			});
-			moving = false;
+			stop_moving();
 		}
-	} catch (const franka::ControlException& e) {
-		moving = false;
-		std::cout << e.what() << std::endl;
+	} catch (const franka::Exception& e) {
+		stop_moving();
+		std::cout << "Error joint velocity control: " << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -236,7 +269,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1move
 		} else {
 			cartesian_velocity.goal(vx,vy,vz,ox,oy,oz);
 			int i=0;
-			moving = true;
+			start_moving();
 			robot->control([=, &i, &cartesian_velocity](const franka::RobotState& state,
 										franka::Duration time_step) -> franka::CartesianVelocities {
 				if(i++ % rate == 0){
@@ -247,11 +280,11 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1move
 				}
 				return cartesian_velocity.next(state, time_step);
 			});
-			moving = false;
+			stop_moving();
 		}
-	} catch (const franka::ControlException& e) {
-		moving = false;
-		std::cout << e.what() << std::endl;
+	} catch (const franka::Exception& e) {
+		stop_moving();
+		std::cout << "Error cartesian velocity control: " << e.what() << std::endl;
 		java->throwException(e.what());
 	}
 }
@@ -265,7 +298,7 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 	try {
 		CartesianMotionGenerator motion_generator(speed, x,y,z, ox,oy,oz,ow);
 		int i = 0;
-		moving = true;
+		start_moving();
 		robot->control([=, &i, &motion_generator](const franka::RobotState& state,
 									franka::Duration time_step) -> franka::CartesianPose {
 			if(i++ % rate == 0){
@@ -277,11 +310,11 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 
 			return motion_generator.next(state, time_step);
 		});
-		moving = false;
+		stop_moving();
 		java->resolve(d, o);
-	} catch (const franka::ControlException& e) {
-		moving = false;
-		std::cout << e.what() << std::endl;
+	} catch (const franka::Exception& e) {
+		stop_moving();
+		std::cout << "Error cartesian position control: " << e.what() << std::endl;
 		java->fail(d, e.what());
 	}
 }
@@ -289,8 +322,13 @@ JNIEXPORT void JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1moveTo
 
 JNIEXPORT jboolean JNICALL Java_be_iminds_iot_robot_panda_jni_PandaArmImpl__1is_1grasped
   (JNIEnv * env, jobject o){
-	if(!gripping)
-		gripper_state = gripper->readOnce();
+	if(!gripping){
+		try {
+			gripper_state = gripper->readOnce();
+		} catch (const franka::Exception& e) {
+			std::cout << "Error reading gripper state: " << e.what() << std::endl;
+		}
+	}
 
 	return gripper_state.is_grasped && gripper_state.width > 0;
 }
