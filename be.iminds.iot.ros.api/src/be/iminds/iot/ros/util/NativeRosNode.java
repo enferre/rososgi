@@ -87,6 +87,7 @@ public class NativeRosNode {
 				}	
 			} else if(key.equals("name")) {
 				name = entry.getValue().toString();
+				rosParameters.add("name:="+name);
 			} else if(!key.contains(".")){ // ignore parameters with "." , most likely OSGi service props
 				rosParameters.add(key+":="+entry.getValue());
 			}
