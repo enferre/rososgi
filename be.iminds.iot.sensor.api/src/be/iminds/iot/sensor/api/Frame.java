@@ -22,6 +22,12 @@
  *******************************************************************************/
 package be.iminds.iot.sensor.api;
 
+/**
+ * Sensor value for Camera typed sensors.
+ * 
+ * @author tverbele
+ *
+ */
 public class Frame extends SensorValue {
 
 	public int width;

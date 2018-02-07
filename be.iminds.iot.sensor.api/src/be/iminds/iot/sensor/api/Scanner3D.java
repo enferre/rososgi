@@ -23,16 +23,13 @@
 package be.iminds.iot.sensor.api;
 
 /**
- * Device that generates sensor values.
+ * A sensor that generates point clouds, for example certain RADAR / Depth cameras with on-board processing.
  * 
  * @author tverbele
  *
  */
-public interface Sensor {
-
-	/**
-	 * @return the latest sensor value
-	 */
-	SensorValue getValue();
+public interface Scanner3D extends Sensor {
+	
+	String[] getFields();
 	
 }

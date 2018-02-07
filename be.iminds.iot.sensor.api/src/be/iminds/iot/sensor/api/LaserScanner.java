@@ -22,6 +22,12 @@
  *******************************************************************************/
 package be.iminds.iot.sensor.api;
 
+/**
+ * Sensor that scans ranges in 1 dimension.
+ * 
+ * @author tverbele
+ *
+ */
 public interface LaserScanner extends Sensor {
 
 	float getMinAngle();

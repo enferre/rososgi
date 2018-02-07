@@ -23,16 +23,17 @@
 package be.iminds.iot.sensor.api;
 
 /**
- * Device that generates sensor values.
+ * Sensor value for 3D scanner typed sensors.
  * 
  * @author tverbele
  *
  */
-public interface Sensor {
+public class PointCloud extends SensorValue {
 
-	/**
-	 * @return the latest sensor value
-	 */
-	SensorValue getValue();
+	// number of points
+	public int size;
+	
+	// number of fields per point + name for each point
+	public String[] fields;
 	
 }

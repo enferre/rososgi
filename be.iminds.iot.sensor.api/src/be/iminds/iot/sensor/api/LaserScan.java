@@ -22,6 +22,12 @@
  *******************************************************************************/
 package be.iminds.iot.sensor.api;
 
+/**
+ * Sensor value for LaserScanner sensors.
+ * 
+ * @author tverbele
+ *
+ */
 public class LaserScan extends SensorValue {
 
 	public float minAngle;

@@ -22,6 +22,14 @@
  *******************************************************************************/
 package be.iminds.iot.sensor.api;
 
+/**
+ * A sensor that generates 2D structured data with width and height.
+ * 
+ * Outputs Frame sensor values.
+ * 
+ * @author tverbele
+ *
+ */
 public interface Camera extends Sensor {
 
 	int getWidth();

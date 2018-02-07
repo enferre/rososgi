@@ -22,6 +22,12 @@
  *******************************************************************************/
 package be.iminds.iot.sensor.api;
 
+/**
+ * Listener interface to get callbacks from a certain sensor.
+ * 
+ * @author tverbele
+ *
+ */
 public interface SensorListener {
 
 	public void update(SensorValue value);

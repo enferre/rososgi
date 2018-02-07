@@ -24,6 +24,12 @@ package be.iminds.iot.sensor.api;
 
 import java.util.UUID;
 
+/**
+ * Base class for sensor values.
+ * 
+ * @author tverbele
+ *
+ */
 public class SensorValue {
 
 	public UUID src;
