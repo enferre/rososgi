@@ -97,7 +97,6 @@ public class ROSScan3dProvider extends AbstractNodeMain implements Scanner3D {
 
 	@Override
 	public void onStart(ConnectedNode connectedNode) {
-		System.out.println("Subscribe to "+topic);
 		subscriber = connectedNode.newSubscriber(topic, PointCloud2._TYPE);
 		subscriber.addMessageListener(new MessageListener<PointCloud2>() {
 			@Override
@@ -183,7 +182,6 @@ public class ROSScan3dProvider extends AbstractNodeMain implements Scanner3D {
 							
 							index+=f.size;
 		
-							System.out.print(pointCloud.data[k]+" ");
 							k++;
 						}
 					}
