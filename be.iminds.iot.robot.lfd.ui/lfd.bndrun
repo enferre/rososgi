@@ -6,7 +6,9 @@
 	be.iminds.iot.robot.lfd.ui;version=latest,\
 	be.iminds.iot.ros.configurator;version=latest,\
 	be.iminds.iot.ros.camera;version=latest,\
+	be.iminds.iot.ros.mmwave;version=latest,\
 	be.iminds.iot.sensor.camera.ros;version=latest,\
+	be.iminds.iot.sensor.range3d.ros;version=latest,\
 	be.iminds.iot.robot.cli;version=latest
 
 -runproperties.xlfd: \
