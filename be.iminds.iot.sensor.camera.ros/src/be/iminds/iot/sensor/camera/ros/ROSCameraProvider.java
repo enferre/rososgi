@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
@@ -98,14 +99,13 @@ public class ROSCameraProvider extends AbstractNodeMain implements Camera {
 				switch(f.encoding){
 					case "rgb8":
 						f.data = new float[f.width*f.height*3];
-						byte[] data = image.getData().array();
-						
+						ChannelBuffer data = image.getData();
 						int ind = 0;
 						for(int j=0;j<f.height;j++){
 							for(int i=0;i<f.width;i++){
 								for(int k=0;k<3;k++){
 									f.data[k*f.width*f.height+j*f.width+i] =
-											(0xFF & data[ind++])/255.f;
+											(0xFF & data.getByte(ind++))/255.f;
 								}
 							}
 						}
