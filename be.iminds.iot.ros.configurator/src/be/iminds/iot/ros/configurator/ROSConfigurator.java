@@ -109,6 +109,10 @@ public class ROSConfigurator {
 							// in case of generic move it arm - make sure to launch your own node config in combination?
 							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.robot.moveit.Arm", null);
 							break;
+						case "mmwave":
+							nodeConfig = ca.createFactoryConfiguration("be.iminds.iot.ros.mmwave.Radar", null);
+							subscriberConfig = ca.createFactoryConfiguration("be.iminds.iot.sensor.range3d.ros.Scanner3D", null);
+							break;
 						default: 
 							continue;
 					}
